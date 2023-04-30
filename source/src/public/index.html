@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.js" integrity="sha512-51xEUbZobtzTG53DuETlzoOZk9cWBiEXV/5Mh7m1htisZLZS4pIHP29J/61/t47rL5Yo0ZCzaeaKLabxdurSJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="style.css">
+  <title>Search Transactions</title>
+</head>
+<body>
+
+<div class="search-container">
+  <div class="search-wrapper">
+    <input type="text" class="search-input" id="search-term" placeholder="Search transactions">
+    <button class="regular-button search-button" id="search-button">Search</button>
+    <button class="regular-button randomize-button" id="randomize-button">Randomize transactions</button>
+  </div>
+</div>
+
+<div class="table-wrapper">
+  <table></table>
+</div>
+
+<table id="transactions-table"></table>
+
+<!--<div class="transactions-table-wrapper">-->
+<!--</div>-->
+
+
+<script type="module" src="./main.js"></script>
+
+</body>
+</html>

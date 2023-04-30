@@ -1,0 +1,33 @@
+const merchant_categories = [
+  "Electronic Sales",
+  "Sporting Goods Stores",
+  "Passenger Railways",
+  "Miscellaneous and Specialty Retail S",
+  "Airlines",
+  "Travel Agencies and Tour Operations",
+  "Shoe Stores",
+  "Misc. Food Stores – Convenience Stor",
+  "Airlines, Air Carriers ( not listed",
+  "SAS",
+  "Miscellaneous Personal Services ( no",
+  "Department Stores",
+  "Lodging – Hotels, Motels, Resorts, C",
+  "Variety Stores",
+  "Financial Institutions – ATM",
+  "Eating places and Restaurants",
+  "Duty Free Store",
+  "Transportation Services, Not elsewhe",
+  "Grocery Stores, Supermarkets",
+  "Membership Organizations ( Not Elsew",
+  "Taxicabs and Limousines",
+  "Money Orders – Wire Transfer",
+  "Book Stores",
+  "Bus Lines, Including Charters, Tour",
+  "Fast Food Restaurants",
+  "Package Stores – Beer, Wine, and Liq",
+  "Tailors, Seamstress, Mending, and Al",
+  "Automotive Service Shops",
+  "Financial Institutions – Merchandise"
+];
+
+export default merchant_categories;
