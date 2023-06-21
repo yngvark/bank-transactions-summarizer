@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.js" integrity="sha512-51xEUbZobtzTG53DuETlzoOZk9cWBiEXV/5Mh7m1htisZLZS4pIHP29J/61/t47rL5Yo0ZCzaeaKLabxdurSJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="table.css">
   <title>Search Transactions</title>
 </head>
 <body>
@@ -14,6 +15,14 @@
     <input type="text" class="search-input" id="search-term" placeholder="Search transactions">
     <button class="regular-button search-button" id="search-button">Search</button>
     <button class="regular-button randomize-button" id="randomize-button">Randomize transactions</button>
+  </div>
+
+  <div class="period-fields-wrapper">
+    <div class="period-text">Period from</div>
+    <input type="text" class="period-input" id="period-from" placeholder="YYYY-MM-DD">
+    <div class="period-text">To</div>
+    <input type="text" class="period-input" id="period-to" placeholder="YYYY-MM-DD">
+    <button class="regular-button period-button">Apply</button>
   </div>
 </div>
 
