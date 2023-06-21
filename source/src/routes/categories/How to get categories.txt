@@ -12,15 +12,17 @@ d3.csv("/transactions").then((data) => {
 })
 -------------------------------------------
 
-(I've previously copied these into categories from transactions.txt)
+You'll use the resulting output below.
 
 Then ask ChatGPT the below question. The result goes into categories.json. ChatGPT won't output the whole output, so I had to say
 
-"You stopped, please continue. Include the last row, so I know you haven't skipped anything.    "
+"You stopped, please continue. Include the last row, so I know you haven't skipped anything."
 
 and then combine the output myself.
 
 ---------------------------------------------- CHATGPT START ---------------------------------------------------
+
+You're a helpful coding assistant, with lots of knowledge about bank transactions.
 
 We have a list of economic transactions that has a category in english, as follows. The categories are enclosed by quotes.
 "
@@ -212,3 +214,5 @@ An eaxmple is:
 }
 
 As for the mapping, I want you to do a best guess.
+
+The result will probably be too big for you to output all at once. So I want you to use paging. Start with page 1. For each output, include the last category from the last page, so I know you haven't skipped anything. Then I'll combine the output myself.
