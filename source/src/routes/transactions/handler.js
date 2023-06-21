@@ -9,17 +9,21 @@ import csvMerger from "./csvMerger";
 const handler = async (req, res) => {
   const hasDataDir = "DATA_DIR" in process.env;
 
-  if (hasDataDir) {
-    const dataDir = process.env["DATA_DIR"];
-    const filename1 = path.join(dataDir, "2017jan-2023apr.csv");
-    // const filename2 = path.join(envHome, "2023-jan-feb-mar-apr.csv")
-    const files = [filename1];
-
-    const csvContent = await csvMerger.mergeCSVFiles(files);
-    res.send(csvContent);
+  if (!hasDataDir) {
+    res.send({});
+    return;
   }
 
-  res.send({});
+  const dataDir = process.env["DATA_DIR"];
+  console.log("DATA_DIR: ", dataDir);
+
+  const f1 = path.join(dataDir, "2017jan-2023apr.csv");
+  const f2 = path.join(dataDir, "2023-mai.csv");
+  // const filename2 = path.join(envHome, "2023-jan-feb-mar-apr.csv")
+  const files = [f1, f2];
+
+  const csvContent = await csvMerger.mergeCSVFiles(files);
+  res.send(csvContent);
 };
 
 export default handler;

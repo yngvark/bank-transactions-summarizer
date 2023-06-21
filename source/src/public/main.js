@@ -14,4 +14,4 @@ function addEventListeners() {
 }
 
 addEventListeners();
-await renderer.loadDataAndRenderTable();
+renderer.loadDataAndRenderTable();
