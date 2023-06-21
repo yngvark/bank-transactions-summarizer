@@ -99,22 +99,17 @@ function renderTable(costs) {
 }
 
 function enterToAndFromDate(transactions) {
-  var parseTime = d3.timeParse("%m/%d/%Y");
-
   let parsedTransactions = transactions.map(function(d) {
     return {...d, TransacationDateParsed: new Date(d["TransactionDate"])};
   });
 
   parsedTransactions.sort((a, b) => a.TransacationDateParsed > b.TransacationDateParsed);
 
-  var firstTransaction = parsedTransactions[0];
-  var latestTransaction = parsedTransactions[parsedTransactions.length - 1];
+  const firstTransaction = parsedTransactions[0];
+  const latestTransaction = parsedTransactions[parsedTransactions.length - 1];
 
-  console.log(firstTransaction.TransacationDateParsed)
-  console.log(latestTransaction.TransacationDateParsed)
-
-  var firstDateISO = firstTransaction.TransacationDateParsed.toISOString().split('T')[0]
-  var latestDateISO = latestTransaction.TransacationDateParsed.toISOString().split('T')[0]
+  const firstDateISO = firstTransaction.TransacationDateParsed.toISOString().split('T')[0]
+  const latestDateISO = latestTransaction.TransacationDateParsed.toISOString().split('T')[0]
 
   document.getElementById("period-from").value = firstDateISO
   document.getElementById("period-to").value = latestDateISO

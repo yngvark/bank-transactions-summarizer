@@ -14,7 +14,18 @@ function addEventListeners() {
 
   // Period apply button
   document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
+
+  document.getElementById('period-from').addEventListener('keydown', periodKeyListener);
+  document.getElementById('period-to').addEventListener('keydown', periodKeyListener);
 }
+
+function periodKeyListener(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    renderer.filterAndRenderData();
+  }
+}
+
 
 addEventListeners();
 renderer.loadDataAndRenderTable();
