@@ -10,18 +10,34 @@ async function loadDataAndRenderTable() {
   globalTransactions = await d3.csv("/transactions");  // TODO: Upload from frontend instead of loading from backend
   const groupedTransactions = await statistics.calculate(d3, categoryMapping, globalTransactions);
   renderTables(groupedTransactions, globalTransactions);
+
+  enterToAndFromDate(globalTransactions);
 }
+
 
 // ------------------------------------------------------------------------------------------------------
 // Functions called from GUI event listeners
 // ------------------------------------------------------------------------------------------------------
 async function filterAndRenderData() {
   const searchTerm = document.getElementById("search-term").value.toLowerCase();
+  const periodFrom = document.getElementById("period-from").value.toLowerCase();
+  const periodTo = document.getElementById("period-to").value.toLowerCase();
 
   // TODO: Since this is called from the GUI, we get data from a global variable. Improve this.
-  const filteredTransactions = globalTransactions.filter(row => {
-    return row["Text"].toLowerCase().includes(searchTerm);
-  });
+  let filteredTransactions = globalTransactions
+      .filter(row => row["Text"].toLowerCase().includes(searchTerm))
+
+  if (periodFrom !== undefined && periodFrom.length > 0) {
+    filteredTransactions = filteredTransactions.filter(row =>
+        new Date(row["BookDate"]) >= new Date(periodFrom)
+    )
+  }
+
+  if (periodTo !== undefined && periodTo.length > 0) {
+    filteredTransactions = filteredTransactions.filter(row =>
+        new Date(row["BookDate"]) <= new Date(periodTo)
+    )
+  }
   // console.log("randomTransactions", filteredTransactions)
 
   const groupedTransactions = await statistics.calculate(d3, categoryMapping, filteredTransactions);
@@ -82,6 +98,27 @@ function renderTable(costs) {
     .text(d => d);
 }
 
+function enterToAndFromDate(transactions) {
+  var parseTime = d3.timeParse("%m/%d/%Y");
+
+  let parsedTransactions = transactions.map(function(d) {
+    return {...d, TransacationDateParsed: new Date(d["TransactionDate"])};
+  });
+
+  parsedTransactions.sort((a, b) => a.TransacationDateParsed > b.TransacationDateParsed);
+
+  var firstTransaction = parsedTransactions[0];
+  var latestTransaction = parsedTransactions[parsedTransactions.length - 1];
+
+  console.log(firstTransaction.TransacationDateParsed)
+  console.log(latestTransaction.TransacationDateParsed)
+
+  var firstDateISO = firstTransaction.TransacationDateParsed.toISOString().split('T')[0]
+  var latestDateISO = latestTransaction.TransacationDateParsed.toISOString().split('T')[0]
+
+  document.getElementById("period-from").value = firstDateISO
+  document.getElementById("period-to").value = latestDateISO
+}
 
 export default {
   loadDataAndRenderTable,
