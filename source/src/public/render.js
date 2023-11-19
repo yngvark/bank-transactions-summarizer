@@ -103,6 +103,10 @@ function enterToAndFromDate(transactions) {
     return {...d, TransacationDateParsed: new Date(d["TransactionDate"])};
   });
 
+  if (parsedTransactions.length === 0) {
+    return;
+  }
+
   parsedTransactions.sort((a, b) => a.TransacationDateParsed > b.TransacationDateParsed);
 
   const firstTransaction = parsedTransactions[0];
