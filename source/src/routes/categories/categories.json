@@ -27,7 +27,7 @@
   "Package Stores – Beer, Wine, and Liq": ["Mat og drikke", "Dagligvarer"],
   "Tailors, Seamstress, Mending, and Al": ["Personlig forbruk", "Klær og sko"],
   "Automotive Service Shops": ["Reise", "Kjøretøy & Leiebil"],
-  "Financial Institutions – Merchandise": ["Kontanter og pengeoverføring", "Kontaktuttak"]
+  "Financial Institutions – Merchandise": ["Kontanter og pengeoverføring", "Kontaktuttak"],
+  "TRANSPORTATION SVCS - DEFAULT": ["Reise", "Reise og transport"],
+  "MEMBER CLUBS/SPORT/REC/GOLF": ["Personlig forbruk", "Sport og fritid"]
 }
-
-
