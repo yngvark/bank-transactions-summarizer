@@ -120,8 +120,17 @@ function enterToAndFromDate(transactions) {
   document.getElementById("period-to").value = latestDateISO
 }
 
+function useAi() {
+  d3.json("/ai").then(function(data) {
+    console.log("Success!", data);
+  }).catch(function(error) {
+    console.log("Oh no error!", error.response);
+  });
+}
+
 export default {
   loadDataAndRenderTable,
   filterAndRenderData,
-  randomizeAndRenderData
+  randomizeAndRenderData,
+  useAi
 };

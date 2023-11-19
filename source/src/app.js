@@ -1,6 +1,7 @@
 import express from "express";
 import transactionsHandler from "./routes/transactions/handler";
 import categoriesHandler from "./routes/categories/handler";
+import aiHandler from "./routes/ai/handler";
 import path from "path";
 
 const app = express()
@@ -10,6 +11,7 @@ app.use(express.static(publicDir));
 
 app.use('/transactions', transactionsHandler)
 app.use('/categories', categoriesHandler)
+app.use('/ai', aiHandler)
 
 export default app
 

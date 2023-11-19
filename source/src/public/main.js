@@ -12,6 +12,9 @@ function addEventListeners() {
   // Randomize button
   document.getElementById("randomize-button").addEventListener("click", renderer.randomizeAndRenderData);
 
+  // Use AI button
+  document.getElementById("use-ai").addEventListener("click", renderer.useAi);
+
   // Period apply button
   document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
 
