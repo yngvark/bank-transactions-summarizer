@@ -36,5 +36,6 @@ async function mergeCSVFiles(inputFiles) {
 }
 
 export default {
+  readCSV: readCSV,
   mergeCSVFiles: mergeCSVFiles
 }

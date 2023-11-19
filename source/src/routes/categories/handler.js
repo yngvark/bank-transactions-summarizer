@@ -8,16 +8,17 @@ import path from "path";
 const handler = (req, res) => {
   const hasDataDir = "DATA_DIR" in process.env;
 
-  if (hasDataDir) {
-    const dataDir = process.env["DATA_DIR"];
+  if (!hasDataDir) {
+    const dataDir = __dirname;
     const filePath = path.join(dataDir, "categories.json");
+    console.log("Returning file: ", filePath);
+
     res.sendFile(filePath);
-    return;
+    return
   }
 
-  const dataDir = __dirname;
+  const dataDir = process.env["DATA_DIR"];
   const filePath = path.join(dataDir, "categories.json");
-
   res.sendFile(filePath);
 };
 
