@@ -8,6 +8,7 @@ let globalTransactions = [];
 // Called from index.js
 async function loadDataAndRenderTable() {
   globalTransactions = await d3.csv("/transactions");  // TODO: Upload from frontend instead of loading from backend
+
   const groupedTransactions = await statistics.calculate(d3, categoryMapping, globalTransactions);
   renderTables(groupedTransactions, globalTransactions);
 
