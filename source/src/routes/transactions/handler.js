@@ -1,5 +1,6 @@
 import path from "path";
-import csvMerger from "./csvMerger";
+import csvHelper from "./csvHelper";
+import { promises as fs } from 'fs';
 
 /**
  * Health check endpoint
@@ -10,20 +11,33 @@ const handler = async (req, res) => {
   const hasDataDir = "DATA_DIR" in process.env;
 
   if (!hasDataDir) {
-    res.send({});
+    const csvContent = await getTestData();
+    res.send(csvContent);
+
+
+
     return;
   }
 
+  const csvContent = await getData();
+  res.send(csvContent);
+};
+
+async function getTestData() {
+  const dataDir = __dirname;
+  const filePath = path.join(dataDir, "test.csv");
+  console.log("Returning file: ", filePath);
+
+  return await fs.readFile(filePath, 'utf8');
+}
+
+async function getData() {
   const dataDir = process.env["DATA_DIR"];
   console.log("DATA_DIR: ", dataDir);
 
-  const f1 = path.join(dataDir, "2017jan-2023apr.csv");
-  const f2 = path.join(dataDir, "2023-mai.csv");
-  // const filename2 = path.join(envHome, "2023-jan-feb-mar-apr.csv")
-  const files = [f1, f2];
-
-  const csvContent = await csvMerger.mergeCSVFiles(files);
-  res.send(csvContent);
-};
+  // get all csv files in dataDir as an array
+  const files = fs.readdirSync(dataDir).filter(fn => fn.endsWith(".csv"));
+  return await csvHelper.mergeCSVFiles(files);
+}
 
 export default handler;
