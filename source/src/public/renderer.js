@@ -110,14 +110,18 @@ function enterToAndFromDate(transactions) {
 
   parsedTransactions.sort((a, b) => a.TransacationDateParsed > b.TransacationDateParsed);
 
-  const firstTransaction = parsedTransactions[0];
+  // Period from
   const latestTransaction = parsedTransactions[parsedTransactions.length - 1];
+  const year = latestTransaction.TransacationDateParsed.getFullYear();
+  const yearOfLatestTransaction = `${year}-01-01`;
 
-  const firstDateISO = firstTransaction.TransacationDateParsed.toISOString().split('T')[0]
-  const latestDateISO = latestTransaction.TransacationDateParsed.toISOString().split('T')[0]
+  // Period to
+  const latestDate = latestTransaction.TransacationDateParsed;
+  const latestDateISO = `${latestDate.getFullYear()}-${(latestDate.getMonth() + 1).toString().padStart(2, '0')}-${latestDate.getDate().toString().padStart(2, '0')}`;
 
-  document.getElementById("period-from").value = firstDateISO
-  document.getElementById("period-to").value = latestDateISO
+  document.getElementById("period-from").value = yearOfLatestTransaction;
+  document.getElementById("period-to").value = latestDateISO;
+
 }
 
 function useAi() {
