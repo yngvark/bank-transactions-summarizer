@@ -1,6 +1,4 @@
-import path from "path";
 import OpenAI from "openai";
-const openai = new OpenAI();
 
 /**
  * Health check endpoint
@@ -8,6 +6,9 @@ const openai = new OpenAI();
  * @param {import("express").Response} res
  */
 const handler = async (req, res) => {
+  const openai = new OpenAI();
+  console.log("111111111111111111111111111")
+
   const hasApiKey = "OPENAI_API_KEY" in process.env;
 
   if (!hasApiKey) {
@@ -25,11 +26,11 @@ const handler = async (req, res) => {
     });
     console.log(completion.choices[0]);
 
-    const data = {
+    const response = {
       data: completion.choices[0]
     }
 
-    res.send(data)
+    res.send(response)
   } catch (error) {
     console.log(error);
     res

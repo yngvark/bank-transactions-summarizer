@@ -14,8 +14,6 @@ const handler = async (req, res) => {
     const csvContent = await getTestData();
     res.send(csvContent);
 
-
-
     return;
   }
 
@@ -35,9 +33,18 @@ async function getData() {
   const dataDir = process.env["DATA_DIR"];
   console.log("DATA_DIR: ", dataDir);
 
-  // get all csv files in dataDir as an array
-  const files = fs.readdirSync(dataDir).filter(fn => fn.endsWith(".csv"));
-  return await csvHelper.mergeCSVFiles(files);
+  let csvFiles;
+  try {
+    const files = await fs.readdir(dataDir);
+    csvFiles = files
+        .filter(file => file.endsWith('.csv'))
+        .map(file => path.join(dataDir, file));
+  } catch (error) {
+    console.error("Error reading data directory: ", error);
+    throw error
+  }
+
+  return await csvHelper.mergeCSVFiles(csvFiles);
 }
 
 export default handler;
