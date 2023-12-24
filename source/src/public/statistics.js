@@ -3,7 +3,7 @@ async function calculate(d3, categoryMapping, csvData) {
   const groupedData = groupData(d3, parsedData);
 
   // convert groupedData to matrix
-  const yearMonths = Array.from(groupedData.keys());
+  const yearMonths = Array.from(groupedData.keys())
   const categories = Array.from(
     new Set(parsedData
       .map((d) => d["Category"]))
@@ -21,6 +21,10 @@ async function calculate(d3, categoryMapping, csvData) {
     const periodTotals = yearMonths.map(
       (yearMonth) => Math.round(groupedData.get(yearMonth)?.get(category)) || 0);
 
+    // Calculate average
+    const average = periodTotals.reduce((a, b) => a + b, 0) / periodTotals.length;
+    const formattedAverage = numberFormatter.format(average);
+
     // Avoid floating point errors by summing cents/øre instead of floating point numbers
     const sum = periodTotals.reduce((a, b) => (a * 100 + b * 100) / 100);
 
@@ -28,26 +32,33 @@ async function calculate(d3, categoryMapping, csvData) {
     const formattedPeriodTotals = periodTotals.map(value => numberFormatter.format(value));
     const formattedSum = numberFormatter.format(sum);
 
-    return [category, ...formattedPeriodTotals, formattedSum];
+    return [category, ...formattedPeriodTotals, formattedSum, formattedAverage];
   });
 
   // Header
-  const header = ["Category", ...yearMonths, "Sum"];
+  const header = ["Category", ...yearMonths, "Sum", "Average"];
 
-// Footer
+  // Footer
   const footerData = yearMonths.map((yearMonth) => {
     return categories.reduce((a, b) => {
       return Math.round(a + (groupedData.get(yearMonth)?.get(b) || 0));
     }, 0);
   });
 
-  const sumOfSums = footerData.reduce((a, b) => a + b, 0);
 
-  // Format footerData and sumOfSums using the number formatter
+  // Format footerData
   const formattedFooterData = footerData.map(value => numberFormatter.format(value));
+
+  // Calculate sum of sums
+  const sumOfSums = footerData.reduce((a, b) => a + b, 0);
   const formattedSumOfSums = numberFormatter.format(sumOfSums);
 
-  const footer = ["Sum", ...formattedFooterData, formattedSumOfSums];
+  // Calculate average of averages
+  const averageOfAverages = footerData.reduce((a, b) => a + b, 0) / footerData.length;
+  const formattedAverageOfAverages = numberFormatter.format(averageOfAverages);
+
+  // Set footer
+  const footer = ["Sum", ...formattedFooterData, formattedSumOfSums, formattedAverageOfAverages];
 
   return {
     header: header,
