@@ -1,3 +1,7 @@
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
 /* Search input and button container styles */
 .search-container {
     display: flex;

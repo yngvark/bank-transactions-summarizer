@@ -1,4 +1,5 @@
-import renderer from "./render.js";
+/* eslint-disable no-undef */
+import renderer from "./renderer.js";
 
 window.d3 = d3;
 
@@ -15,11 +16,10 @@ function addEventListeners() {
   // Use AI button
   document.getElementById("use-ai").addEventListener("click", renderer.useAi);
 
-  // Period apply button
-  document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
-
+  // Period
   document.getElementById('period-from').addEventListener('keydown', periodKeyListener);
   document.getElementById('period-to').addEventListener('keydown', periodKeyListener);
+  document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
 }
 
 function periodKeyListener(event) {
@@ -28,7 +28,6 @@ function periodKeyListener(event) {
     renderer.filterAndRenderData();
   }
 }
-
 
 addEventListeners();
 renderer.loadDataAndRenderTable();
