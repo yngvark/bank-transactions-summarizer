@@ -7,10 +7,13 @@ let globalTransactions = [];
 
 // Called from index.js
 async function loadDataAndRenderTable() {
-  globalTransactions = await d3.csv("/transactions");
+  const transactions = await d3.csv("/transactions");
+  globalTransactions = transactions
 
-  const groupedTransactions = await statistics.calculate(d3, categoryMapping, globalTransactions);
-  renderTables(groupedTransactions, globalTransactions);
+  const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
+  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
+
+  renderTables(groupedTransactions, transactionsWithCategory);
 
   enterToAndFromDate(globalTransactions);
 }
@@ -40,27 +43,30 @@ async function filterAndRenderData() {
   }
   // console.log("randomTransactions", filteredTransactions)
 
-  const groupedTransactions = await statistics.calculate(d3, categoryMapping, filteredTransactions);
+  const transactionsWithCategory = await statistics.parse(categoryMapping, filteredTransactions);
+  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
 
   // console.log("Showing data for '" + searchTerm + "'", costs)
-  renderTables(groupedTransactions, filteredTransactions);
+  renderTables(groupedTransactions, transactionsWithCategory);
 }
 
 async function randomizeAndRenderData() {
-  const csv = generateCSV();
+  const csvWithRandomTransactions = generateCSV();
 
-  const randomTransactions = d3.csvParse(csv);
-  globalTransactions = randomTransactions;
+  const transactions = d3.csvParse(csvWithRandomTransactions);
+  globalTransactions = transactions;
 
-  const groupedTransactions = await statistics.calculate(d3, categoryMapping, randomTransactions);
-  renderTables(groupedTransactions, randomTransactions)
+  const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
+  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
+
+  renderTables(groupedTransactions, transactionsWithCategory)
 }
 // ------------------------------------------------------------------------------------------------------
 
-function renderTables(groupedTransactions, rawTransactions) {
+function renderTables(groupedTransactions, transactionsWithCategory) {
   console.log("renderTables")
   renderTable(groupedTransactions);
-  renderTransactionsTable(rawTransactions);
+  renderTransactionsTable(transactionsWithCategory);
 }
 
 function renderTable(costs) {

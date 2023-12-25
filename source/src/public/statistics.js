@@ -1,11 +1,10 @@
-async function calculate(d3, categoryMapping, csvData) {
-  const parsedData = await parse(d3, categoryMapping, csvData);
-  const groupedData = groupData(d3, parsedData);
+async function calculate(d3, transactionsWithCategory) {
+  const groupedData = groupData(d3, transactionsWithCategory);
 
   // convert groupedData to matrix
   const yearMonths = Array.from(groupedData.keys())
   const categories = Array.from(
-    new Set(parsedData
+    new Set(transactionsWithCategory
       .map((d) => d["Category"]))
   ).sort();
 
@@ -78,7 +77,7 @@ function removeMyOwnInvoicePayments(row) {
   return !rowIsMyOwnInvoicePayment;
 }
 
-async function parse(d3, categoryMapping, data) {
+async function parse(categoryMapping, data) {
   let parsedData = data
     .filter((row) => row["TransactionDate"].length > 0)
     .filter(removeMyOwnInvoicePayments)

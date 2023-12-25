@@ -11,7 +11,7 @@ const handler = (req, res) => {
   if (!hasDataDir) {
     const dataDir = __dirname;
     const filePath = path.join(dataDir, "categories.json");
-    console.log("Returning file: ", filePath);
+    console.log("DATA_DIR missing - returning file: ", filePath);
 
     res.sendFile(filePath);
     return

@@ -1,14 +1,14 @@
-const tableHeaders = ["Date", "Text", "Type", "Amount", "Merchant Category"];
-const dataKeys = ["TransactionDate", "Text", "Type", "Amount", "Merchant Category"];
+const tableHeaders = ["Date", "Text", "Type", "Amount", "Merchant Category", "Category"];
+const dataKeys = ["TransactionDate", "Text", "Type", "Amount", "Merchant Category", "Category"];
 
 // Generate the table with given data
-function renderTransactionsTable(data) {
+
+function renderTransactionsTable(transactionsWithCategory) {
   const table = d3.select("#transactions-table")
   table.html("");
 
   const thead = table.append("thead");
   const tbody = table.append("tbody");
-
 
   // Add table headers
   thead
@@ -21,7 +21,7 @@ function renderTransactionsTable(data) {
   // Add table rows
   const rows = tbody
     .selectAll("tr")
-    .data(data)
+    .data(transactionsWithCategory)
     .join("tr");
 
   // Add table cells

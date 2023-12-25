@@ -6,10 +6,10 @@
     "configurations": [
         {
             "command": "npm run dev",
-            "name": "Run npm run dev",
+            "name": "WOHO - Run npm run dev",
             "request": "launch",
             "type": "node-terminal",
-            "cwd": "${workspaceFolder}/source"
+            "cwd": "${workspaceFolder}/source",
         },
     ]
 }
