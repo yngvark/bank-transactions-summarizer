@@ -45,7 +45,6 @@ async function calculate(d3, categoryMapping, csvData) {
     }, 0);
   });
 
-
   // Format footerData
   const formattedFooterData = footerData.map(value => numberFormatter.format(value));
 
@@ -146,7 +145,6 @@ function groupData(d3, parsedData) {
       (d) => d["Category"]
     );
 }
-
 
 function getDateKey(date) {
   return date.getFullYear() + "-" + pad(date.getMonth() + 1);

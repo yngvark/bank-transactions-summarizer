@@ -15,7 +15,6 @@ async function loadDataAndRenderTable() {
   enterToAndFromDate(globalTransactions);
 }
 
-
 // ------------------------------------------------------------------------------------------------------
 // Functions called from GUI event listeners
 // ------------------------------------------------------------------------------------------------------
