@@ -29,5 +29,7 @@
   "Automotive Service Shops": ["Reise", "Kjøretøy & Leiebil"],
   "Financial Institutions – Merchandise": ["Kontanter og pengeoverføring", "Kontaktuttak"],
   "TRANSPORTATION SVCS - DEFAULT": ["Reise", "Reise og transport"],
-  "MEMBER CLUBS/SPORT/REC/GOLF": ["Personlig forbruk", "Sport og fritid"]
+  "MEMBER CLUBS/SPORT/REC/GOLF": ["Personlig forbruk", "Sport og fritid"],
+  "Membership Clubs (Sports, Recreation": ["Personlig forbruk", "Sport og fritid"],
+  "Local/Suburban Commuter Passenger Tr": ["Reise", "Reise og transport"]
 }
