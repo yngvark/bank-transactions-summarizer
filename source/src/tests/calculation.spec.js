@@ -10,11 +10,12 @@ describe("statistics", () => {
     const categoryMapping = JSON.parse(fs.readFileSync(path.join(__dirname, "../routes/categories/categories.json"), "utf8"));
 
     const data = fs.readFileSync(path.join(__dirname, "test.csv"), "utf8");
-    const csv = d3.csvParse(data);
+    const transactions = d3.csvParse(data);
+    const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
 
     // When
-    const result = await statistics.calculate(d3, categoryMapping, csv);
-''
+    const result = await statistics.calculate(d3, transactionsWithCategory);
+
     // Then
     // // Note two gotchas
     // - the non-breaking space " ". This is intented behavior because implementation uses Intl.NumberFormat.
