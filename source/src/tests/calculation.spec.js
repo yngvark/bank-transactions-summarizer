@@ -1,4 +1,6 @@
-import statistics from "../public/statistics";
+import statistics from "../public/statistics/statistics.js";
+import parser from "../public/statistics/parser.js";
+
 import * as d3 from "./d3-7.8.4.js";
 
 const fs = require("fs");
@@ -11,7 +13,7 @@ describe("statistics", () => {
 
     const data = fs.readFileSync(path.join(__dirname, "test.csv"), "utf8");
     const transactions = d3.csvParse(data);
-    const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
+    const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
 
     // When
     const result = await statistics.calculate(d3, transactionsWithCategory);

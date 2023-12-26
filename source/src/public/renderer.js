@@ -1,4 +1,5 @@
-import statistics from "./statistics.js";
+import statistics from "./statistics/statistics.js";
+import parser from "./statistics/parser.js";
 import generateCSV from "./randomize/main.js";
 import renderTransactionsTable from "./render_transactions/main.js";
 
@@ -10,7 +11,7 @@ async function loadDataAndRenderTable() {
   const transactions = await d3.csv("/transactions");
   globalTransactions = transactions
 
-  const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
+  const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
   const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
 
   renderTables(groupedTransactions, transactionsWithCategory);
@@ -43,7 +44,7 @@ async function filterAndRenderData() {
   }
   // console.log("randomTransactions", filteredTransactions)
 
-  const transactionsWithCategory = await statistics.parse(categoryMapping, filteredTransactions);
+  const transactionsWithCategory = await parser.parse(categoryMapping, filteredTransactions);
   const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
 
   // console.log("Showing data for '" + searchTerm + "'", costs)
@@ -56,7 +57,7 @@ async function randomizeAndRenderData() {
   const transactions = d3.csvParse(csvWithRandomTransactions);
   globalTransactions = transactions;
 
-  const transactionsWithCategory = await statistics.parse(categoryMapping, transactions);
+  const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
   const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
 
   renderTables(groupedTransactions, transactionsWithCategory)
