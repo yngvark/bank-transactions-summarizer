@@ -11,17 +11,17 @@ const handler = async (req, res) => {
   const hasDataDir = "DATA_DIR" in process.env;
 
   if (!hasDataDir) {
-    const csvContent = await getTestData();
-    res.send(csvContent);
+    const data = await getTestCsvData();
+    res.send(data);
 
     return;
   }
 
-  const csvContent = await getData();
-  res.send(csvContent);
+  const data = await getCsvData();
+  res.send(data);
 };
 
-async function getTestData() {
+async function getTestCsvData() {
   const dataDir = __dirname;
   const filePath = path.join(dataDir, "test.csv");
   console.log("Returning file: ", filePath);
@@ -29,7 +29,7 @@ async function getTestData() {
   return await fs.readFile(filePath, 'utf8');
 }
 
-async function getData() {
+async function getCsvData() {
   const dataDir = process.env["DATA_DIR"];
   console.log("DATA_DIR: ", dataDir);
 

@@ -1,7 +1,7 @@
-import statistics from "../public/statistics/statistics.js";
-import parser from "../public/statistics/parser.js";
+import statistics from "../../../public/statistics/statistics.js";
+import parser from "../../../public/statistics/parser.js";
 
-import * as d3 from "./d3-7.8.4.js";
+import * as d3 from "../../d3-7.8.4.js";
 
 const fs = require("fs");
 import path from "path";
@@ -9,9 +9,11 @@ import path from "path";
 describe("statistics", () => {
   test("should look like expected", async () => {
     // Given
-    const categoryMapping = JSON.parse(fs.readFileSync(path.join(__dirname, "../routes/categories/categories.json"), "utf8"));
+    const categoriesFile = "../../../routes/categories/categories.json"
+    const categoryMapping = JSON.parse(fs.readFileSync(path.join(__dirname, categoriesFile), "utf8"));
 
-    const data = fs.readFileSync(path.join(__dirname, "test.csv"), "utf8");
+    const csvFile = "test.csv";
+    const data = fs.readFileSync(path.join(__dirname, csvFile), "utf8");
     const transactions = d3.csvParse(data);
     const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
 
