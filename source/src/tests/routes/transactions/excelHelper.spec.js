@@ -1,9 +1,9 @@
-import excelHelper from "../../../routes/transactions/excelHelper.js";
+import excelHelper from "../../../routes/transactions/excelGetter.js";
 
 describe("parser", () => {
     test("should parse Excel format", async () => {
         // When
-        const transactions = await excelHelper.getTestDataFromExcel();
+        const transactions = await excelHelper.getTestExcelData();
 
         // Then
         const expected = [

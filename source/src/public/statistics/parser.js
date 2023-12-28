@@ -1,19 +1,15 @@
 async function parse(categoryMapping, data) {
     let parsedData = data
-        .filter((row) => row["TransactionDate"].length > 0)
+        .filter((row) => row["Merchant Category"] && row["Merchant Category"].length > 0)
         .filter(removeMyOwnInvoicePayments)
-        .map((row) => {
-            row["Text"] = row["Text"].trim();
-            row["Merchant Category"] = row["Merchant Category"].trim();
-            return row
-        })
         .map((row) => {
             return {
                 ...row,
-                TransactionDate: new Date(row.TransactionDate)
+                "Text": row["Text"].trim(),
+                "Merchant Category": row["Merchant Category"].trim()
             };
-        });
-
+        })
+        
     return parsedData
         .map((row) => {
             return {
@@ -29,7 +25,7 @@ function removeMyOwnInvoicePayments(row) {
         /^From \d+$/.test(row["Text"].trim());
 
     // if (rowIsMyOwnInvoicePayment) {
-    // console.log("Excluding transaction", row)
+    //     console.log("Excluding transaction", row)
     // }
 
     return !rowIsMyOwnInvoicePayment;

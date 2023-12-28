@@ -4,6 +4,21 @@ const dataKeys = ["TransactionDate", "Text", "Type", "Amount", "Merchant Categor
 // Generate the table with given data
 
 function renderTransactionsTable(transactionsWithCategory) {
+  // Format stuff nicely
+  const numberFormatter = new Intl.NumberFormat('nb-NO', {
+    style: 'decimal',
+    useGrouping: true,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  })
+
+  transactionsWithCategory = transactionsWithCategory.map((d) => {
+    d.TransactionDate = new Date(d.TransactionDate).toLocaleDateString()
+    d.Amount = numberFormatter.format(d.Amount)
+    return d
+  })
+
+  // Create teable
   const table = d3.select("#transactions-table")
   table.html("");
 

@@ -34,7 +34,7 @@ function randomCurrencyAmount(type) {
 }
 
 // Generate random CSV rows
-function generateRandomRow() {
+function generateRandomTransaction() {
   const transactionDate = randomDate(new Date("2022-01-01"), new Date("2023-04-30"));
   const type = randomType();
   const text = randomText(type);
@@ -47,51 +47,31 @@ function generateRandomRow() {
   const bookDate = transactionDate;
   const valueDate = transactionDate;
 
-  return [
-    transactionDate.toLocaleDateString(),
-    text,
-    type,
-    currencyAmount,
-    currencyRate,
-    currency,
-    amount,
-    merchantArea,
-    merchantCategory,
-    bookDate.toLocaleDateString(),
-    valueDate.toLocaleDateString()
-  ];
+  return {
+    TransactionDate: transactionDate, 
+    Text: text, 
+    Type: type, 
+    "Currency Amount": currencyAmount, 
+    "Currency Rate": currencyRate, 
+    Currency: currency, 
+    Amount: amount, 
+    "Merchant Area": merchantArea, 
+    "Merchant Category": merchantCategory, 
+    BookDate: bookDate, 
+    ValueDate: valueDate, 
+  };
 }
 
 // Write rows to CSV file
-function generateCSV() {
-  const rows = [];
+function generateRandomTransactions() {
+  const transactions = [];
   for (let i = 0; i < 500; i++) {
-    rows.push(generateRandomRow());
+    transactions.push(generateRandomTransaction());
   }
 
-  // Sort rows by transactionDate (earliest first)
-  rows.sort((a, b) => new Date(a[0]) - new Date(b[0]));
+  transactions.sort((a, b) => a.TransactionDate > b.TransactionDate);
 
-  const header = [
-    "TransactionDate",
-    "Text",
-    "Type",
-    "Currency Amount",
-    "Currency Rate",
-    "Currency",
-    "Amount",
-    "Merchant Area",
-    "Merchant Category",
-    "BookDate",
-    "ValueDate"
-  ];
-
-  let csvContent = header.join(",") + "\n";
-  rows.forEach(row => {
-    csvContent += row.join(",") + "\n";
-  });
-
-  return csvContent;
+  return transactions;
 }
 
-export default generateCSV;
+export default generateRandomTransactions;

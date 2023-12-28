@@ -94,13 +94,18 @@ function groupData(d3, parsedData) {
     .rollup(
       parsedData,
       (v) => d3.sum(v, (d) => d.Amount),
-      (d) => getDateKey(d.TransactionDate),
+      (d) => getDateKey(d.TransactionDate, d),
       (d) => d["Category"]
     );
 }
 
-function getDateKey(date) {
-  return date.getFullYear() + "-" + pad(date.getMonth() + 1);
+function getDateKey(date, d) {
+  try {
+    return date.getFullYear() + "-" + pad(date.getMonth() + 1);
+  } catch (e) {
+    console.log("Error parsing date:", d);
+    throw e;
+  }
 }
 
 function pad(n) {

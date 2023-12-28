@@ -1,16 +1,15 @@
 import statistics from "./statistics/statistics.js";
 import parser from "./statistics/parser.js";
-import generateCSV from "./randomize/main.js";
+import generateRandomTransactions from "./randomize/main.js";
 import renderTransactionsTable from "./render_transactions/main.js";
 
 const categoryMapping = await d3.json("/categories");
 let globalTransactions = [];
 
 // Called from index.js
-async function loadDataAndRenderTable() {
-  const transactions = await d3.csv("/transactions");
+async function loadDataAndRenderTable(transactions) {
   globalTransactions = transactions
-
+  
   const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
   const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
 
@@ -42,7 +41,7 @@ async function filterAndRenderData() {
         new Date(row["BookDate"]) <= new Date(periodTo)
     )
   }
-  // console.log("randomTransactions", filteredTransactions)
+  // console.log("filteredTransactions", filteredTransactions)
 
   const transactionsWithCategory = await parser.parse(categoryMapping, filteredTransactions);
   const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
@@ -52,9 +51,7 @@ async function filterAndRenderData() {
 }
 
 async function randomizeAndRenderData() {
-  const csvWithRandomTransactions = generateCSV();
-
-  const transactions = d3.csvParse(csvWithRandomTransactions);
+  const transactions = generateRandomTransactions();
   globalTransactions = transactions;
 
   const transactionsWithCategory = await parser.parse(categoryMapping, transactions);

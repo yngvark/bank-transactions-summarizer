@@ -1,9 +1,13 @@
 /* eslint-disable no-undef */
 import renderer from "./renderer.js";
+import uploader from "./uploader.js";
 
 window.d3 = d3;
 
 function addEventListeners() {
+  // Upload button
+  document.getElementById('fileInput').addEventListener('change', uploader.upload);
+
   // Search button
   document.getElementById("search-button").addEventListener("click", renderer.filterAndRenderData);
 
@@ -30,4 +34,4 @@ function periodKeyListener(event) {
 }
 
 addEventListeners();
-renderer.loadDataAndRenderTable();
+// renderer.loadDataAndRenderTable(); // Delete, we now wait for upload to happen.
