@@ -2,6 +2,9 @@
 
 - Markere celler grønn/rød hvis de er langt unna snittet for den raden
 - Fix npm audit fix
+- Ta i bruk
+  - npm helmet: https://github.com/helmetjs/helmet
+  - npm cors
 
 ## Større issues
 
