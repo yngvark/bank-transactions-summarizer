@@ -1,13 +1,13 @@
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 import renderer from "./renderer.js";
 
-function upload(event) {
+async function upload(event) {
     showLoaderGif();
 
     const file = event.target.files[0];
     const reader = new FileReader();
 
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array', cellDates:true });
 
@@ -18,7 +18,7 @@ function upload(event) {
         // Convert sheet to JSON
         const transactions = XLSX.utils.sheet_to_json(worksheet);
 
-        renderer.loadDataAndRenderTable(transactions);
+        await renderer.loadDataAndRenderTable(transactions);
 
         // Convert sheet to HTML (or you can process it as needed)
         // const htmlStr = XLSX.utils.sheet_to_html(worksheet);

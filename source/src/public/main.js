@@ -26,10 +26,10 @@ function addEventListeners() {
   document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
 }
 
-function periodKeyListener(event) {
+async function periodKeyListener(event) {
   if (event.key === 'Enter') {
     event.preventDefault();
-    renderer.filterAndRenderData();
+    await renderer.filterAndRenderData();
   }
 }
 
