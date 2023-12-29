@@ -7,14 +7,15 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
+    margin-left: auto; /* Center align the container */
+    margin-right: auto;
 }
 
 /* Wrapper for the search field and button */
 .search-wrapper {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -55,11 +56,9 @@ body {
 /* Additional inputs and button wrapper styles */
 .period-fields-wrapper {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
-    max-width: 600px;
-    margin: 0 auto;
-    margin-top: 20px;
+    margin: 20px auto 0;
 }
 
 .period-input {

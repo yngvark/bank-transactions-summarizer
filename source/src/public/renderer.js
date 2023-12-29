@@ -75,31 +75,57 @@ function renderTable(costs) {
   const thead = table.append("thead");
   const tbody = table.append("tbody");
 
-  thead
-    .append("tr")
-    .selectAll("th")
-    .data(costs.header)
-    .enter()
-    .append("th")
-    .text((d) => d);
+  // Append headers
+  thead.append("tr")
+      .selectAll("th")
+      .data(costs.header)
+      .enter()
+      .append("th")
+      .text(d => d);
 
-  // Table data
+  // Determine the index of the category average
+  const avgIndex = costs.header.indexOf("Average");
+
+  // Append table rows
   tbody.selectAll("tr")
-    .data(costs.tableData)
-    .join("tr")
-    .selectAll("td")
-    .data(d => d)
-    .join("td")
-    .text(d => d);
+      .data(costs.tableData)
+      .join("tr")
+      .selectAll("td")
+      .data(row => prepareRowData(row, avgIndex))
+      .join("td")
+      .text(d => d.value)
+      .attr("style", d => getColorStyle(d));
 
-  // Footer row
+  // Append footer row
   tbody.append("tr")
-    .attr("class", "sum")
-    .selectAll("td")
-    .data(costs.footer)
-    .enter()
-    .append("td")
-    .text(d => d);
+      .attr("class", "sum")
+      .selectAll("td")
+      .data(costs.footer)
+      .enter()
+      .append("td")
+      .text(d => d);
+}
+
+function prepareRowData(row, avgIndex) {
+  return row.map((cell, index) => ({
+    value: cell,
+    isPeriod: index > 0 && index < avgIndex,
+    avgValue: row[avgIndex]
+  }));
+}
+
+function getColorStyle(d) {
+  if (!d.isPeriod) return null;
+
+  const deviationThreshold = 0.01; // Define your threshold (10% in this case)
+  const deviation = (d.value - d.avgValue) / d.avgValue;
+
+  if (deviation <= -deviationThreshold) {
+    return 'color: red;'; // Negative deviation more than threshold
+  } else if (deviation >= deviationThreshold) {
+    return 'color: green;'; // Positive deviation more than threshold
+  }
+  return null; // No significant deviation
 }
 
 function enterToAndFromDate(transactions) {

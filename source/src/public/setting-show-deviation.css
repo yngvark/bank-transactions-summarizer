@@ -1,0 +1,26 @@
+.setting-show-deviations {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+    padding: 10px;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    margin-top: 20px; /* Adds space above the toggle */
+}
+
+.setting-show-deviations input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+/* Adjustments for responsiveness */
+@media screen and (max-width: 768px) {
+    .feature-toggle {
+        position: relative;
+        top: initial;
+        left: initial;
+        transform: none;
+        margin-top: 20px;
+    }
+}

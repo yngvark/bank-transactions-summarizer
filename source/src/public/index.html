@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.4/d3.js" integrity="sha512-51xEUbZobtzTG53DuETlzoOZk9cWBiEXV/5Mh7m1htisZLZS4pIHP29J/61/t47rL5Yo0ZCzaeaKLabxdurSJg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  
+
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="setting-show-deviation.css">
   <link rel="stylesheet" href="table.css">
   
   <title>Search Transactions</title>
@@ -32,6 +33,12 @@
     <input type="text" class="period-input" id="period-to" placeholder="YYYY-MM-DD">
     <button class="regular-button period-button" id="period-apply-button">Apply</button>
   </div>
+</div>
+
+<div class="setting-show-deviations">
+  <input type="checkbox" id="show-deviations-checkbox">
+  <label for="show-deviations-checkbox">Show deviations</label>
+  <span class="checkmark"></span>
 </div>
 
 <div class="table-wrapper">

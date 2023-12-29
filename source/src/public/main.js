@@ -24,12 +24,25 @@ function addEventListeners() {
   document.getElementById('period-from').addEventListener('keydown', periodKeyListener);
   document.getElementById('period-to').addEventListener('keydown', periodKeyListener);
   document.getElementById("period-apply-button").addEventListener("click", renderer.filterAndRenderData);
+
+  document.getElementById("show-deviations-checkbox").addEventListener("click", toggleShowDeviations);
+
 }
 
 async function periodKeyListener(event) {
   if (event.key === 'Enter') {
     event.preventDefault();
     await renderer.filterAndRenderData();
+  }
+}
+
+function toggleShowDeviations() {
+  const checkbox = document.getElementById("show-deviations-checkbox")
+
+  if (checkbox.checked) {
+    //blabla(true); // Call function to turn the feature on
+  } else {
+    //blabla(false); // Call function to turn the feature off
   }
 }
 
