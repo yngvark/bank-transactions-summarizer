@@ -32,4 +32,6 @@
   "MEMBER CLUBS/SPORT/REC/GOLF": ["Personlig forbruk", "Sport og fritid"],
   "Membership Clubs (Sports, Recreation": ["Personlig forbruk", "Sport og fritid"],
   "Local/Suburban Commuter Passenger Tr": ["Reise", "Reise og transport"]
+  "TAXICABS/LIMOUSINES": ["Reise", "Reise og transport"],
+  "LOCAL COMMUTER TRANSPORT": ["Reise", "Reise og transport"],
 }
