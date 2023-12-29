@@ -2,6 +2,8 @@ import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 import renderer from "./renderer.js";
 
 function upload(event) {
+    showLoaderGif();
+
     const file = event.target.files[0];
     const reader = new FileReader();
 
@@ -24,6 +26,17 @@ function upload(event) {
     };
 
     reader.readAsArrayBuffer(file);
+}
+
+function showLoaderGif() {
+    const div = document.querySelector('.table-wrapper');
+
+    if (div) {
+        div.innerHTML = `
+            <img src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/images/loading.gif"
+                 height="15" width="15"/> Calculating...
+        ` + div.innerHTML;
+    }
 }
 
 export default {
