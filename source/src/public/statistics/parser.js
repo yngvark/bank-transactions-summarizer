@@ -1,5 +1,8 @@
-async function parse(categoryMapping, data) {
-    let parsedData = data
+/**
+ * Returns the input table rows, but with an added column called "Merchant Category".
+ */
+async function parse(categoryMapping, rows) {
+    let parsedData = rows
         .filter((row) => row["Merchant Category"] && row["Merchant Category"].length > 0)
         .filter(removeMyOwnInvoicePayments)
         .map((row) => {
@@ -9,7 +12,7 @@ async function parse(categoryMapping, data) {
                 "Merchant Category": row["Merchant Category"].trim()
             };
         })
-        
+
     return parsedData
         .map((row) => {
             return {

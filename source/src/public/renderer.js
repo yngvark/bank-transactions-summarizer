@@ -11,7 +11,7 @@ async function loadDataAndRenderTable(transactions) {
   globalTransactions = transactions
   
   const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
-  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
+  const groupedTransactions = await statistics.calculateTable(d3, transactionsWithCategory);
 
   renderTables(groupedTransactions, transactionsWithCategory);
 
@@ -44,7 +44,7 @@ async function filterAndRenderData() {
   // console.log("filteredTransactions", filteredTransactions)
 
   const transactionsWithCategory = await parser.parse(categoryMapping, filteredTransactions);
-  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
+  const groupedTransactions = await statistics.calculateTable(d3, transactionsWithCategory);
 
   // console.log("Showing data for '" + searchTerm + "'", costs)
   renderTables(groupedTransactions, transactionsWithCategory);
@@ -55,7 +55,7 @@ async function randomizeAndRenderData() {
   globalTransactions = transactions;
 
   const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
-  const groupedTransactions = await statistics.calculate(d3, transactionsWithCategory);
+  const groupedTransactions = await statistics.calculateTable(d3, transactionsWithCategory);
 
   renderTables(groupedTransactions, transactionsWithCategory)
 }
@@ -67,7 +67,7 @@ function renderTables(groupedTransactions, transactionsWithCategory) {
   renderTransactionsTable(transactionsWithCategory);
 }
 
-function renderTable(costs) {
+function renderTable(groupedTransactions) {
   const tableWrapper = d3.select(".table-wrapper");
   tableWrapper.html(""); // Clear the table-wrapper div
 
@@ -78,17 +78,17 @@ function renderTable(costs) {
   // Append headers
   thead.append("tr")
       .selectAll("th")
-      .data(costs.header)
+      .data(groupedTransactions.header)
       .enter()
       .append("th")
       .text(d => d);
 
   // Determine the index of the category average
-  const avgIndex = costs.header.indexOf("Average");
+  const avgIndex = groupedTransactions.header.indexOf("Average");
 
   // Append table rows
   tbody.selectAll("tr")
-      .data(costs.tableData)
+      .data(groupedTransactions.tableData)
       .join("tr")
       .selectAll("td")
       .data(row => prepareRowData(row, avgIndex))
@@ -100,7 +100,7 @@ function renderTable(costs) {
   tbody.append("tr")
       .attr("class", "sum")
       .selectAll("td")
-      .data(costs.footer)
+      .data(groupedTransactions.footer)
       .enter()
       .append("td")
       .text(d => d);
@@ -117,7 +117,7 @@ function prepareRowData(row, avgIndex) {
 function getColorStyle(d) {
   if (!d.isPeriod) return null;
 
-  const deviationThreshold = 0.01; // Define your threshold (10% in this case)
+  const deviationThreshold = 0.3; // Define your threshold (10% in this case)
   const deviation = (d.value - d.avgValue) / d.avgValue;
 
   if (deviation <= -deviationThreshold) {

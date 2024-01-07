@@ -18,7 +18,7 @@ describe("statistics", () => {
     const transactionsWithCategory = await parser.parse(categoryMapping, transactions);
 
     // When
-    const result = await statistics.calculate(d3, transactionsWithCategory);
+    const result = await statistics.calculateTable(d3, transactionsWithCategory);
 
     // Then
     // // Note two gotchas

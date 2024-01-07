@@ -1,4 +1,8 @@
-async function calculate(d3, transactionsWithCategory) {
+/**
+ * Converts transactionsWithCategory to a table object with a header, main body and a footer.
+ * The main body contains the transactions grouped by category and month, summed up.
+ */
+async function calculateTable(d3, transactionsWithCategory) {
   const groupedData = groupData(d3, transactionsWithCategory);
 
   // convert groupedData to matrix
@@ -16,6 +20,7 @@ async function calculate(d3, transactionsWithCategory) {
     maximumFractionDigits: 0
   });
 
+  // Main body of table
   const tableData = categories.map((category) => {
     const periodTotals = yearMonths.map(
       (yearMonth) => Math.round(groupedData.get(yearMonth)?.get(category)) || 0);
@@ -126,5 +131,5 @@ function pad(n) {
 // })
 
 export default {
-  calculate: calculate
+  calculateTable: calculateTable
 };
