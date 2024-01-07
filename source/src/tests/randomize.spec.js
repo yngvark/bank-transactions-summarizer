@@ -1,20 +1,20 @@
-import randomize from "../public/randomize/main";
+import generateRandomTransactions from "../public/randomize/main";
 
-describe("randomize", () => {
+describe("generateRandomTransactions", () => {
   test("should print some output", async () => {
-    const csvContent = randomize();
+    const transactions = generateRandomTransactions();
 
     let refundCount = 0;
     let innbetalingCount = 0;
     let lineCount = 0;
 
-    csvContent.split("\n").forEach(line => {
-      if (line.includes("Credit Voucher")) {
+    transactions.forEach(t => {
+      if (t.Type.includes("Credit Voucher")) {
         refundCount++;
-      }
-      if (line.includes("Innbetaling")) {
+      } else if (t.Type.includes("Innbetaling")) {
         innbetalingCount++;
       }
+
       lineCount++;
     });
 
