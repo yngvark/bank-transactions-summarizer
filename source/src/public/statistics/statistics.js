@@ -16,6 +16,7 @@ async function calculate(d3, transactionsWithCategory) {
     maximumFractionDigits: 0
   });
 
+  const rawTableData = [];
   const tableData = categories.map((category) => {
     const periodTotals = yearMonths.map(
       (yearMonth) => Math.round(groupedData.get(yearMonth)?.get(category)) || 0);
@@ -30,6 +31,14 @@ async function calculate(d3, transactionsWithCategory) {
     // Format periodTotals and sum using the Norwegian currency format
     const formattedPeriodTotals = periodTotals.map(value => numberFormatter.format(value));
     const formattedSum = numberFormatter.format(sum);
+
+    // Store raw data for color calculations
+    rawTableData.push({
+      category,
+      periodTotals,
+      average,
+      sum
+    });
 
     return [category, ...formattedPeriodTotals, formattedSum, formattedAverage];
   });
@@ -61,7 +70,9 @@ async function calculate(d3, transactionsWithCategory) {
   return {
     header: header,
     tableData: tableData,
-    footer: footer
+    footer: footer,
+    rawTableData: rawTableData,
+    yearMonths: yearMonths
   };
 }
 

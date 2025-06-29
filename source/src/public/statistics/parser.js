@@ -1,12 +1,15 @@
 async function parse(categoryMapping, data) {
     let parsedData = data
-        .filter((row) => row["Merchant Category"] && row["Merchant Category"].length > 0)
         .filter(removeMyOwnInvoicePayments)
         .map((row) => {
             return {
                 ...row,
                 "Text": row["Text"].trim(),
-                "Merchant Category": row["Merchant Category"].trim()
+                "Merchant Category": row["Merchant Category"] ? row["Merchant Category"].trim() : "",
+                // Ensure dates are Date objects for consistency
+                "TransactionDate": typeof row["TransactionDate"] === 'string' ? new Date(row["TransactionDate"]) : row["TransactionDate"],
+                "BookDate": typeof row["BookDate"] === 'string' ? new Date(row["BookDate"]) : row["BookDate"],
+                "ValueDate": typeof row["ValueDate"] === 'string' ? new Date(row["ValueDate"]) : row["ValueDate"]
             };
         })
         

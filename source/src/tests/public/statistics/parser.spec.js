@@ -29,8 +29,8 @@ describe("parser", () => {
                 "Amount": '-10000',
                 "Merchant Area": 'OSLO',
                 "Merchant Category": 'Membership Clubs (Sports, Recreation',
-                "BookDate": '1/1/2022',
-                "ValueDate": '1/2/2022',
+                "BookDate": new Date("2021-12-31T23:00:00.000Z"),
+                "ValueDate": new Date("2022-01-01T23:00:00.000Z"),
                 "Category": 'Personlig forbruk ➡ Sport og fritid'
             }
         ];
