@@ -19,6 +19,7 @@ async function upload(event) {
         const transactions = XLSX.utils.sheet_to_json(worksheet);
 
         await renderer.loadDataAndRenderTable(transactions);
+        updateCurrentFileName(file.name);
 
         // Convert sheet to HTML (or you can process it as needed)
         // const htmlStr = XLSX.utils.sheet_to_html(worksheet);
@@ -26,6 +27,13 @@ async function upload(event) {
     };
 
     reader.readAsArrayBuffer(file);
+}
+
+function updateCurrentFileName(fileName) {
+    const fileNameElement = document.getElementById('currentFileName');
+    if (fileNameElement) {
+        fileNameElement.textContent = fileName;
+    }
 }
 
 function showLoaderGif() {

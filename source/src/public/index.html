@@ -13,8 +13,12 @@
 </head>
 <body>
 
-<div>
+<div class="file-upload-section">
   <input type="file" id="fileInput" accept=".xlsx, .xls"/>
+  <div class="current-file-display" id="currentFileDisplay">
+    <span class="file-icon">📁</span>
+    <span class="file-name" id="currentFileName">No file loaded</span>
+  </div>
 </div>
 
 <div class="search-container">

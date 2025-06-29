@@ -64,9 +64,17 @@ async function loadDefaultFile() {
     const transactions = XLSX.utils.sheet_to_json(worksheet);
 
     await renderer.loadDataAndRenderTable(transactions);
+    updateCurrentFileName('transactions.xlsx');
     console.log('Default file loaded successfully');
   } catch (error) {
     console.error('Error loading default file:', error);
+  }
+}
+
+function updateCurrentFileName(fileName) {
+  const fileNameElement = document.getElementById('currentFileName');
+  if (fileNameElement) {
+    fileNameElement.textContent = fileName;
   }
 }
 
