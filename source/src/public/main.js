@@ -1,6 +1,7 @@
 /* eslint-disable no-undef */
 import renderer from "./renderer.js";
 import uploader from "./uploader.js";
+import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 
 window.d3 = d3;
 
@@ -33,5 +34,41 @@ async function periodKeyListener(event) {
   }
 }
 
+async function checkAndLoadDefaultFile() {
+  try {
+    const response = await fetch('/files/check');
+    const result = await response.json();
+
+    if (result.hasDataDir && result.hasDefaultFile) {
+      console.log('Loading default transactions.xlsx from DATA_DIR');
+      await loadDefaultFile();
+    }
+  } catch (error) {
+    console.log('No default file available or error checking:', error);
+  }
+}
+
+async function loadDefaultFile() {
+  try {
+    const response = await fetch('/files/default');
+    if (!response.ok) {
+      throw new Error('Failed to load default file');
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    const transactions = XLSX.utils.sheet_to_json(worksheet);
+
+    await renderer.loadDataAndRenderTable(transactions);
+    console.log('Default file loaded successfully');
+  } catch (error) {
+    console.error('Error loading default file:', error);
+  }
+}
+
 addEventListeners();
-// renderer.loadDataAndRenderTable(); // Delete, we now wait for upload to happen.
+checkAndLoadDefaultFile();

@@ -17,7 +17,9 @@ const config = {
     clientOrigins: {
         'development': process.env['DEV_ORIGIN'] ?? '*',
         'production': process.env['PROD_ORIGIN'] ?? 'none'
-    }
+    },
+
+    dataDir: process.env['DATA_DIR']
 }
 
 export default config
