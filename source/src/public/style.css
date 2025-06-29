@@ -103,10 +103,12 @@ body {
 }
 
 #fileInput {
-    padding: 8px;
+    padding: 0;
+    width: 100px;
+    overflow: hidden;
     #border: 1px solid #67809f;
     border-radius: 4px;
-    background-color: white;
+    background-color: transparent;
 }
 
 #fileInput::-webkit-file-upload-button {
