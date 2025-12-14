@@ -7,15 +7,15 @@ help: ## Show this help message
 
 install: ## Install dependencies
 	@echo "Installing frontend dependencies..."
-	@(cd frontend && npm install)
+	@(cd v2/frontend && npm install)
 
 build: ## Build frontend
 	@echo "Building frontend..."
-	@(cd frontend && npm run build)
+	@(cd v2/frontend && npm run build)
 
 dev: ## Run frontend in development mode (use PORT=XXXX for custom port)
 	@echo "Starting development server on port $(PORT)..."
-	@(cd frontend && PORT=$(PORT) npm run dev) & \
+	@(cd v2/frontend && PORT=$(PORT) npm run dev) & \
 	sleep 2 && \
 	open http://localhost:$(PORT)
 	@wait

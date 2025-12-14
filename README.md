@@ -10,9 +10,8 @@ A frontend-only React app for summarizing bank transactions.
 ## Getting Started
 
 ```bash
-cd v2
 make install   # Install dependencies
-make dev       # Start dev server (opens http://localhost:5173)
+make dev       # Start dev server (opens browser automatically)
 ```
 
 ## Stopping the Server
