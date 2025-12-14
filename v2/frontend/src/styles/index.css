@@ -127,23 +127,27 @@ section h2 .count {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background-color: var(--accent-color);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--accent-color) 0%, #818cf8 100%);
   color: white;
   border-radius: var(--radius);
   cursor: pointer;
   font-size: 0.875rem;
-  font-weight: 500;
-  transition: background-color var(--transition), transform var(--transition);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.25), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all var(--transition);
 }
 
 .file-upload-label:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--accent-hover) 0%, #6366f1 100%);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .file-upload-label:active {
   transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
 }
 
 .current-file-display {
@@ -209,40 +213,48 @@ section h2 .count {
 
 /* Buttons */
 .regular-button {
-  padding: 0.625rem 1.25rem;
-  background-color: var(--accent-color);
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--accent-color) 0%, #818cf8 100%);
   color: white;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
   border: none;
   border-radius: var(--radius);
-  transition: background-color var(--transition), transform var(--transition);
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.25), 0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all var(--transition);
 }
 
 .regular-button:hover {
-  background-color: var(--accent-hover);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--accent-hover) 0%, #6366f1 100%);
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .regular-button:active {
   transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.2);
 }
 
 .search-button {
-  background-color: var(--secondary-color);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, #94a3b8 100%);
+  box-shadow: 0 2px 4px rgba(100, 116, 139, 0.25), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .search-button:hover {
-  background-color: #475569;
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  box-shadow: 0 4px 8px rgba(100, 116, 139, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .randomize-button {
-  background-color: #8b5cf6;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.25), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .randomize-button:hover {
-  background-color: #7c3aed;
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Period fields */
@@ -277,11 +289,13 @@ section h2 .count {
 }
 
 .period-button {
-  background-color: var(--secondary-color);
+  background: linear-gradient(135deg, var(--secondary-color) 0%, #94a3b8 100%);
+  box-shadow: 0 2px 4px rgba(100, 116, 139, 0.25), 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .period-button:hover {
-  background-color: #475569;
+  background: linear-gradient(135deg, #475569 0%, #64748b 100%);
+  box-shadow: 0 4px 8px rgba(100, 116, 139, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Statistics section */
