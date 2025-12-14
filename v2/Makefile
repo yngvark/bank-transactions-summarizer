@@ -1,6 +1,6 @@
 .PHONY: dev help install build
 
-PORT ?= 5173
+PORT ?= $(shell awk 'BEGIN{srand(); print int(rand()*6000)+3000}')
 
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_0-9-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
