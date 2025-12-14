@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/v1/source"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+
+  - package-ecosystem: "npm"
+    directory: "/v2/frontend"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+    ignore:
+      # xlsx has no fix available, accepted risk for user-uploaded files
+      - dependency-name: "xlsx"
