@@ -37,8 +37,11 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
         accept=".xlsx, .xls"
         onChange={handleFileChange}
       />
+      <label htmlFor="fileInput" className="file-upload-label">
+        <span>Upload Excel File</span>
+      </label>
       <div className="current-file-display">
-        <span className="file-icon">📁</span>
+        <span className="file-icon">📄</span>
         <span className="file-name">{currentFileName}</span>
       </div>
     </div>

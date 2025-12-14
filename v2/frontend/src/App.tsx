@@ -92,21 +92,38 @@ function App() {
 
   return (
     <div className="app">
-      <FileUpload currentFileName={currentFileName} onFileLoad={handleFileLoad} />
+      <header className="app-header">
+        <h1>Bank Transactions</h1>
+        <p className="app-subtitle">Analyze and categorize your spending</p>
+      </header>
 
-      <SearchControls
-        searchTerm={searchTerm}
-        periodFrom={periodFrom}
-        periodTo={periodTo}
-        onSearchChange={setSearchTerm}
-        onPeriodFromChange={setPeriodFrom}
-        onPeriodToChange={setPeriodTo}
-        onRandomize={handleRandomize}
-      />
+      <main className="app-content">
+        <section className="controls-section">
+          <FileUpload currentFileName={currentFileName} onFileLoad={handleFileLoad} />
 
-      {statistics && <StatisticsTable statistics={statistics} />}
+          <SearchControls
+            searchTerm={searchTerm}
+            periodFrom={periodFrom}
+            periodTo={periodTo}
+            onSearchChange={setSearchTerm}
+            onPeriodFromChange={setPeriodFrom}
+            onPeriodToChange={setPeriodTo}
+            onRandomize={handleRandomize}
+          />
+        </section>
 
-      <TransactionsTable transactions={filteredTransactions} />
+        {statistics && (
+          <section className="statistics-section">
+            <h2>Spending by Category</h2>
+            <StatisticsTable statistics={statistics} />
+          </section>
+        )}
+
+        <section className="transactions-section">
+          <h2>Transactions {filteredTransactions.length > 0 && <span className="count">({filteredTransactions.length})</span>}</h2>
+          <TransactionsTable transactions={filteredTransactions} />
+        </section>
+      </main>
     </div>
   );
 }

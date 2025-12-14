@@ -32,36 +32,32 @@ function SearchControls({
         <input
           type="text"
           className="search-input"
-          placeholder="Search transactions"
+          placeholder="Search transactions..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
-        <button className="regular-button search-button">Search</button>
         <button className="regular-button randomize-button" onClick={onRandomize}>
-          Randomize transactions
+          Load Sample Data
         </button>
       </div>
 
       <div className="period-fields-wrapper">
-        <div className="period-text">Period from</div>
+        <span className="period-text">From</span>
         <input
-          type="text"
+          type="date"
           className="period-input"
-          placeholder="YYYY-MM-DD"
           value={periodFrom}
           onChange={(e) => onPeriodFromChange(e.target.value)}
           onKeyDown={handlePeriodKeyDown}
         />
-        <div className="period-text">To</div>
+        <span className="period-text">To</span>
         <input
-          type="text"
+          type="date"
           className="period-input"
-          placeholder="YYYY-MM-DD"
           value={periodTo}
           onChange={(e) => onPeriodToChange(e.target.value)}
           onKeyDown={handlePeriodKeyDown}
         />
-        <button className="regular-button period-button">Apply</button>
       </div>
     </div>
   );
