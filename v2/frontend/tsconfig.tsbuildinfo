@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/fileupload.tsx","./src/components/searchcontrols.tsx","./src/components/statisticstable.tsx","./src/components/transactionstable.tsx","./src/services/parser.ts","./src/services/statistics.ts","./src/utils/randomize.ts"],"version":"5.9.3"}
