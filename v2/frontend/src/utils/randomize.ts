@@ -100,7 +100,7 @@ function randomText(type: string): string {
 }
 
 function generateRandomTransaction(): RawTransaction {
-  const transactionDate = randomDate(new Date('2022-01-01'), new Date('2023-04-30'));
+  const transactionDate = randomDate(new Date('2023-01-01'), new Date('2023-12-31'));
   const type = randomType();
   const text = randomText(type);
   const currencyAmount = randomCurrencyAmount(type);
