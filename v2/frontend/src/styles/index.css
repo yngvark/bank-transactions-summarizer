@@ -1,16 +1,18 @@
 /* Variables */
 :root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #dbeafe;
+  --primary-color: #475569;
+  --primary-hover: #334155;
+  --primary-light: #f1f5f9;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
   --secondary-color: #64748b;
   --background: #f8fafc;
   --surface: #ffffff;
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --border-color: #e2e8f0;
-  --success: #22c55e;
-  --danger: #ef4444;
+  --success: #10b981;
+  --danger: #f87171;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -40,7 +42,7 @@ body {
 
 /* Header */
 .app-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
   color: white;
   padding: 2rem 1.5rem;
   text-align: center;
@@ -126,7 +128,7 @@ section h2 .count {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background-color: var(--primary-color);
+  background-color: var(--accent-color);
   color: white;
   border-radius: var(--radius);
   cursor: pointer;
@@ -136,7 +138,7 @@ section h2 .count {
 }
 
 .file-upload-label:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--accent-hover);
   transform: translateY(-1px);
 }
 
@@ -208,7 +210,7 @@ section h2 .count {
 /* Buttons */
 .regular-button {
   padding: 0.625rem 1.25rem;
-  background-color: var(--primary-color);
+  background-color: var(--accent-color);
   color: white;
   font-size: 0.875rem;
   font-weight: 500;
@@ -219,7 +221,7 @@ section h2 .count {
 }
 
 .regular-button:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--accent-hover);
   transform: translateY(-1px);
 }
 

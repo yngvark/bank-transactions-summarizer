@@ -7,8 +7,8 @@ interface StatisticsTableProps {
 const COLOR_CONFIG: ColorConfig = {
   MAX_RED_RATIO: 2.0,
   MAX_GREEN_RATIO: 0.5,
-  MAX_RED_COLOR: '#ff4444',
-  MAX_GREEN_COLOR: '#44ff44',
+  MAX_RED_COLOR: '#f87171',    // Soft coral red
+  MAX_GREEN_COLOR: '#86efac',  // Soft mint green
   NEUTRAL_COLOR: '#ffffff',
 };
 
