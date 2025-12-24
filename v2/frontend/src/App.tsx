@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import SearchControls from './components/SearchControls';
 import StatisticsTable from './components/StatisticsTable';
 import TransactionsTable from './components/TransactionsTable';
+import DisplaySettings, { applyDisplaySettings } from './components/DisplaySettings';
 import { parseTransactions } from './services/parser';
 import { calculateStatistics } from './services/statistics';
 import { generateRandomTransactions } from './utils/randomize';
@@ -19,6 +20,13 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFrom, setPeriodFrom] = useState('');
   const [periodTo, setPeriodTo] = useState('');
+  const [textSize, setTextSize] = useState('small');
+  const [spacing, setSpacing] = useState('compact');
+
+  // Apply display settings when they change
+  useEffect(() => {
+    applyDisplaySettings(textSize, spacing);
+  }, [textSize, spacing]);
 
   // Process transactions when data or filters change
   const processTransactions = useCallback(async () => {
@@ -116,6 +124,12 @@ function App() {
           <section className="statistics-section">
             <h2>Spending by Category</h2>
             <StatisticsTable statistics={statistics} />
+            <DisplaySettings
+              textSize={textSize}
+              spacing={spacing}
+              onTextSizeChange={setTextSize}
+              onSpacingChange={setSpacing}
+            />
           </section>
         )}
 
