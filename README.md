@@ -16,7 +16,11 @@ make dev       # Start dev server (opens browser automatically)
 
 ## Stopping the Server
 
-Press `Ctrl+C` in the terminal running the dev server.
+Press `Ctrl+C` in the terminal, or kill orphaned node processes:
+
+```bash
+pkill -f node   # Kill all node processes
+```
 
 ## Other Commands
 
