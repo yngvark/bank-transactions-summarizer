@@ -4,6 +4,7 @@ export default defineConfig(function (_a) {
     var mode = _a.mode;
     var env = loadEnv(mode, process.cwd(), '');
     return {
+        base: './',
         plugins: [react()],
         server: {
             port: parseInt(env.PORT || '5173'),
