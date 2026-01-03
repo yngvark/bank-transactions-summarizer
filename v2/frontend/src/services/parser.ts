@@ -37,5 +37,5 @@ function getCategoryFromMapping(categoryMapping: CategoryMapping, key: string): 
     return 'Ukjent kategori';
   }
 
-  return categoryMapping[key][0] + ' ➡ ' + categoryMapping[key][1];
+  return categoryMapping[key].join(' ➡ ');
 }

@@ -21,8 +21,8 @@ export interface Transaction extends RawTransaction {
   Category: string;
 }
 
-// Category mapping from merchant category to [main, sub]
-export type CategoryMapping = Record<string, [string, string]>;
+// Category mapping from merchant category to hierarchical category path
+export type CategoryMapping = Record<string, string[]>;
 
 // Raw row data for statistics
 export interface RawRowData {
