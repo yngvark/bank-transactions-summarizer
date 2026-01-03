@@ -13,7 +13,7 @@ build: ## Build frontend
 	@echo "Building frontend..."
 	@(cd v2/frontend && npm run build)
 
-dev: ## Run frontend in development mode (use PORT=XXXX for custom port)
+run: ## Run frontend in development mode (use PORT=XXXX for custom port)
 	@echo "Starting development server on port $(PORT)..."
 	@(cd v2/frontend && PORT=$(PORT) npm run dev) & \
 	sleep 2 && \

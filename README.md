@@ -11,7 +11,7 @@ A frontend-only React app for summarizing bank transactions.
 
 ```bash
 make install   # Install dependencies
-make dev       # Start dev server (opens browser automatically)
+make run       # Start dev server (opens browser automatically)
 ```
 
 ## Stopping the Server
