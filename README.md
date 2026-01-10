@@ -1,4 +1,4 @@
-# Bank Transactions Summarizer
+# Bank Transactions Summarizer V2
 
 A frontend-only React app for summarizing bank transactions.
 
