@@ -1,4 +1,4 @@
-.PHONY: dev help install build
+.PHONY: dev help install build stop
 
 PORT ?= $(shell awk 'BEGIN{srand(); print int(rand()*6000)+3000}')
 
@@ -19,3 +19,6 @@ run: ## Run frontend in development mode (use PORT=XXXX for custom port)
 	sleep 2 && \
 	open http://localhost:$(PORT)
 	@wait
+
+stop: ## Stop the development server
+	@lsof -ti:$(PORT) | xargs kill 2>/dev/null || echo "No server running on port $(PORT)"

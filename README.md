@@ -18,10 +18,10 @@ make run       # Start dev server (opens browser automatically)
 
 ## Stopping the Server
 
-Press `Ctrl+C` in the terminal, or kill orphaned node processes:
+Press `Ctrl+C` in the terminal, or use the stop command:
 
 ```bash
-pkill -f node   # Kill all node processes
+make stop PORT=XXXX   # Stop server on specific port
 ```
 
 ## Other Commands
