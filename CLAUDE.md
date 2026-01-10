@@ -1,3 +1,7 @@
+## Developing rules
+
+- ✅ ALWAYS use /dev-browser skill for verifying UI or frontend changes
+
 ## Issue Tracking with bd (beads)
 
 **IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
