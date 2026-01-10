@@ -1,4 +1,4 @@
-import { ChangeEvent } from 'react';
+import { ChangeEvent, DragEvent, useState } from 'react';
 import { RawTransaction } from '../../../shared/types';
 
 interface FileUploadProps {
@@ -7,9 +7,12 @@ interface FileUploadProps {
 }
 
 function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const [isDragging, setIsDragging] = useState(false);
+
+  const processFile = async (file: File) => {
+    if (!file.name.match(/\.xlsx?$/i)) {
+      return;
+    }
 
     const reader = new FileReader();
 
@@ -29,8 +32,41 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
   return (
-    <div className="file-upload-section">
+    <div
+      className={`file-upload-section ${isDragging ? 'dragging' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <input
         type="file"
         id="fileInput"
@@ -40,6 +76,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
       <label htmlFor="fileInput" className="file-upload-label">
         <span>Upload Excel File</span>
       </label>
+      <span className="drop-hint">or drop file here</span>
       <div className="current-file-display">
         <span className="file-icon">📄</span>
         <span className="file-name">{currentFileName}</span>
