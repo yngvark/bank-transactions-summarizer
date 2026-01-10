@@ -33,31 +33,37 @@ export function applyDisplaySettings(textSize: string, spacing: string) {
 function DisplaySettings({ textSize, spacing, onTextSizeChange, onSpacingChange }: DisplaySettingsProps) {
   return (
     <div className="display-settings">
-      <label className="display-settings-label">
-        Text size:
-        <select
-          className="display-settings-select"
-          value={textSize}
-          onChange={(e) => onTextSizeChange(e.target.value)}
-        >
+      <div className="display-settings-group">
+        <span className="display-settings-label">Text size:</span>
+        <div className="segmented-control">
           {TEXT_SIZES.map(size => (
-            <option key={size.value} value={size.value}>{size.label}</option>
+            <button
+              key={size.value}
+              type="button"
+              className={`segmented-control-button ${textSize === size.value ? 'active' : ''}`}
+              onClick={() => onTextSizeChange(size.value)}
+            >
+              {size.label}
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
 
-      <label className="display-settings-label">
-        Spacing:
-        <select
-          className="display-settings-select"
-          value={spacing}
-          onChange={(e) => onSpacingChange(e.target.value)}
-        >
+      <div className="display-settings-group">
+        <span className="display-settings-label">Spacing:</span>
+        <div className="segmented-control">
           {SPACINGS.map(s => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <button
+              key={s.value}
+              type="button"
+              className={`segmented-control-button ${spacing === s.value ? 'active' : ''}`}
+              onClick={() => onSpacingChange(s.value)}
+            >
+              {s.label}
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
     </div>
   );
 }
