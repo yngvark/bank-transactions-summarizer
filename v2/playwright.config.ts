@@ -47,8 +47,9 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'cd frontend && npm run dev',
+    command: 'npm run dev',
     url: 'http://localhost:3456',
     reuseExistingServer: !process.env.CI,
+    cwd: './frontend',
   },
 });
