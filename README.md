@@ -2,6 +2,8 @@
 
 A frontend-only React app for summarizing bank transactions.
 
+**Live demo:** https://yngvark.github.io/bank-transactions-summarizer/
+
 ## Prerequisites
 
 - Node.js (v18+)
