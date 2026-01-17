@@ -483,7 +483,14 @@ table tr.sum:hover td {
     font-size: 0.8125rem;
   }
 
-  /* Hide month columns in statistics table on mobile, show only Category, Sum, and Average */
+  /* Hide all month columns in statistics table on mobile
+   * Shows only: Category column (first), Sum column (second-to-last), Average column (last)
+   * Hides: All intermediate month columns (2023-01, 2023-02, etc.)
+   * Selector breakdown:
+   *   - th:not(:first-child) = all headers except Category
+   *   - :not(:nth-last-child(-n+2)) = exclude last 2 columns (Sum, Average)
+   *   - Result: hides all month columns
+   */
   .statistics-section table th:not(:first-child):not(:nth-last-child(-n+2)),
   .statistics-section table td:not(:first-child):not(:nth-last-child(-n+2)) {
     display: none;

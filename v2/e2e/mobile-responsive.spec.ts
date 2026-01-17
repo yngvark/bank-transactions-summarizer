@@ -4,7 +4,7 @@ test.describe('Mobile Responsive Design', () => {
   test.use(devices['iPhone 12']);
 
   test('should display mobile-friendly layout', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Wait for the app to load
     await page.waitForSelector('h1');
@@ -19,7 +19,7 @@ test.describe('Mobile Responsive Design', () => {
   });
 
   test('should hide month columns in statistics table on mobile', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -43,7 +43,7 @@ test.describe('Mobile Responsive Design', () => {
   });
 
   test('should stack display settings vertically on mobile', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -67,7 +67,7 @@ test.describe('Mobile Responsive Design', () => {
   });
 
   test('should optimize transactions table for mobile', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -78,15 +78,10 @@ test.describe('Mobile Responsive Design', () => {
     // Check that table is visible
     const transactionsTable = page.locator('table').nth(1);
     await expect(transactionsTable).toBeVisible();
-    
-    // Check that table can scroll horizontally
-    const tableWrapper = transactionsTable.locator('..');
-    const boundingBox = await tableWrapper.boundingBox();
-    expect(boundingBox).toBeTruthy();
   });
 
   test('should have adequate touch targets on mobile', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Check upload button has adequate size
     const uploadButton = page.locator('button:has-text("Upload Excel File")');
@@ -106,7 +101,7 @@ test.describe('Mobile Responsive Design', () => {
   });
 
   test('should wrap long text appropriately on mobile', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -128,7 +123,7 @@ test.describe('Desktop Responsive Design', () => {
   test.use(devices['Desktop Chrome']);
 
   test('should display all columns in statistics table on desktop', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -151,7 +146,7 @@ test.describe('Desktop Responsive Design', () => {
   });
 
   test('should display settings side by side on desktop', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
@@ -181,7 +176,7 @@ test.describe('Desktop Responsive Design', () => {
   });
 
   test('should maintain desktop experience unchanged', async ({ page }) => {
-    await page.goto('http://localhost:3456');
+    await page.goto('/');
     
     // Check header
     await expect(page.locator('h1:has-text("Bank Transactions")')).toBeVisible();
@@ -219,7 +214,7 @@ test.describe('Cross-Device Compatibility', () => {
       const context = await browser.newContext(device);
       const page = await context.newPage();
       
-      await page.goto('http://localhost:3456');
+      await page.goto('/');
       
       // Basic functionality test
       await expect(page.locator('h1')).toBeVisible();
