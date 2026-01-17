@@ -426,6 +426,10 @@ table tr.sum:hover td {
     font-size: 1.5rem;
   }
 
+  .app-subtitle {
+    font-size: 0.875rem;
+  }
+
   .app-content {
     padding: 1rem;
   }
@@ -452,10 +456,64 @@ table tr.sum:hover td {
     width: 100%;
   }
 
+  /* Make display settings stack vertically on mobile */
+  .display-settings {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .display-settings-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .display-settings-label {
+    font-size: 0.875rem;
+  }
+
+  .segmented-control {
+    width: 100%;
+  }
+
+  .segmented-control-button {
+    flex: 1;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Hide month columns in statistics table on mobile, show only Category, Sum, and Average */
+  .statistics-section table th:not(:first-child):not(:nth-last-child(-n+2)),
+  .statistics-section table td:not(:first-child):not(:nth-last-child(-n+2)) {
+    display: none;
+  }
+
+  /* Adjust table font sizes for mobile */
   table th,
   table td {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.7rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.8125rem;
+  }
+
+  table th {
+    font-size: 0.75rem;
+  }
+
+  /* Make first column (sticky) more visible on mobile */
+  table th:first-child,
+  table td:first-child {
+    min-width: 120px;
+    max-width: 180px;
+  }
+
+  /* Improve section titles on mobile */
+  section h2 {
+    font-size: 1.125rem;
+  }
+
+  section h2 .count {
+    font-size: 0.8125rem;
   }
 }
 
