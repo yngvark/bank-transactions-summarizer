@@ -27,6 +27,7 @@
 - Use `BEADS_DB=/tmp/test.db` to avoid polluting production database
 - Run `go test -short ./...` before committing
 - Never create test issues in production DB (use temporary DB)
+- **When verifying UI behavior or taking screenshots**: Always load sample data first by clicking "Load Sample Data" button to ensure realistic data is displayed
 
 ### Code Style
 - Run `golangci-lint run ./...` before committing

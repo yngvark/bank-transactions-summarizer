@@ -145,3 +145,4 @@ For more details, see README.md and QUICKSTART.md.
 ### Important Rules
 
 - ✅ Use /dev-browser skill for verifying UI or frontend changes
+- ✅ When verifying UI behavior or taking screenshots: Always load sample data first by clicking "Load Sample Data" button to ensure realistic data is displayed

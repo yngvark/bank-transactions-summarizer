@@ -38,3 +38,10 @@ bd sync               # Sync with git
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 
+## Testing and Verification
+
+**When verifying UI behavior or taking screenshots:**
+- **ALWAYS** load sample data first by clicking "Load Sample Data" button
+- This ensures screenshots and tests show realistic data instead of empty states
+- Applies to all frontend testing, Playwright tests, and manual verification
+
