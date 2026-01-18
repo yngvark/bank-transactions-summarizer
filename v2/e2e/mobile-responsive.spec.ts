@@ -86,11 +86,11 @@ test.describe('Mobile Responsive Design', () => {
   test('should have adequate touch targets on mobile', async ({ page }) => {
     await page.goto('/');
     
-    // Check upload button has adequate size
-    const uploadButton = page.locator('button:has-text("Upload Excel File")');
-    await expect(uploadButton).toBeVisible();
+    // Check upload label has adequate size
+    const uploadLabel = page.locator('label.file-upload-label');
+    await expect(uploadLabel).toBeVisible();
     
-    const uploadBox = await uploadButton.boundingBox();
+    const uploadBox = await uploadLabel.boundingBox();
     expect(uploadBox?.height).toBeGreaterThanOrEqual(44); // Minimum touch target size
     
     // Load sample data
@@ -110,14 +110,14 @@ test.describe('Mobile Responsive Design', () => {
     await page.click('button:has-text("Load Sample Data")');
     
     // Wait for transactions to load
-    await page.waitForSelector('table tbody tr');
+    await page.waitForSelector('.transactions-section table tbody tr');
     
-    // Check that text in cells doesn't overflow
-    const firstTransactionText = page.locator('table tbody tr').first().locator('td').nth(1);
+    // Check that text in cells doesn't overflow in transactions table
+    const firstTransactionText = page.locator('.transactions-section table tbody tr').first().locator('td').nth(1);
     await expect(firstTransactionText).toBeVisible();
     
     // Check category text
-    const categoryCell = page.locator('table tbody tr').first().locator('td').last();
+    const categoryCell = page.locator('.transactions-section table tbody tr').first().locator('td').last();
     await expect(categoryCell).toBeVisible();
   });
 });
