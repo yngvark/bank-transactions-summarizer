@@ -1,7 +1,10 @@
 import { test, expect, devices } from '@playwright/test';
 
+// Mobile tests - using iPhone 12 viewport
 test.describe('Mobile Responsive Design', () => {
-  test.use(devices['iPhone 12']);
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize(devices['iPhone 12'].viewport!);
+  });
 
   test('should display mobile-friendly layout', async ({ page }) => {
     await page.goto('/');
@@ -119,8 +122,11 @@ test.describe('Mobile Responsive Design', () => {
   });
 });
 
+// Desktop tests - using Desktop Chrome viewport
 test.describe('Desktop Responsive Design', () => {
-  test.use(devices['Desktop Chrome']);
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize(devices['Desktop Chrome'].viewport!);
+  });
 
   test('should display all columns in statistics table on desktop', async ({ page }) => {
     await page.goto('/');
