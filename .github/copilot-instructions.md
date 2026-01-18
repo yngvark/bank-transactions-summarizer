@@ -28,6 +28,7 @@
 - Run `go test -short ./...` before committing
 - Never create test issues in production DB (use temporary DB)
 - **When verifying UI behavior or taking screenshots**: Always load sample data first by clicking "Load Sample Data" button to ensure realistic data is displayed
+- **Screenshots must never exceed 1300px in height** - use viewport screenshots instead of full-page screenshots to keep images manageable
 
 ### Code Style
 - Run `golangci-lint run ./...` before committing

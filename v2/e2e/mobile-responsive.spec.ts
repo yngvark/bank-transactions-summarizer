@@ -203,13 +203,13 @@ test.describe('Desktop Responsive Design', () => {
 });
 
 test.describe('Cross-Device Compatibility', () => {
-  const devices_to_test = [
+  const devicesToTest = [
     { name: 'iPhone SE', device: devices['iPhone SE'] },
     { name: 'iPad Pro', device: devices['iPad Pro'] },
     { name: 'Desktop', device: devices['Desktop Chrome'] }
   ];
 
-  for (const { name, device } of devices_to_test) {
+  for (const { name, device } of devicesToTest) {
     test(`should be functional on ${name}`, async ({ browser }) => {
       const context = await browser.newContext(device);
       const page = await context.newPage();

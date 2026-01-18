@@ -146,3 +146,4 @@ For more details, see README.md and QUICKSTART.md.
 
 - ✅ Use /dev-browser skill for verifying UI or frontend changes
 - ✅ When verifying UI behavior or taking screenshots: Always load sample data first by clicking "Load Sample Data" button to ensure realistic data is displayed
+- ✅ Screenshots must never exceed 1300px in height - use viewport screenshots instead of full-page screenshots to keep images manageable

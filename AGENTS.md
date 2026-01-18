@@ -44,4 +44,5 @@ bd sync               # Sync with git
 - **ALWAYS** load sample data first by clicking "Load Sample Data" button
 - This ensures screenshots and tests show realistic data instead of empty states
 - Applies to all frontend testing, Playwright tests, and manual verification
+- **Screenshots must never exceed 1300px in height** - use viewport screenshots instead of full-page screenshots to keep images manageable
 
