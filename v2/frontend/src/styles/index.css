@@ -48,13 +48,13 @@ body {
 .app-header {
   background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
   color: white;
-  padding: 2rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   text-align: center;
 }
 
 .app-header h1 {
-  margin: 0 0 0.5rem 0;
-  font-size: 2rem;
+  margin: 0 0 0.125rem 0;
+  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -62,7 +62,7 @@ body {
 .app-subtitle {
   margin: 0;
   opacity: 0.9;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 400;
 }
 
@@ -419,11 +419,11 @@ table tr.sum:hover td {
 /* Responsive */
 @media (max-width: 768px) {
   .app-header {
-    padding: 1.5rem 1rem;
+    padding: 0.5rem 1rem;
   }
 
   .app-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
   }
 
   .app-subtitle {
