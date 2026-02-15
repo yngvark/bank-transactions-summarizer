@@ -4,6 +4,7 @@
 .idea/
 
 .playwright-mcp/
+.dev-port
 
 # Node.js
 node_modules/
