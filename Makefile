@@ -15,10 +15,16 @@ build: ## Build frontend
 
 run: ## Run frontend in development mode (use PORT=XXXX for custom port)
 	@echo "Starting development server on port $(PORT)..."
+	@echo $(PORT) > .dev-port
 	@(cd v2/frontend && PORT=$(PORT) npm run dev) & \
 	sleep 2 && \
 	open http://localhost:$(PORT)
 	@wait
 
 stop: ## Stop the development server
-	@lsof -ti:$(PORT) | xargs kill 2>/dev/null || echo "No server running on port $(PORT)"
+	@if [ -f .dev-port ]; then \
+		port=$$(cat .dev-port); \
+		lsof -ti:$$port | xargs kill 2>/dev/null && echo "Stopped server on port $$port" && rm -f .dev-port || echo "No server running on port $$port"; \
+	else \
+		echo "No .dev-port file found. Server may not be running."; \
+	fi
