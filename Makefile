@@ -18,7 +18,7 @@ run: ## Run frontend in development mode (use PORT=XXXX for custom port)
 	@echo $(PORT) > .dev-port
 	@(cd v2/frontend && PORT=$(PORT) npm run dev) & \
 	sleep 2 && \
-	open http://localhost:$(PORT)
+	(open http://localhost:$(PORT) 2>/dev/null || xdg-open http://localhost:$(PORT) 2>/dev/null || echo "Open http://localhost:$(PORT) in your browser")
 	@wait
 
 stop: ## Stop the development server
