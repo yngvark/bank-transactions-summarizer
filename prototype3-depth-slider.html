@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype 3: Depth Slider + Per-Category Drill-Down</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f1f5f9;
+    padding: 2rem;
+    color: #1e293b;
+  }
+  h1 { margin-bottom: 0.5rem; font-size: 1.5rem; }
+  .description {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+
+  .controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .control-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+  }
+  .depth-slider {
+    width: 150px;
+    accent-color: #6366f1;
+  }
+  .depth-display {
+    background: #6366f1;
+    color: white;
+    padding: 0.15rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+  }
+  .depth-labels {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    color: #94a3b8;
+  }
+  .depth-labels span {
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .depth-labels span:hover { background: #f1f5f9; color: #475569; }
+  .depth-labels span.active { background: #eef2ff; color: #6366f1; font-weight: 600; }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th {
+    text-align: right;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
+  }
+  th:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+  }
+  td {
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 1;
+  }
+
+  tr { transition: all 0.2s; }
+  tr:hover { background: #f8fafc; }
+
+  /* Row depth styling */
+  tr.is-parent { font-weight: 700; background: #fafafe; }
+  tr.is-parent td { border-bottom: 1px solid #e2e8f0; }
+  tr.is-leaf { font-weight: 400; }
+  tr.depth-1 .cat-cell { padding-left: 1.5rem; }
+  tr.depth-2 .cat-cell { padding-left: 3rem; }
+  tr.depth-3 .cat-cell { padding-left: 4.5rem; }
+
+  /* Drill-down button */
+  .drill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    padding: 0;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .drill-btn:hover {
+    color: #6366f1;
+    border-color: #c7d2fe;
+    background: #eef2ff;
+    padding: 0 4px;
+  }
+  .drill-icon {
+    font-size: 0.65rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+    color: #6366f1;
+  }
+  .drill-btn:hover .drill-icon { opacity: 1; }
+  tr.is-expanded > td:first-child .drill-icon { opacity: 1; transform: rotate(90deg); }
+  tr.is-expanded { background: #fafafe; }
+
+  /* Sum row */
+  tr.sum-row { background: #1e293b !important; color: white; font-weight: 700; }
+  tr.sum-row td { border-bottom: none; }
+  tr.sum-row td:first-child { background: #1e293b; }
+
+  /* Heatmap */
+  .cell-hot { background-color: rgba(248, 113, 113, 0.3); }
+  .cell-warm { background-color: rgba(251, 191, 36, 0.15); }
+  .cell-neutral { background-color: transparent; }
+  .cell-cool { background-color: rgba(134, 239, 172, 0.2); }
+  .cell-cold { background-color: rgba(134, 239, 172, 0.4); }
+
+  .breadcrumb {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+  }
+  .breadcrumb a {
+    color: #6366f1;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+
+  .animate-in {
+    animation: fadeSlideIn 0.2s ease;
+  }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<h1>Prototype 3: Depth Slider + Click to Drill Down</h1>
+<p class="description">
+  A global depth slider controls the default aggregation level for all categories.
+  At depth 0 you see only top-level totals; at depth 3 you see everything.
+  Additionally, you can click any parent row to expand just that category one level deeper,
+  overriding the global depth for that specific branch. Click again to collapse it.
+  This combines global overview control with per-category drill-down.
+</p>
+
+<div class="controls-bar">
+  <div class="control-group">
+    <label>Detail Level:</label>
+    <input type="range" class="depth-slider" id="depthSlider" min="0" max="3" value="0" step="1">
+    <span class="depth-display" id="depthDisplay">Top level</span>
+  </div>
+  <div class="depth-labels" id="depthLabels">
+    <span class="active" onclick="setDepth(0)">Overview</span>
+    <span onclick="setDepth(1)">Categories</span>
+    <span onclick="setDepth(2)">Detailed</span>
+    <span onclick="setDepth(3)">Everything</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <table>
+    <thead><tr id="header-row"></tr></thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<script>
+const months = ['2023-01', '2023-02', '2023-03', '2023-04', '2023-05', '2023-06'];
+
+const categoryTree = [
+  {
+    name: 'Reise (Travel)',
+    children: [
+      {
+        name: 'Flyselskap (Airlines)',
+        children: [
+          { name: 'SAS', amounts: { '2023-01': 3000, '2023-02': 0, '2023-03': 4500, '2023-04': 0, '2023-05': 2000, '2023-06': 6000 } },
+          { name: 'Norwegian', amounts: { '2023-01': 1500, '2023-02': 2200, '2023-03': 0, '2023-04': 3100, '2023-05': 0, '2023-06': 1800 } },
+        ]
+      },
+      {
+        name: 'Hotell (Hotels)',
+        children: [
+          { name: 'Scandic', amounts: { '2023-01': 2500, '2023-02': 0, '2023-03': 3200, '2023-04': 0, '2023-05': 2800, '2023-06': 0 } },
+          { name: 'Thon Hotels', amounts: { '2023-01': 0, '2023-02': 1800, '2023-03': 0, '2023-04': 2100, '2023-05': 0, '2023-06': 1500 } },
+        ]
+      },
+      { name: 'Leiebil (Car rental)', amounts: { '2023-01': 800, '2023-02': 0, '2023-03': 1200, '2023-04': 0, '2023-05': 950, '2023-06': 0 } },
+    ]
+  },
+  {
+    name: 'Mat og drikke (Food & drink)',
+    children: [
+      { name: 'Dagligvarer (Groceries)', amounts: { '2023-01': 6500, '2023-02': 5800, '2023-03': 7200, '2023-04': 6100, '2023-05': 6800, '2023-06': 7500 } },
+      {
+        name: 'Restauranter (Restaurants)',
+        children: [
+          { name: 'Fast food', amounts: { '2023-01': 400, '2023-02': 350, '2023-03': 500, '2023-04': 300, '2023-05': 450, '2023-06': 380 } },
+          { name: 'Fine dining', amounts: { '2023-01': 2200, '2023-02': 0, '2023-03': 1800, '2023-04': 2500, '2023-05': 0, '2023-06': 3000 } },
+          { name: 'Cafes', amounts: { '2023-01': 600, '2023-02': 550, '2023-03': 700, '2023-04': 500, '2023-05': 650, '2023-06': 580 } },
+        ]
+      },
+      { name: 'Alkohol (Alcohol)', amounts: { '2023-01': 1200, '2023-02': 800, '2023-03': 1500, '2023-04': 900, '2023-05': 1100, '2023-06': 1300 } },
+    ]
+  },
+  {
+    name: 'Personlig forbruk (Personal)',
+    children: [
+      { name: 'Klaer (Clothing)', amounts: { '2023-01': 3200, '2023-02': 1500, '2023-03': 2800, '2023-04': 4100, '2023-05': 1200, '2023-06': 2600 } },
+      { name: 'Elektronikk (Electronics)', amounts: { '2023-01': 5500, '2023-02': 0, '2023-03': 800, '2023-04': 0, '2023-05': 12000, '2023-06': 0 } },
+      { name: 'Helse (Health)', amounts: { '2023-01': 900, '2023-02': 900, '2023-03': 900, '2023-04': 900, '2023-05': 900, '2023-06': 900 } },
+    ]
+  },
+  {
+    name: 'Hus og innbo (Housing)',
+    children: [
+      { name: 'Forsikring (Insurance)', amounts: { '2023-01': 2000, '2023-02': 2000, '2023-03': 2000, '2023-04': 2000, '2023-05': 2000, '2023-06': 2000 } },
+      { name: 'Vedlikehold (Maintenance)', amounts: { '2023-01': 500, '2023-02': 3200, '2023-03': 0, '2023-04': 800, '2023-05': 0, '2023-06': 4500 } },
+      { name: 'Mobler (Furniture)', amounts: { '2023-01': 0, '2023-02': 8500, '2023-03': 0, '2023-04': 0, '2023-05': 15000, '2023-06': 0 } },
+    ]
+  },
+];
+
+// Assign paths and compute sums
+let nodeIndex = 0;
+function initTree(nodes, pathPrefix = '') {
+  nodes.forEach((node, i) => {
+    node.path = pathPrefix ? `${pathPrefix}/${node.name}` : node.name;
+    node.nodeId = nodeIndex++;
+    if (node.children) {
+      initTree(node.children, node.path);
+      // Compute sums
+      node.amounts = {};
+      months.forEach(m => {
+        node.amounts[m] = node.children.reduce((s, c) => s + (c.amounts[m] || 0), 0);
+      });
+    }
+    node.sum = months.reduce((s, m) => s + (node.amounts[m] || 0), 0);
+    node.avg = Math.round(node.sum / months.length);
+  });
+}
+initTree(categoryTree);
+
+let globalDepth = 0;
+// Per-node overrides: nodeId -> expanded (true/false)
+const expandOverrides = {};
+
+function formatNum(n) {
+  return n === 0 ? '-' : n.toLocaleString('nb-NO');
+}
+
+function heatClass(value, avg) {
+  if (avg === 0 || value === 0) return 'cell-neutral';
+  const ratio = value / avg;
+  if (ratio >= 1.8) return 'cell-hot';
+  if (ratio >= 1.2) return 'cell-warm';
+  if (ratio >= 0.7) return 'cell-neutral';
+  if (ratio >= 0.4) return 'cell-cool';
+  return 'cell-cold';
+}
+
+// Determine if a node's children should be shown
+function shouldShowChildren(node, currentDepth) {
+  if (!node.children) return false;
+  // Check per-node override first
+  if (expandOverrides[node.nodeId] !== undefined) {
+    return expandOverrides[node.nodeId];
+  }
+  // Otherwise follow global depth
+  return currentDepth < globalDepth;
+}
+
+function collectVisibleRows(nodes, depth = 0) {
+  const rows = [];
+  nodes.forEach(node => {
+    const hasChildren = node.children && node.children.length > 0;
+    const showChildren = hasChildren && shouldShowChildren(node, depth);
+    const isExpanded = expandOverrides[node.nodeId] === true;
+
+    rows.push({
+      node,
+      depth,
+      hasChildren,
+      showChildren,
+      isExpanded,
+      isOverridden: expandOverrides[node.nodeId] !== undefined
+    });
+
+    if (showChildren) {
+      rows.push(...collectVisibleRows(node.children, depth + 1));
+    }
+  });
+  return rows;
+}
+
+function toggleNode(nodeId) {
+  const current = expandOverrides[nodeId];
+  if (current === undefined) {
+    // First click: expand beyond global depth
+    expandOverrides[nodeId] = true;
+  } else if (current === true) {
+    expandOverrides[nodeId] = false;
+  } else {
+    delete expandOverrides[nodeId];
+  }
+  render();
+}
+
+function setDepth(d) {
+  globalDepth = d;
+  document.getElementById('depthSlider').value = d;
+  // Clear overrides when global depth changes
+  Object.keys(expandOverrides).forEach(k => delete expandOverrides[k]);
+  render();
+}
+
+document.getElementById('depthSlider').addEventListener('input', function() {
+  setDepth(parseInt(this.value));
+});
+
+const depthLabels = ['Top level', 'Categories', 'Detailed', 'Everything'];
+
+function render() {
+  // Update controls
+  document.getElementById('depthDisplay').textContent = depthLabels[globalDepth];
+  document.querySelectorAll('#depthLabels span').forEach((el, i) => {
+    el.classList.toggle('active', i === globalDepth);
+  });
+
+  // Header
+  const headerRow = document.getElementById('header-row');
+  headerRow.innerHTML = '<th>Category</th>' +
+    months.map(m => `<th>${m}</th>`).join('') +
+    '<th>Sum</th><th>Average</th>';
+
+  // Body
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  const visibleRows = collectVisibleRows(categoryTree);
+
+  visibleRows.forEach(({ node, depth, hasChildren, showChildren, isExpanded, isOverridden }) => {
+    const tr = document.createElement('tr');
+    const classes = [`depth-${depth}`];
+    if (hasChildren) classes.push('is-parent');
+    else classes.push('is-leaf');
+    if (showChildren) classes.push('is-expanded');
+    tr.className = classes.join(' ');
+
+    // Category cell
+    const catTd = document.createElement('td');
+    catTd.className = 'cat-cell';
+
+    if (hasChildren) {
+      const btn = document.createElement('button');
+      btn.className = 'drill-btn';
+      const icon = document.createElement('span');
+      icon.className = 'drill-icon';
+      icon.textContent = showChildren ? '\u25BC' : '\u25B6';
+      btn.appendChild(document.createTextNode(node.name));
+      btn.appendChild(icon);
+      btn.onclick = () => toggleNode(node.nodeId);
+      catTd.appendChild(btn);
+    } else {
+      catTd.textContent = node.name;
+    }
+    tr.appendChild(catTd);
+
+    // Month cells
+    months.forEach(m => {
+      const td = document.createElement('td');
+      td.textContent = formatNum(node.amounts[m] || 0);
+      td.className = heatClass(node.amounts[m] || 0, node.avg);
+      tr.appendChild(td);
+    });
+
+    // Sum & Average
+    const sumTd = document.createElement('td');
+    sumTd.textContent = formatNum(node.sum);
+    sumTd.style.fontWeight = '600';
+    tr.appendChild(sumTd);
+    const avgTd = document.createElement('td');
+    avgTd.textContent = formatNum(node.avg);
+    tr.appendChild(avgTd);
+
+    tbody.appendChild(tr);
+  });
+
+  // Grand total
+  const grandTotals = {};
+  months.forEach(m => grandTotals[m] = 0);
+  categoryTree.forEach(node => months.forEach(m => { grandTotals[m] += node.amounts[m] || 0; }));
+  const grandSum = months.reduce((s, m) => s + grandTotals[m], 0);
+  const grandAvg = Math.round(grandSum / months.length);
+
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'sum-row';
+  const st = document.createElement('td');
+  st.textContent = 'Total';
+  sumTr.appendChild(st);
+  months.forEach(m => {
+    const td = document.createElement('td');
+    td.textContent = formatNum(grandTotals[m]);
+    sumTr.appendChild(td);
+  });
+  const gsTd = document.createElement('td');
+  gsTd.textContent = formatNum(grandSum);
+  sumTr.appendChild(gsTd);
+  const gaTd = document.createElement('td');
+  gaTd.textContent = formatNum(grandAvg);
+  sumTr.appendChild(gaTd);
+  tbody.appendChild(sumTr);
+}
+
+render();
+</script>
+</body>
+</html>
