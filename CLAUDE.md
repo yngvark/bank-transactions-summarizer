@@ -17,7 +17,7 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 ## Developing rules
 
-- ✅ ALWAYS use playwright-cli skill for verifying UI or frontend changes
+- ✅ ALWAYS use playwright skill for verifying UI or frontend changes
 - ✅ ALWAYS commit changes when done
 
 ## AI Planning Documents
