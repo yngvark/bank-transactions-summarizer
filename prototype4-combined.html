@@ -53,6 +53,8 @@
     transition: all 0.15s;
   }
   .controls-bar button:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .controls-bar button.active { background: #1e293b; color: white; border-color: #1e293b; }
+  .controls-bar button.active:hover { background: #334155; border-color: #334155; }
 
   .card {
     background: white;
@@ -189,6 +191,7 @@
     <button onclick="collapseAllNodes()">Collapse All</button>
     <button onclick="expandAllNodes()">Expand All</button>
   </div>
+  <button id="heatmap-toggle" onclick="toggleHeatmap()">Heatmap</button>
 </div>
 
 <div class="card">
@@ -275,6 +278,7 @@ initTree(categoryTree);
 
 // --- State ---
 const expandState = {}; // nodeId -> true/false (expanded or not)
+let heatmapEnabled = false;
 
 // --- Heatmap: continuous red-green interpolation (from app) ---
 const MAX_RED_RATIO = 2.0;
@@ -336,6 +340,12 @@ function collectVisibleRows(nodes, depth) {
 }
 
 // --- Interactions ---
+function toggleHeatmap() {
+  heatmapEnabled = !heatmapEnabled;
+  document.getElementById('heatmap-toggle').classList.toggle('active', heatmapEnabled);
+  render();
+}
+
 function toggleNode(nodeId) {
   expandState[nodeId] = !expandState[nodeId];
   render();
@@ -489,9 +499,11 @@ function render() {
       const td = document.createElement('td');
       const val = node.amounts[m] || 0;
       td.textContent = formatNum(val);
-      const color = calculateCellColor(val, node.avg);
-      if (color !== NEUTRAL_COLOR) {
-        td.style.backgroundColor = color;
+      if (heatmapEnabled) {
+        const color = calculateCellColor(val, node.avg);
+        if (color !== NEUTRAL_COLOR) {
+          td.style.backgroundColor = color;
+        }
       }
       tr.appendChild(td);
     });
