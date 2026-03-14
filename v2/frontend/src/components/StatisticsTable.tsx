@@ -1,4 +1,5 @@
-import { GroupedStatistics, ColorConfig } from '../../../shared/types';
+import { useState, useMemo, useCallback } from 'react';
+import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../shared/types';
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
@@ -49,59 +50,215 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+const numberFormatter = new Intl.NumberFormat('nb-NO', {
+  style: 'decimal',
+  useGrouping: true,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
+
+function formatNum(n: number): string {
+  return numberFormatter.format(n);
+}
+
+interface VisibleRow {
+  node: CategoryTreeNode;
+  depth: number;
+  hasChildren: boolean;
+  isExpanded: boolean;
+}
+
+function collectVisibleRows(
+  nodes: CategoryTreeNode[],
+  depth: number,
+  expandState: Record<string, boolean>
+): VisibleRow[] {
+  const rows: VisibleRow[] = [];
+  for (const node of nodes) {
+    const hasChildren = node.children.length > 0;
+    const isExpanded = hasChildren && !!expandState[node.path];
+    rows.push({ node, depth, hasChildren, isExpanded });
+    if (isExpanded) {
+      rows.push(...collectVisibleRows(node.children, depth + 1, expandState));
+    }
+  }
+  return rows;
+}
+
 function StatisticsTable({ statistics }: StatisticsTableProps) {
-  // Calculate colors for each cell
-  const colorData: string[][] = statistics.rawTableData.map((rawRow) => {
-    const rowColors: string[] = [];
-    // Category column - no color
-    rowColors.push(COLOR_CONFIG.NEUTRAL_COLOR);
+  const [expandState, setExpandState] = useState<Record<string, boolean>>({});
+  const [heatmapEnabled, setHeatmapEnabled] = useState(true);
+  const { categoryTree, yearMonths, footer } = statistics;
 
-    // Period columns - apply color based on value vs average
-    rawRow.periodTotals.forEach((cellValue) => {
-      const color = calculateCellColor(cellValue, rawRow.average);
-      rowColors.push(color);
+  const toggleNode = useCallback((path: string) => {
+    setExpandState(prev => ({ ...prev, [path]: !prev[path] }));
+  }, []);
+
+  const expandAll = useCallback(() => {
+    const state: Record<string, boolean> = {};
+    function walk(nodes: CategoryTreeNode[]) {
+      for (const node of nodes) {
+        if (node.children.length > 0) {
+          state[node.path] = true;
+          walk(node.children);
+        }
+      }
+    }
+    walk(categoryTree);
+    setExpandState(state);
+  }, [categoryTree]);
+
+  const collapseAll = useCallback(() => {
+    setExpandState({});
+  }, []);
+
+  const expandOneLevel = useCallback(() => {
+    setExpandState(prev => {
+      const next = { ...prev };
+      let minDepth = Infinity;
+      function findMin(nodes: CategoryTreeNode[], depth: number) {
+        for (const node of nodes) {
+          if (node.children.length > 0) {
+            if (!next[node.path]) {
+              if (depth < minDepth) minDepth = depth;
+            } else {
+              findMin(node.children, depth + 1);
+            }
+          }
+        }
+      }
+      findMin(categoryTree, 0);
+      if (minDepth === Infinity) return prev;
+
+      function expandAtDepth(nodes: CategoryTreeNode[], depth: number) {
+        for (const node of nodes) {
+          if (node.children.length > 0) {
+            if (!next[node.path] && depth === minDepth) {
+              next[node.path] = true;
+            } else if (next[node.path]) {
+              expandAtDepth(node.children, depth + 1);
+            }
+          }
+        }
+      }
+      expandAtDepth(categoryTree, 0);
+      return next;
     });
+  }, [categoryTree]);
 
-    // Sum and Average columns - no color
-    rowColors.push(COLOR_CONFIG.NEUTRAL_COLOR);
-    rowColors.push(COLOR_CONFIG.NEUTRAL_COLOR);
+  const collapseOneLevel = useCallback(() => {
+    setExpandState(prev => {
+      const next = { ...prev };
+      let maxDepth = -1;
+      function findMax(nodes: CategoryTreeNode[], depth: number) {
+        for (const node of nodes) {
+          if (node.children.length > 0 && next[node.path]) {
+            const hasExpandedChild = node.children.some(c => c.children.length > 0 && next[c.path]);
+            if (!hasExpandedChild) {
+              if (depth > maxDepth) maxDepth = depth;
+            } else {
+              findMax(node.children, depth + 1);
+            }
+          }
+        }
+      }
+      findMax(categoryTree, 0);
+      if (maxDepth === -1) return prev;
 
-    return rowColors;
-  });
+      function collapseAtDepth(nodes: CategoryTreeNode[], depth: number) {
+        for (const node of nodes) {
+          if (node.children.length > 0 && next[node.path]) {
+            if (depth === maxDepth) {
+              next[node.path] = false;
+            } else {
+              collapseAtDepth(node.children, depth + 1);
+            }
+          }
+        }
+      }
+      collapseAtDepth(categoryTree, 0);
+      return next;
+    });
+  }, [categoryTree]);
+
+  const visibleRows = useMemo(
+    () => collectVisibleRows(categoryTree, 0, expandState),
+    [categoryTree, expandState]
+  );
 
   return (
-    <div className="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            {statistics.header.map((header, i) => (
-              <th key={i}>{header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {statistics.tableData.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((cell, cellIndex) => (
+    <>
+      <div className="statistics-controls-bar">
+        <div className="control-group">
+          <button onClick={collapseOneLevel}>Collapse</button>
+          <button onClick={expandOneLevel}>Expand</button>
+        </div>
+        <div className="control-group">
+          <button onClick={collapseAll}>Collapse All</button>
+          <button onClick={expandAll}>Expand All</button>
+        </div>
+        <button
+          className={heatmapEnabled ? 'active' : ''}
+          onClick={() => setHeatmapEnabled(prev => !prev)}
+        >
+          Heatmap
+        </button>
+      </div>
+      <div className="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              {yearMonths.map(ym => (
+                <th key={ym}>{ym}</th>
+              ))}
+              <th>Sum</th>
+              <th>Average</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visibleRows.map(({ node, depth, hasChildren, isExpanded }) => (
+              <tr key={node.path} className={`depth-${Math.min(depth, 3)}`}>
                 <td
-                  key={cellIndex}
-                  style={{
-                    backgroundColor: colorData[rowIndex]?.[cellIndex] || COLOR_CONFIG.NEUTRAL_COLOR,
-                  }}
+                  className={hasChildren ? 'cat-cell-parent' : undefined}
+                  onClick={hasChildren ? () => toggleNode(node.path) : undefined}
                 >
-                  {cell}
+                  <div className="cat-content">
+                    <span className="indent" style={{ width: depth * 16 }} />
+                    {hasChildren ? (
+                      <span className={`chevron${isExpanded ? ' open' : ''}`}>{'\u25B6'}</span>
+                    ) : (
+                      <span className="no-chevron" />
+                    )}
+                    <span>{node.name}</span>
+                  </div>
                 </td>
+                {node.periodTotals.map((val, i) => (
+                  <td
+                    key={i}
+                    className="num-cell"
+                    style={
+                      heatmapEnabled
+                        ? { backgroundColor: calculateCellColor(val, node.average) }
+                        : undefined
+                    }
+                  >
+                    {formatNum(val)}
+                  </td>
+                ))}
+                <td className="num-cell" style={{ fontWeight: 600 }}>{formatNum(node.sum)}</td>
+                <td className="num-cell">{formatNum(node.average)}</td>
+              </tr>
+            ))}
+            <tr className="sum">
+              {footer.map((cell, i) => (
+                <td key={i}>{cell}</td>
               ))}
             </tr>
-          ))}
-          <tr className="sum">
-            {statistics.footer.map((cell, i) => (
-              <td key={i}>{cell}</td>
-            ))}
-          </tr>
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

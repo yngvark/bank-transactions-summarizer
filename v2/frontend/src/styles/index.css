@@ -381,19 +381,20 @@ table th:first-child {
   z-index: 15;
 }
 
-table tbody tr {
+/* Even/odd striping only for transactions table */
+.transactions-section table tbody tr {
   transition: background-color var(--transition);
 }
 
-table tbody tr:hover {
+.transactions-section table tbody tr:hover {
   background-color: var(--primary-light);
 }
 
-table tbody tr:nth-child(even) {
+.transactions-section table tbody tr:nth-child(even) {
   background-color: var(--background);
 }
 
-table tbody tr:nth-child(even):hover {
+.transactions-section table tbody tr:nth-child(even):hover {
   background-color: var(--primary-light);
 }
 
@@ -415,6 +416,122 @@ table tr.sum:hover {
 table tr.sum:hover td {
   background-color: var(--primary-hover) !important;
 }
+
+/* Statistics controls bar */
+.statistics-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--background);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.statistics-controls-bar .control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statistics-controls-bar button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+
+.statistics-controls-bar button:hover {
+  background: var(--primary-light);
+  border-color: #94a3b8;
+}
+
+.statistics-controls-bar button.active {
+  background: var(--text-primary);
+  color: white;
+  border-color: var(--text-primary);
+}
+
+.statistics-controls-bar button.active:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Monospace number cells in statistics table */
+.statistics-section td.num-cell {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Depth-based row styling for hierarchical categories */
+.statistics-section tr.depth-0 {
+  background: #e2e8f0;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.statistics-section tr.depth-0 td { border-bottom: 2px solid #cbd5e1; }
+.statistics-section tr.depth-0 td:first-child { background: #e2e8f0; }
+
+.statistics-section tr.depth-1 {
+  background: #f1f5f9;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.statistics-section tr.depth-1 td { border-bottom: 1px solid #e2e8f0; }
+.statistics-section tr.depth-1 td:first-child { background: #f1f5f9; }
+
+.statistics-section tr.depth-2 {
+  background: #f8fafc;
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+.statistics-section tr.depth-2 td { border-bottom: 1px solid #f1f5f9; }
+.statistics-section tr.depth-2 td:first-child { background: #f8fafc; }
+
+.statistics-section tr.depth-3 {
+  background: white;
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.statistics-section tr.depth-3 td { border-bottom: 1px solid #f8fafc; }
+.statistics-section tr.depth-3 td:first-child { background: white; }
+
+/* Clickable parent category cell */
+td.cat-cell-parent {
+  cursor: pointer;
+  user-select: none;
+}
+td.cat-cell-parent:hover {
+  filter: brightness(0.95);
+}
+
+/* Category content layout */
+.cat-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.indent { flex-shrink: 0; }
+
+/* Chevron indicator */
+.chevron {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 0.6rem;
+  color: #94a3b8;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.chevron.open { transform: rotate(90deg); }
+.no-chevron { display: inline-block; width: 14px; flex-shrink: 0; }
 
 /* Responsive */
 @media (max-width: 768px) {

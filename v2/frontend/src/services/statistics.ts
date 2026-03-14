@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { Transaction, GroupedStatistics, RawRowData } from '../../../shared/types';
+import { buildCategoryTree } from './categoryTree';
 
 export function calculateStatistics(transactionsWithCategory: Transaction[]): GroupedStatistics {
   const groupedData = groupData(transactionsWithCategory);
@@ -56,12 +57,15 @@ export function calculateStatistics(transactionsWithCategory: Transaction[]): Gr
 
   const footer = ['Sum', ...formattedFooterData, formattedSumOfSums, formattedAverageOfAverages];
 
+  const categoryTree = buildCategoryTree(rawTableData, yearMonths);
+
   return {
     header,
     tableData,
     footer,
     rawTableData,
     yearMonths,
+    categoryTree,
   };
 }
 

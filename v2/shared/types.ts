@@ -32,6 +32,17 @@ export interface RawRowData {
   sum: number;
 }
 
+// Node in the category tree for hierarchical display
+export interface CategoryTreeNode {
+  name: string;
+  path: string;
+  depth: number;
+  periodTotals: number[];
+  average: number;
+  sum: number;
+  children: CategoryTreeNode[];
+}
+
 // Grouped statistics data
 export interface GroupedStatistics {
   header: string[];
@@ -39,6 +50,7 @@ export interface GroupedStatistics {
   footer: string[];
   rawTableData: RawRowData[];
   yearMonths: string[];
+  categoryTree: CategoryTreeNode[];
 }
 
 // Color configuration

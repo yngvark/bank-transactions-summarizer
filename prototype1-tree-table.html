@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype 1: Tree Table with Expand/Collapse</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f1f5f9;
+    padding: 2rem;
+    color: #1e293b;
+  }
+  h1 { margin-bottom: 0.5rem; font-size: 1.5rem; }
+  .description {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th {
+    text-align: right;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 2;
+  }
+  th:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+  }
+  td {
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
+  }
+  td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    background: inherit;
+    z-index: 1;
+  }
+  tr:hover { background: #f8fafc; }
+  tr.depth-0 { font-weight: 700; background: #f8fafc; }
+  tr.depth-0 td { border-bottom: 1px solid #e2e8f0; }
+  tr.depth-1 { font-weight: 600; }
+  tr.depth-2 { font-weight: 400; color: #475569; }
+  tr.depth-3 { font-weight: 400; color: #64748b; font-size: 0.75rem; }
+  tr.sum-row { background: #1e293b !important; color: white; font-weight: 700; }
+  tr.sum-row td { border-bottom: none; }
+  tr.sum-row td:first-child { background: #1e293b; }
+
+  .toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    background: #f8fafc;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #475569;
+    margin-right: 4px;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .toggle-btn:hover { background: #e2e8f0; border-color: #94a3b8; }
+  .toggle-placeholder {
+    display: inline-block;
+    width: 18px;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+  .cat-cell {
+    display: flex;
+    align-items: center;
+  }
+  .indent { flex-shrink: 0; }
+
+  .controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .controls button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #475569;
+    transition: all 0.15s;
+  }
+  .controls button:hover { background: #f1f5f9; border-color: #94a3b8; }
+
+  /* Heatmap colors */
+  .cell-high { background-color: #fca5a5; }
+  .cell-mid-high { background-color: #fed7aa; }
+  .cell-mid { background-color: #fef9c3; }
+  .cell-mid-low { background-color: #d9f99d; }
+  .cell-low { background-color: #bbf7d0; }
+</style>
+</head>
+<body>
+
+<h1>Prototype 1: Tree Table</h1>
+<p class="description">
+  Classic expandable tree rows inside the table. Each parent category has a +/- toggle.
+  Clicking it expands or collapses children. Parent rows always show the sum of all
+  descendants. Indentation indicates depth. Each category can be toggled independently.
+</p>
+
+<div class="card">
+  <div class="controls">
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+  </div>
+  <table>
+    <thead><tr id="header-row"></tr></thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<script>
+// --- Sample hierarchical data ---
+// Each node: { name, children?, amounts: { 'YYYY-MM': number } }
+// Leaf nodes have amounts; parent amounts are computed by summing children.
+const categoryTree = [
+  {
+    name: 'Reise (Travel)',
+    children: [
+      {
+        name: 'Flyselskap (Airlines)',
+        children: [
+          { name: 'SAS', amounts: { '2023-01': 3000, '2023-02': 0, '2023-03': 4500, '2023-04': 0, '2023-05': 2000, '2023-06': 6000 } },
+          { name: 'Norwegian', amounts: { '2023-01': 1500, '2023-02': 2200, '2023-03': 0, '2023-04': 3100, '2023-05': 0, '2023-06': 1800 } },
+        ]
+      },
+      {
+        name: 'Hotell (Hotels)',
+        children: [
+          { name: 'Scandic', amounts: { '2023-01': 2500, '2023-02': 0, '2023-03': 3200, '2023-04': 0, '2023-05': 2800, '2023-06': 0 } },
+          { name: 'Thon Hotels', amounts: { '2023-01': 0, '2023-02': 1800, '2023-03': 0, '2023-04': 2100, '2023-05': 0, '2023-06': 1500 } },
+        ]
+      },
+      { name: 'Leiebil (Car rental)', amounts: { '2023-01': 800, '2023-02': 0, '2023-03': 1200, '2023-04': 0, '2023-05': 950, '2023-06': 0 } },
+    ]
+  },
+  {
+    name: 'Mat og drikke (Food & drink)',
+    children: [
+      { name: 'Dagligvarer (Groceries)', amounts: { '2023-01': 6500, '2023-02': 5800, '2023-03': 7200, '2023-04': 6100, '2023-05': 6800, '2023-06': 7500 } },
+      {
+        name: 'Restauranter (Restaurants)',
+        children: [
+          { name: 'Fast food', amounts: { '2023-01': 400, '2023-02': 350, '2023-03': 500, '2023-04': 300, '2023-05': 450, '2023-06': 380 } },
+          { name: 'Fine dining', amounts: { '2023-01': 2200, '2023-02': 0, '2023-03': 1800, '2023-04': 2500, '2023-05': 0, '2023-06': 3000 } },
+          { name: 'Cafes', amounts: { '2023-01': 600, '2023-02': 550, '2023-03': 700, '2023-04': 500, '2023-05': 650, '2023-06': 580 } },
+        ]
+      },
+      { name: 'Alkohol (Alcohol)', amounts: { '2023-01': 1200, '2023-02': 800, '2023-03': 1500, '2023-04': 900, '2023-05': 1100, '2023-06': 1300 } },
+    ]
+  },
+  {
+    name: 'Personlig forbruk (Personal)',
+    children: [
+      { name: 'Klær (Clothing)', amounts: { '2023-01': 3200, '2023-02': 1500, '2023-03': 2800, '2023-04': 4100, '2023-05': 1200, '2023-06': 2600 } },
+      { name: 'Elektronikk (Electronics)', amounts: { '2023-01': 5500, '2023-02': 0, '2023-03': 800, '2023-04': 0, '2023-05': 12000, '2023-06': 0 } },
+      { name: 'Helse (Health)', amounts: { '2023-01': 900, '2023-02': 900, '2023-03': 900, '2023-04': 900, '2023-05': 900, '2023-06': 900 } },
+    ]
+  },
+  {
+    name: 'Hus og innbo (Housing)',
+    children: [
+      { name: 'Forsikring (Insurance)', amounts: { '2023-01': 2000, '2023-02': 2000, '2023-03': 2000, '2023-04': 2000, '2023-05': 2000, '2023-06': 2000 } },
+      { name: 'Vedlikehold (Maintenance)', amounts: { '2023-01': 500, '2023-02': 3200, '2023-03': 0, '2023-04': 800, '2023-05': 0, '2023-06': 4500 } },
+      { name: 'Møbler (Furniture)', amounts: { '2023-01': 0, '2023-02': 8500, '2023-03': 0, '2023-04': 0, '2023-05': 15000, '2023-06': 0 } },
+    ]
+  },
+];
+
+const months = ['2023-01', '2023-02', '2023-03', '2023-04', '2023-05', '2023-06'];
+
+// Compute summed amounts for parent nodes (recursive)
+function computeSums(node) {
+  if (!node.children) return node.amounts;
+  const sums = {};
+  months.forEach(m => sums[m] = 0);
+  node.children.forEach(child => {
+    const childAmounts = computeSums(child);
+    months.forEach(m => { sums[m] += childAmounts[m] || 0; });
+  });
+  node.amounts = sums;
+  return sums;
+}
+categoryTree.forEach(computeSums);
+
+// Flatten tree into rows with depth info
+function flattenTree(nodes, depth = 0) {
+  const rows = [];
+  nodes.forEach(node => {
+    const hasChildren = node.children && node.children.length > 0;
+    const id = `row-${rows.length}-${depth}-${node.name.replace(/\s/g, '_')}`;
+    const sum = months.reduce((s, m) => s + (node.amounts[m] || 0), 0);
+    const avg = Math.round(sum / months.length);
+    rows.push({ id, name: node.name, depth, hasChildren, amounts: node.amounts, sum, avg, expanded: depth < 1, childIds: [] });
+    if (hasChildren) {
+      const childRows = flattenTree(node.children, depth + 1);
+      rows[rows.length - 1].childIds = childRows.filter(r => r.depth === depth + 1).map(r => r.id);
+      childRows.forEach(r => rows.push(r));
+    }
+  });
+  return rows;
+}
+
+let allRows = [];
+let globalIdCounter = 0;
+function buildRows(nodes, depth = 0) {
+  nodes.forEach(node => {
+    const hasChildren = node.children && node.children.length > 0;
+    const id = globalIdCounter++;
+    const sum = months.reduce((s, m) => s + (node.amounts[m] || 0), 0);
+    const avg = Math.round(sum / months.length);
+    const row = { id, name: node.name, depth, hasChildren, amounts: node.amounts, sum, avg, expanded: depth === 0, parentId: null, childIds: [] };
+    allRows.push(row);
+    if (hasChildren) {
+      const childStart = globalIdCounter;
+      buildRows(node.children, depth + 1);
+      // Link children
+      for (let i = childStart; i < globalIdCounter; i++) {
+        if (allRows[i].depth === depth + 1 && allRows[i].parentId === null) {
+          allRows[i].parentId = id;
+          row.childIds.push(i);
+        }
+      }
+    }
+  });
+}
+buildRows(categoryTree);
+
+// Compute grand totals
+const grandTotals = {};
+months.forEach(m => grandTotals[m] = 0);
+categoryTree.forEach(node => months.forEach(m => { grandTotals[m] += node.amounts[m] || 0; }));
+const grandSum = months.reduce((s, m) => s + grandTotals[m], 0);
+const grandAvg = Math.round(grandSum / months.length);
+
+// Heatmap color
+function heatColor(value, avg) {
+  if (avg === 0 || value === 0) return '';
+  const ratio = value / avg;
+  if (ratio >= 2.0) return 'cell-high';
+  if (ratio >= 1.3) return 'cell-mid-high';
+  if (ratio >= 0.8) return 'cell-mid';
+  if (ratio >= 0.5) return 'cell-mid-low';
+  return 'cell-low';
+}
+
+function formatNum(n) {
+  return n === 0 ? '-' : n.toLocaleString('nb-NO');
+}
+
+// Render
+function render() {
+  // Header
+  const headerRow = document.getElementById('header-row');
+  headerRow.innerHTML = '<th>Category</th>' +
+    months.map(m => `<th>${m}</th>`).join('') +
+    '<th>Sum</th><th>Average</th>';
+
+  // Body
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  allRows.forEach(row => {
+    // Visibility: visible if all ancestors are expanded
+    if (!isVisible(row)) return;
+
+    const tr = document.createElement('tr');
+    tr.className = `depth-${Math.min(row.depth, 3)}`;
+
+    // Category cell
+    const catTd = document.createElement('td');
+    const catDiv = document.createElement('div');
+    catDiv.className = 'cat-cell';
+
+    // Indent
+    const indent = document.createElement('span');
+    indent.className = 'indent';
+    indent.style.width = (row.depth * 20) + 'px';
+    catDiv.appendChild(indent);
+
+    // Toggle or placeholder
+    if (row.hasChildren) {
+      const btn = document.createElement('span');
+      btn.className = 'toggle-btn';
+      btn.textContent = row.expanded ? '−' : '+';
+      btn.onclick = () => { toggleRow(row.id); };
+      catDiv.appendChild(btn);
+    } else {
+      const ph = document.createElement('span');
+      ph.className = 'toggle-placeholder';
+      catDiv.appendChild(ph);
+    }
+
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = row.name;
+    catDiv.appendChild(nameSpan);
+    catTd.appendChild(catDiv);
+    tr.appendChild(catTd);
+
+    // Month cells
+    months.forEach(m => {
+      const td = document.createElement('td');
+      td.textContent = formatNum(row.amounts[m] || 0);
+      const cls = heatColor(row.amounts[m] || 0, row.avg);
+      if (cls) td.className = cls;
+      tr.appendChild(td);
+    });
+
+    // Sum & Average
+    const sumTd = document.createElement('td');
+    sumTd.textContent = formatNum(row.sum);
+    tr.appendChild(sumTd);
+    const avgTd = document.createElement('td');
+    avgTd.textContent = formatNum(row.avg);
+    tr.appendChild(avgTd);
+
+    tbody.appendChild(tr);
+  });
+
+  // Grand total row
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'sum-row';
+  const sumCatTd = document.createElement('td');
+  sumCatTd.textContent = 'Total';
+  sumTr.appendChild(sumCatTd);
+  months.forEach(m => {
+    const td = document.createElement('td');
+    td.textContent = formatNum(grandTotals[m]);
+    sumTr.appendChild(td);
+  });
+  const gsTd = document.createElement('td');
+  gsTd.textContent = formatNum(grandSum);
+  sumTr.appendChild(gsTd);
+  const gaTd = document.createElement('td');
+  gaTd.textContent = formatNum(grandAvg);
+  sumTr.appendChild(gaTd);
+  tbody.appendChild(sumTr);
+}
+
+function isVisible(row) {
+  if (row.parentId === null) return true;
+  const parent = allRows[row.parentId];
+  if (!parent.expanded) return false;
+  return isVisible(parent);
+}
+
+function toggleRow(id) {
+  allRows[id].expanded = !allRows[id].expanded;
+  render();
+}
+
+function expandAll() {
+  allRows.forEach(r => { if (r.hasChildren) r.expanded = true; });
+  render();
+}
+
+function collapseAll() {
+  allRows.forEach(r => { if (r.hasChildren) r.expanded = false; });
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
