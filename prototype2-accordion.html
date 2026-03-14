@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype 2: Nested Accordion Panels</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f1f5f9;
+    padding: 2rem;
+    color: #1e293b;
+  }
+  h1 { margin-bottom: 0.5rem; font-size: 1.5rem; }
+  .description {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+
+  .month-header {
+    display: grid;
+    grid-template-columns: 1fr repeat(8, 90px);
+    background: #1e293b;
+    color: white;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 8px 8px 0 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .month-header span {
+    padding: 0.6rem 0.5rem;
+    text-align: right;
+  }
+  .month-header span:first-child { text-align: left; }
+
+  .category-group {
+    margin-bottom: 2px;
+  }
+
+  /* Depth 0 - top level */
+  .cat-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(8, 90px);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 0.8rem;
+  }
+  .cat-row:hover { filter: brightness(0.97); }
+  .cat-row span {
+    padding: 0.5rem 0.5rem;
+    text-align: right;
+  }
+  .cat-row span:first-child {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .depth-0 > .cat-row {
+    background: #e2e8f0;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-bottom: 2px solid #cbd5e1;
+  }
+  .depth-1 > .cat-row {
+    background: #f1f5f9;
+    font-weight: 600;
+    font-size: 0.8rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .depth-2 > .cat-row {
+    background: #f8fafc;
+    font-weight: 400;
+    font-size: 0.78rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .depth-3 > .cat-row {
+    background: white;
+    font-weight: 400;
+    font-size: 0.75rem;
+    color: #64748b;
+    border-bottom: 1px solid #f8fafc;
+  }
+
+  .children {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  .children.collapsed {
+    max-height: 0 !important;
+  }
+
+  .chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+    font-size: 0.6rem;
+    color: #94a3b8;
+    width: 14px;
+    text-align: center;
+  }
+  .chevron.open { transform: rotate(90deg); }
+  .no-chevron { display: inline-block; width: 14px; }
+
+  .cat-name-indent {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Heatmap bars (mini inline bars instead of cell colors) */
+  .bar-cell {
+    position: relative;
+    text-align: right;
+    padding-right: 0.5rem !important;
+  }
+  .bar-bg {
+    position: absolute;
+    left: 2px;
+    top: 3px;
+    bottom: 3px;
+    border-radius: 3px;
+    opacity: 0.25;
+    z-index: 0;
+  }
+  .bar-val {
+    position: relative;
+    z-index: 1;
+  }
+
+  .total-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(8, 90px);
+    background: #1e293b;
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-radius: 0 0 8px 8px;
+  }
+  .total-row span {
+    padding: 0.6rem 0.5rem;
+    text-align: right;
+  }
+  .total-row span:first-child { text-align: left; }
+
+  .controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .controls button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+  .controls button:hover { background: #f1f5f9; }
+</style>
+</head>
+<body>
+
+<h1>Prototype 2: Nested Accordion Panels</h1>
+<p class="description">
+  Each category level is a collapsible panel. Clicking a category row reveals its
+  sub-categories nested inside. The visual hierarchy is shown through background
+  shade changes and indentation. Mini bar charts in cells show relative magnitude.
+  Parent rows always show summed totals.
+</p>
+
+<div class="controls">
+  <button onclick="expandAll()">Expand All</button>
+  <button onclick="collapseAll()">Collapse All</button>
+</div>
+
+<div id="container"></div>
+
+<script>
+const months = ['2023-01', '2023-02', '2023-03', '2023-04', '2023-05', '2023-06'];
+
+const categoryTree = [
+  {
+    name: 'Reise (Travel)',
+    children: [
+      {
+        name: 'Flyselskap (Airlines)',
+        children: [
+          { name: 'SAS', amounts: { '2023-01': 3000, '2023-02': 0, '2023-03': 4500, '2023-04': 0, '2023-05': 2000, '2023-06': 6000 } },
+          { name: 'Norwegian', amounts: { '2023-01': 1500, '2023-02': 2200, '2023-03': 0, '2023-04': 3100, '2023-05': 0, '2023-06': 1800 } },
+        ]
+      },
+      {
+        name: 'Hotell (Hotels)',
+        children: [
+          { name: 'Scandic', amounts: { '2023-01': 2500, '2023-02': 0, '2023-03': 3200, '2023-04': 0, '2023-05': 2800, '2023-06': 0 } },
+          { name: 'Thon Hotels', amounts: { '2023-01': 0, '2023-02': 1800, '2023-03': 0, '2023-04': 2100, '2023-05': 0, '2023-06': 1500 } },
+        ]
+      },
+      { name: 'Leiebil (Car rental)', amounts: { '2023-01': 800, '2023-02': 0, '2023-03': 1200, '2023-04': 0, '2023-05': 950, '2023-06': 0 } },
+    ]
+  },
+  {
+    name: 'Mat og drikke (Food & drink)',
+    children: [
+      { name: 'Dagligvarer (Groceries)', amounts: { '2023-01': 6500, '2023-02': 5800, '2023-03': 7200, '2023-04': 6100, '2023-05': 6800, '2023-06': 7500 } },
+      {
+        name: 'Restauranter (Restaurants)',
+        children: [
+          { name: 'Fast food', amounts: { '2023-01': 400, '2023-02': 350, '2023-03': 500, '2023-04': 300, '2023-05': 450, '2023-06': 380 } },
+          { name: 'Fine dining', amounts: { '2023-01': 2200, '2023-02': 0, '2023-03': 1800, '2023-04': 2500, '2023-05': 0, '2023-06': 3000 } },
+          { name: 'Cafes', amounts: { '2023-01': 600, '2023-02': 550, '2023-03': 700, '2023-04': 500, '2023-05': 650, '2023-06': 580 } },
+        ]
+      },
+      { name: 'Alkohol (Alcohol)', amounts: { '2023-01': 1200, '2023-02': 800, '2023-03': 1500, '2023-04': 900, '2023-05': 1100, '2023-06': 1300 } },
+    ]
+  },
+  {
+    name: 'Personlig forbruk (Personal)',
+    children: [
+      { name: 'Klaer (Clothing)', amounts: { '2023-01': 3200, '2023-02': 1500, '2023-03': 2800, '2023-04': 4100, '2023-05': 1200, '2023-06': 2600 } },
+      { name: 'Elektronikk (Electronics)', amounts: { '2023-01': 5500, '2023-02': 0, '2023-03': 800, '2023-04': 0, '2023-05': 12000, '2023-06': 0 } },
+      { name: 'Helse (Health)', amounts: { '2023-01': 900, '2023-02': 900, '2023-03': 900, '2023-04': 900, '2023-05': 900, '2023-06': 900 } },
+    ]
+  },
+  {
+    name: 'Hus og innbo (Housing)',
+    children: [
+      { name: 'Forsikring (Insurance)', amounts: { '2023-01': 2000, '2023-02': 2000, '2023-03': 2000, '2023-04': 2000, '2023-05': 2000, '2023-06': 2000 } },
+      { name: 'Vedlikehold (Maintenance)', amounts: { '2023-01': 500, '2023-02': 3200, '2023-03': 0, '2023-04': 800, '2023-05': 0, '2023-06': 4500 } },
+      { name: 'Mobler (Furniture)', amounts: { '2023-01': 0, '2023-02': 8500, '2023-03': 0, '2023-04': 0, '2023-05': 15000, '2023-06': 0 } },
+    ]
+  },
+];
+
+function computeSums(node) {
+  if (!node.children) return node.amounts;
+  const sums = {};
+  months.forEach(m => sums[m] = 0);
+  node.children.forEach(child => {
+    const childAmounts = computeSums(child);
+    months.forEach(m => { sums[m] += childAmounts[m] || 0; });
+  });
+  node.amounts = sums;
+  return sums;
+}
+categoryTree.forEach(computeSums);
+
+// Find global max for bar scaling
+let globalMax = 0;
+function findMax(node) {
+  months.forEach(m => { if ((node.amounts[m] || 0) > globalMax) globalMax = node.amounts[m]; });
+  if (node.children) node.children.forEach(findMax);
+}
+categoryTree.forEach(findMax);
+
+function formatNum(n) {
+  return n === 0 ? '-' : n.toLocaleString('nb-NO');
+}
+
+function barColor(depth) {
+  const colors = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd'];
+  return colors[Math.min(depth, colors.length - 1)];
+}
+
+let idCounter = 0;
+
+function buildCategoryGroup(node, depth) {
+  const hasChildren = node.children && node.children.length > 0;
+  const sum = months.reduce((s, m) => s + (node.amounts[m] || 0), 0);
+  const avg = Math.round(sum / months.length);
+  const groupId = 'grp-' + (idCounter++);
+
+  const group = document.createElement('div');
+  group.className = `category-group depth-${Math.min(depth, 3)}`;
+
+  // Row
+  const row = document.createElement('div');
+  row.className = 'cat-row';
+
+  // Name cell
+  const nameSpan = document.createElement('span');
+  const indent = document.createElement('span');
+  indent.style.width = (depth * 16) + 'px';
+  indent.style.display = 'inline-block';
+  indent.style.flexShrink = '0';
+
+  if (hasChildren) {
+    const chevron = document.createElement('span');
+    chevron.className = 'chevron open';
+    chevron.textContent = '\u25B6';
+    chevron.id = 'chev-' + groupId;
+    nameSpan.appendChild(indent);
+    nameSpan.appendChild(chevron);
+  } else {
+    const noChev = document.createElement('span');
+    noChev.className = 'no-chevron';
+    nameSpan.appendChild(indent);
+    nameSpan.appendChild(noChev);
+  }
+  const nameText = document.createElement('span');
+  nameText.textContent = node.name;
+  nameSpan.appendChild(nameText);
+  row.appendChild(nameSpan);
+
+  // Month cells with mini bars
+  months.forEach(m => {
+    const cell = document.createElement('span');
+    cell.className = 'bar-cell';
+    const val = node.amounts[m] || 0;
+
+    const bg = document.createElement('span');
+    bg.className = 'bar-bg';
+    const pct = globalMax > 0 ? (val / globalMax) * 100 : 0;
+    bg.style.width = pct + '%';
+    bg.style.backgroundColor = barColor(depth);
+    cell.appendChild(bg);
+
+    const valSpan = document.createElement('span');
+    valSpan.className = 'bar-val';
+    valSpan.textContent = formatNum(val);
+    cell.appendChild(valSpan);
+
+    row.appendChild(cell);
+  });
+
+  // Sum & Average
+  const sumSpan = document.createElement('span');
+  sumSpan.textContent = formatNum(sum);
+  sumSpan.style.fontWeight = '600';
+  row.appendChild(sumSpan);
+
+  const avgSpan = document.createElement('span');
+  avgSpan.textContent = formatNum(avg);
+  row.appendChild(avgSpan);
+
+  group.appendChild(row);
+
+  // Children container
+  if (hasChildren) {
+    const childDiv = document.createElement('div');
+    childDiv.className = 'children';
+    childDiv.id = 'children-' + groupId;
+
+    node.children.forEach(child => {
+      childDiv.appendChild(buildCategoryGroup(child, depth + 1));
+    });
+
+    // Measure natural height after building
+    group.appendChild(childDiv);
+
+    row.addEventListener('click', () => {
+      const isCollapsed = childDiv.classList.contains('collapsed');
+      const chevron = document.getElementById('chev-' + groupId);
+      if (isCollapsed) {
+        childDiv.classList.remove('collapsed');
+        childDiv.style.maxHeight = childDiv.scrollHeight + 'px';
+        if (chevron) chevron.classList.add('open');
+      } else {
+        childDiv.style.maxHeight = childDiv.scrollHeight + 'px';
+        // Force reflow
+        childDiv.offsetHeight;
+        childDiv.classList.add('collapsed');
+        if (chevron) chevron.classList.remove('open');
+      }
+    });
+  }
+
+  return group;
+}
+
+function render() {
+  const container = document.getElementById('container');
+  container.innerHTML = '';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'month-header';
+  header.innerHTML = '<span>Category</span>' +
+    months.map(m => `<span>${m}</span>`).join('') +
+    '<span>Sum</span><span>Avg</span>';
+  container.appendChild(header);
+
+  // Categories
+  categoryTree.forEach(node => {
+    container.appendChild(buildCategoryGroup(node, 0));
+  });
+
+  // Total row
+  const grandTotals = {};
+  months.forEach(m => grandTotals[m] = 0);
+  categoryTree.forEach(node => months.forEach(m => { grandTotals[m] += node.amounts[m] || 0; }));
+  const grandSum = months.reduce((s, m) => s + grandTotals[m], 0);
+  const grandAvg = Math.round(grandSum / months.length);
+
+  const totalRow = document.createElement('div');
+  totalRow.className = 'total-row';
+  totalRow.innerHTML = '<span>Total</span>' +
+    months.map(m => `<span>${formatNum(grandTotals[m])}</span>`).join('') +
+    `<span>${formatNum(grandSum)}</span><span>${formatNum(grandAvg)}</span>`;
+  container.appendChild(totalRow);
+
+  // Set initial max-heights for all children containers
+  document.querySelectorAll('.children').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 'px';
+  });
+}
+
+function expandAll() {
+  document.querySelectorAll('.children').forEach(el => {
+    el.classList.remove('collapsed');
+    el.style.maxHeight = el.scrollHeight + 'px';
+  });
+  document.querySelectorAll('.chevron').forEach(el => el.classList.add('open'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.children').forEach(el => {
+    el.style.maxHeight = el.scrollHeight + 'px';
+    el.offsetHeight;
+    el.classList.add('collapsed');
+  });
+  document.querySelectorAll('.chevron').forEach(el => el.classList.remove('open'));
+}
+
+render();
+</script>
+</body>
+</html>
