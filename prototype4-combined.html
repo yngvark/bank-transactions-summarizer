@@ -54,28 +54,6 @@
   }
   .controls-bar button:hover { background: #f1f5f9; border-color: #94a3b8; }
 
-  .detail-buttons {
-    display: flex;
-    gap: 0.3rem;
-  }
-  .detail-btn {
-    padding: 0.35rem 0.7rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.75rem;
-    color: #475569;
-    transition: all 0.15s;
-  }
-  .detail-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
-  .detail-btn.active {
-    background: #eef2ff;
-    color: #6366f1;
-    border-color: #c7d2fe;
-    font-weight: 600;
-  }
-
   .card {
     background: white;
     border-radius: 12px;
@@ -113,12 +91,14 @@
     text-align: right;
     border-bottom: 1px solid #f1f5f9;
     white-space: nowrap;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
   }
   td:first-child {
     text-align: left;
     position: sticky;
     left: 0;
     z-index: 1;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
   /* Depth-based row styling (from prototype 2) */
@@ -202,17 +182,12 @@
 
 <div class="controls-bar">
   <div class="control-group">
-    <button onclick="expandAllNodes()">Expand All</button>
-    <button onclick="collapseAllNodes()">Collapse All</button>
+    <button onclick="collapseOneLevel()">Collapse</button>
+    <button onclick="expandOneLevel()">Expand</button>
   </div>
   <div class="control-group">
-    <label>Detail Level:</label>
-    <div class="detail-buttons" id="detailButtons">
-      <button class="detail-btn active" onclick="setDepth(0)">Overview</button>
-      <button class="detail-btn" onclick="setDepth(1)">Categories</button>
-      <button class="detail-btn" onclick="setDepth(2)">Detailed</button>
-      <button class="detail-btn" onclick="setDepth(3)">Everything</button>
-    </div>
+    <button onclick="collapseAllNodes()">Collapse All</button>
+    <button onclick="expandAllNodes()">Expand All</button>
   </div>
 </div>
 
@@ -299,8 +274,7 @@ function initTree(nodes) {
 initTree(categoryTree);
 
 // --- State ---
-let globalDepth = 0;
-const expandOverrides = {}; // nodeId -> true/false
+const expandState = {}; // nodeId -> true/false (expanded or not)
 
 // --- Heatmap: continuous red-green interpolation (from app) ---
 const MAX_RED_RATIO = 2.0;
@@ -342,18 +316,17 @@ function formatNum(n) {
   return n === 0 ? '-' : n.toLocaleString('nb-NO');
 }
 
-// --- Visibility logic (from prototype 3) ---
-function shouldShowChildren(node, currentDepth) {
+// --- Visibility logic ---
+function shouldShowChildren(node) {
   if (!node.children) return false;
-  if (expandOverrides[node.nodeId] !== undefined) return expandOverrides[node.nodeId];
-  return currentDepth < globalDepth;
+  return !!expandState[node.nodeId];
 }
 
 function collectVisibleRows(nodes, depth) {
   const rows = [];
   nodes.forEach(node => {
     const hasChildren = node.children && node.children.length > 0;
-    const showChildren = hasChildren && shouldShowChildren(node, depth);
+    const showChildren = hasChildren && shouldShowChildren(node);
     rows.push({ node, depth, hasChildren, showChildren });
     if (showChildren) {
       rows.push(...collectVisibleRows(node.children, depth + 1));
@@ -364,20 +337,7 @@ function collectVisibleRows(nodes, depth) {
 
 // --- Interactions ---
 function toggleNode(nodeId) {
-  const current = expandOverrides[nodeId];
-  if (current === undefined) {
-    expandOverrides[nodeId] = true;
-  } else if (current === true) {
-    expandOverrides[nodeId] = false;
-  } else {
-    delete expandOverrides[nodeId];
-  }
-  render();
-}
-
-function setDepth(d) {
-  globalDepth = d;
-  Object.keys(expandOverrides).forEach(k => delete expandOverrides[k]);
+  expandState[nodeId] = !expandState[nodeId];
   render();
 }
 
@@ -385,7 +345,7 @@ function expandAllNodes() {
   function walk(nodes) {
     nodes.forEach(node => {
       if (node.children) {
-        expandOverrides[node.nodeId] = true;
+        expandState[node.nodeId] = true;
         walk(node.children);
       }
     });
@@ -398,7 +358,7 @@ function collapseAllNodes() {
   function walk(nodes) {
     nodes.forEach(node => {
       if (node.children) {
-        expandOverrides[node.nodeId] = false;
+        expandState[node.nodeId] = false;
         walk(node.children);
       }
     });
@@ -407,13 +367,73 @@ function collapseAllNodes() {
   render();
 }
 
+// Expand one level: find the shallowest currently-visible collapsed parent and expand all at that depth
+function expandOneLevel() {
+  let minDepth = Infinity;
+  function findMinCollapsed(nodes, depth) {
+    nodes.forEach(node => {
+      if (node.children) {
+        if (!expandState[node.nodeId]) {
+          if (depth < minDepth) minDepth = depth;
+        } else {
+          findMinCollapsed(node.children, depth + 1);
+        }
+      }
+    });
+  }
+  findMinCollapsed(categoryTree, 0);
+  if (minDepth === Infinity) return;
+
+  function expandAtDepth(nodes, depth) {
+    nodes.forEach(node => {
+      if (node.children) {
+        if (!expandState[node.nodeId] && depth === minDepth) {
+          expandState[node.nodeId] = true;
+        } else if (expandState[node.nodeId]) {
+          expandAtDepth(node.children, depth + 1);
+        }
+      }
+    });
+  }
+  expandAtDepth(categoryTree, 0);
+  render();
+}
+
+// Collapse one level: find the deepest currently-visible expanded parent (with no expanded children) and collapse all at that depth
+function collapseOneLevel() {
+  let maxDepth = -1;
+  function findMaxExpanded(nodes, depth) {
+    nodes.forEach(node => {
+      if (node.children && expandState[node.nodeId]) {
+        const hasExpandedChild = node.children.some(c => c.children && expandState[c.nodeId]);
+        if (!hasExpandedChild) {
+          if (depth > maxDepth) maxDepth = depth;
+        } else {
+          findMaxExpanded(node.children, depth + 1);
+        }
+      }
+    });
+  }
+  findMaxExpanded(categoryTree, 0);
+  if (maxDepth === -1) return;
+
+  function collapseAtDepth(nodes, depth) {
+    nodes.forEach(node => {
+      if (node.children && expandState[node.nodeId]) {
+        if (depth === maxDepth) {
+          expandState[node.nodeId] = false;
+        } else {
+          collapseAtDepth(node.children, depth + 1);
+        }
+      }
+    });
+  }
+  collapseAtDepth(categoryTree, 0);
+  render();
+}
+
 // --- Render ---
 function render() {
-  // Update detail level buttons
-  document.querySelectorAll('#detailButtons .detail-btn').forEach((el, i) => {
-    el.classList.toggle('active', i === globalDepth);
-  });
-
   // Header
   const headerRow = document.getElementById('header-row');
   headerRow.innerHTML = '<th>Category</th>' +
