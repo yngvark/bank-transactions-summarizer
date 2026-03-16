@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 interface DisplaySettingsProps {
   textSize: string;
   spacing: string;
@@ -31,6 +33,16 @@ export function applyDisplaySettings(textSize: string, spacing: string) {
 }
 
 function DisplaySettings({ textSize, spacing, onTextSizeChange, onSpacingChange }: DisplaySettingsProps) {
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
   return (
     <div className="display-settings">
       <div className="display-settings-group">
@@ -63,6 +75,18 @@ function DisplaySettings({ textSize, spacing, onTextSizeChange, onSpacingChange 
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="theme-toggle">
+        <span className="theme-toggle-label">Theme:</span>
+        <button
+          type="button"
+          className="theme-toggle-button"
+          onClick={() => setIsDark(!isDark)}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+        </button>
       </div>
     </div>
   );

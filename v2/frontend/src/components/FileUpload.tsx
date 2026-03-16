@@ -73,6 +73,11 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
         accept=".xlsx, .xls"
         onChange={handleFileChange}
       />
+      <svg className="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
       <label htmlFor="fileInput" className="file-upload-label">
         <span>Upload Excel File</span>
       </label>
@@ -81,6 +86,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
         <span className="file-icon">📄</span>
         <span className="file-name">{currentFileName}</span>
       </div>
+      <p className="upload-helper-text">Supports .xlsx and .xls files</p>
     </div>
   );
 }
