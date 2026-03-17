@@ -19,6 +19,7 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 - ✅ ALWAYS use playwright skill for verifying UI or frontend changes
 - ✅ ALWAYS commit changes when done
+- ✅ ALWAYS include screenshots in PRs (store in `history/` folder)
 
 ## AI Planning Documents
 

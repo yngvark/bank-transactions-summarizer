@@ -1,19 +1,28 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../shared/types';
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
 }
 
-const COLOR_CONFIG: ColorConfig = {
+const LIGHT_COLOR_CONFIG: ColorConfig = {
   MAX_RED_RATIO: 2.0,
   MAX_GREEN_RATIO: 0.5,
-  MAX_RED_COLOR: '#f87171',    // Soft coral red
+  MAX_RED_COLOR: '#fca5a5',    // Soft coral red
   MAX_GREEN_COLOR: '#86efac',  // Soft mint green
   NEUTRAL_COLOR: '#ffffff',
 };
 
-function calculateCellColor(cellValue: number, average: number): string {
+const DARK_COLOR_CONFIG: ColorConfig = {
+  MAX_RED_RATIO: 2.0,
+  MAX_GREEN_RATIO: 0.5,
+  MAX_RED_COLOR: '#7f1d1d',    // Dark red
+  MAX_GREEN_COLOR: '#14532d',  // Dark green
+  NEUTRAL_COLOR: '#1e1e2e',    // Dark surface
+};
+
+function calculateCellColor(cellValue: number, average: number, isDark: boolean): string {
+  const COLOR_CONFIG = isDark ? DARK_COLOR_CONFIG : LIGHT_COLOR_CONFIG;
   if (average === 0) return COLOR_CONFIG.NEUTRAL_COLOR;
 
   const ratio = cellValue / average;
@@ -88,7 +97,16 @@ function collectVisibleRows(
 function StatisticsTable({ statistics }: StatisticsTableProps) {
   const [expandState, setExpandState] = useState<Record<string, boolean>>({});
   const [heatmapEnabled, setHeatmapEnabled] = useState(true);
+  const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setTheme(document.documentElement.getAttribute('data-theme') || 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => observer.disconnect();
+  }, []);
 
   const toggleNode = useCallback((path: string) => {
     setExpandState(prev => ({ ...prev, [path]: !prev[path] }));
@@ -239,7 +257,7 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
                     className="num-cell"
                     style={
                       heatmapEnabled
-                        ? { backgroundColor: calculateCellColor(val, node.average) }
+                        ? { backgroundColor: calculateCellColor(val, node.average, theme === 'dark') }
                         : undefined
                     }
                   >
