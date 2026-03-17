@@ -647,6 +647,23 @@ table tr.sum:hover td {
 .statistics-section tr.depth-3 td { border-bottom: 1px solid #f8fafc; }
 .statistics-section tr.depth-3 td:first-child { background: white; }
 
+/* Dark mode depth styling */
+[data-theme="dark"] .statistics-section tr.depth-0 { background: #2a2a3e; }
+[data-theme="dark"] .statistics-section tr.depth-0 td { border-bottom: 2px solid #3e3e56; }
+[data-theme="dark"] .statistics-section tr.depth-0 td:first-child { background: #2a2a3e; }
+
+[data-theme="dark"] .statistics-section tr.depth-1 { background: #232336; }
+[data-theme="dark"] .statistics-section tr.depth-1 td { border-bottom: 1px solid #2a2a3e; }
+[data-theme="dark"] .statistics-section tr.depth-1 td:first-child { background: #232336; }
+
+[data-theme="dark"] .statistics-section tr.depth-2 { background: #1e1e2e; }
+[data-theme="dark"] .statistics-section tr.depth-2 td { border-bottom: 1px solid #232336; }
+[data-theme="dark"] .statistics-section tr.depth-2 td:first-child { background: #1e1e2e; }
+
+[data-theme="dark"] .statistics-section tr.depth-3 { background: #1a1a2a; color: #94a3b8; }
+[data-theme="dark"] .statistics-section tr.depth-3 td { border-bottom: 1px solid #1e1e2e; }
+[data-theme="dark"] .statistics-section tr.depth-3 td:first-child { background: #1a1a2a; }
+
 /* Clickable parent category cell */
 td.cat-cell-parent {
   cursor: pointer;
