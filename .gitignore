@@ -14,3 +14,6 @@ playwright-report/
 test-results/
 playwright/.cache/
 .playwright-cli
+
+# Claude worktrees
+.worktrees/
