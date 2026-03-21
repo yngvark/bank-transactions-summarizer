@@ -16,4 +16,4 @@ playwright/.cache/
 .playwright-cli
 
 # Claude worktrees
-.worktrees/
+.claude/.worktrees/
