@@ -8,6 +8,9 @@ test.describe('Dark Mode Contrast', () => {
     await page.click('text=Load sample data');
     await page.waitForSelector('.statistics-section table tbody tr');
 
+    // Enable heatmap (disabled by default)
+    await page.click('button:has-text("Heatmap")');
+
     // Toggle dark mode via the theme button
     await page.click('.theme-toggle-button');
     // Verify dark mode is active

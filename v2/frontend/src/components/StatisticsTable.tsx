@@ -96,7 +96,7 @@ function collectVisibleRows(
 
 function StatisticsTable({ statistics }: StatisticsTableProps) {
   const [expandState, setExpandState] = useState<Record<string, boolean>>({});
-  const [heatmapEnabled, setHeatmapEnabled] = useState(true);
+  const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
 
