@@ -1,4 +1,4 @@
-.PHONY: dev help install build stop
+.PHONY: dev help install build run stop
 
 PORT ?= $(shell awk 'BEGIN{srand(); print int(rand()*6000)+3000}')
 
@@ -9,11 +9,11 @@ install: ## Install dependencies
 	@echo "Installing frontend dependencies..."
 	@(cd v2/frontend && npm install)
 
-build: ## Build frontend
+build: install ## Build frontend
 	@echo "Building frontend..."
 	@(cd v2/frontend && npm run build)
 
-run: ## Run frontend in development mode (use PORT=XXXX for custom port)
+run: install ## Run frontend in development mode (use PORT=XXXX for custom port)
 	@echo "Starting development server on port $(PORT)..."
 	@echo $(PORT) > .dev-port
 	@(cd v2/frontend && PORT=$(PORT) npm run dev) & \
