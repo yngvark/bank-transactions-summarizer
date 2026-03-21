@@ -1,38 +1,28 @@
 import { useEffect, useState } from 'react';
 
 interface DisplaySettingsProps {
-  textSize: string;
-  spacing: string;
-  onTextSizeChange: (size: string) => void;
-  onSpacingChange: (spacing: string) => void;
+  density: string;
+  onDensityChange: (density: string) => void;
 }
 
-const TEXT_SIZES = [
-  { value: 'compact', label: 'Compact', fontSize: '0.65rem', headerSize: '0.55rem' },
-  { value: 'small', label: 'Small', fontSize: '0.75rem', headerSize: '0.65rem' },
-  { value: 'medium', label: 'Medium', fontSize: '0.875rem', headerSize: '0.75rem' },
-  { value: 'large', label: 'Large', fontSize: '1rem', headerSize: '0.875rem' },
+const DENSITIES = [
+  { value: 'compact', label: 'Compact', fontSize: '0.65rem', headerSize: '0.55rem', padding: '0.2rem 0.3rem' },
+  { value: 'normal', label: 'Normal', fontSize: '0.8rem', headerSize: '0.7rem', padding: '0.5rem 0.65rem' },
+  { value: 'comfortable', label: 'Comfortable', fontSize: '1rem', headerSize: '0.875rem', padding: '0.85rem 1.1rem' },
+  { value: 'spacious', label: 'Spacious', fontSize: '1.25rem', headerSize: '1.1rem', padding: '1.2rem 1.5rem' },
 ];
 
-const SPACINGS = [
-  { value: 'tight', label: 'Tight', padding: '0.25rem 0.35rem' },
-  { value: 'compact', label: 'Compact', padding: '0.4rem 0.5rem' },
-  { value: 'normal', label: 'Normal', padding: '0.75rem 1rem' },
-  { value: 'relaxed', label: 'Relaxed', padding: '1rem 1.25rem' },
-];
-
-export function applyDisplaySettings(textSize: string, spacing: string) {
+export function applyDisplaySettings(density: string) {
   const root = document.documentElement;
 
-  const sizeConfig = TEXT_SIZES.find(s => s.value === textSize) || TEXT_SIZES[1];
-  const spacingConfig = SPACINGS.find(s => s.value === spacing) || SPACINGS[1];
+  const config = DENSITIES.find(d => d.value === density) || DENSITIES[1];
 
-  root.style.setProperty('--table-font-size', sizeConfig.fontSize);
-  root.style.setProperty('--table-header-font-size', sizeConfig.headerSize);
-  root.style.setProperty('--table-cell-padding', spacingConfig.padding);
+  root.style.setProperty('--table-font-size', config.fontSize);
+  root.style.setProperty('--table-header-font-size', config.headerSize);
+  root.style.setProperty('--table-cell-padding', config.padding);
 }
 
-function DisplaySettings({ textSize, spacing, onTextSizeChange, onSpacingChange }: DisplaySettingsProps) {
+function DisplaySettings({ density, onDensityChange }: DisplaySettingsProps) {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
     return saved === 'dark';
@@ -46,32 +36,16 @@ function DisplaySettings({ textSize, spacing, onTextSizeChange, onSpacingChange 
   return (
     <div className="display-settings">
       <div className="display-settings-group">
-        <span className="display-settings-label">Text size:</span>
+        <span className="display-settings-label">Density:</span>
         <div className="segmented-control">
-          {TEXT_SIZES.map(size => (
+          {DENSITIES.map(d => (
             <button
-              key={size.value}
+              key={d.value}
               type="button"
-              className={`segmented-control-button ${textSize === size.value ? 'active' : ''}`}
-              onClick={() => onTextSizeChange(size.value)}
+              className={`segmented-control-button ${density === d.value ? 'active' : ''}`}
+              onClick={() => onDensityChange(d.value)}
             >
-              {size.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="display-settings-group">
-        <span className="display-settings-label">Spacing:</span>
-        <div className="segmented-control">
-          {SPACINGS.map(s => (
-            <button
-              key={s.value}
-              type="button"
-              className={`segmented-control-button ${spacing === s.value ? 'active' : ''}`}
-              onClick={() => onSpacingChange(s.value)}
-            >
-              {s.label}
+              {d.label}
             </button>
           ))}
         </div>

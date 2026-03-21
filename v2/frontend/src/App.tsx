@@ -20,13 +20,12 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFrom, setPeriodFrom] = useState('');
   const [periodTo, setPeriodTo] = useState('');
-  const [textSize, setTextSize] = useState('small');
-  const [spacing, setSpacing] = useState('compact');
+  const [density, setDensity] = useState('normal');
 
   // Apply display settings when they change
   useEffect(() => {
-    applyDisplaySettings(textSize, spacing);
-  }, [textSize, spacing]);
+    applyDisplaySettings(density);
+  }, [density]);
 
   // Process transactions when data or filters change
   const processTransactions = useCallback(async () => {
@@ -125,10 +124,8 @@ function App() {
             <h2>Spending by Category</h2>
             <StatisticsTable statistics={statistics} />
             <DisplaySettings
-              textSize={textSize}
-              spacing={spacing}
-              onTextSizeChange={setTextSize}
-              onSpacingChange={setSpacing}
+              density={density}
+              onDensityChange={setDensity}
             />
           </section>
         )}

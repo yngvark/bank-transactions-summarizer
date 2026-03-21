@@ -47,26 +47,22 @@ test.describe('Mobile Responsive Design', () => {
 
   test('should stack display settings vertically on mobile', async ({ page }) => {
     await page.goto('/');
-    
+
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
-    
+
     // Wait for display settings to appear
-    await page.waitForSelector('text=Text size:');
-    
+    await page.waitForSelector('text=Density:');
+
     // Get the display settings container
     const displaySettings = page.locator('div:has(button:has-text("Compact"))').first();
-    
+
     // Check that settings are visible
     await expect(displaySettings).toBeVisible();
-    
-    // Check text size label
-    const textSizeLabel = page.locator('text=Text size:');
-    await expect(textSizeLabel).toBeVisible();
-    
-    // Check spacing label
-    const spacingLabel = page.locator('text=Spacing:');
-    await expect(spacingLabel).toBeVisible();
+
+    // Check density label
+    const densityLabel = page.locator('text=Density:');
+    await expect(densityLabel).toBeVisible();
   });
 
   test('should optimize transactions table for mobile', async ({ page }) => {
@@ -152,33 +148,22 @@ test.describe('Desktop Responsive Design', () => {
     await expect(avgHeader).toBeVisible();
   });
 
-  test('should display settings side by side on desktop', async ({ page }) => {
+  test('should display density settings on desktop', async ({ page }) => {
     await page.goto('/');
-    
+
     // Load sample data
     await page.click('button:has-text("Load Sample Data")');
-    
+
     // Wait for display settings
-    await page.waitForSelector('text=Text size:');
-    
-    // Get both setting groups
-    const textSizeSection = page.locator('div:has-text("Text size:")').first();
-    const spacingSection = page.locator('div:has-text("Spacing:")').first();
-    
-    await expect(textSizeSection).toBeVisible();
-    await expect(spacingSection).toBeVisible();
-    
-    // Check they are horizontally aligned by checking their positions
-    const textBox = await textSizeSection.boundingBox();
-    const spacingBox = await spacingSection.boundingBox();
-    
-    expect(textBox?.y).toBeDefined();
-    expect(spacingBox?.y).toBeDefined();
-    
-    // They should be on the same row (similar Y coordinates)
-    if (textBox && spacingBox) {
-      const yDiff = Math.abs(textBox.y - spacingBox.y);
-      expect(yDiff).toBeLessThan(50); // Allow some tolerance
+    await page.waitForSelector('text=Density:');
+
+    // Check density control is visible
+    const densityLabel = page.locator('text=Density:');
+    await expect(densityLabel).toBeVisible();
+
+    // Check all density options are visible
+    for (const label of ['Compact', 'Normal', 'Comfortable', 'Spacious']) {
+      await expect(page.locator(`button:has-text("${label}")`)).toBeVisible();
     }
   });
 
