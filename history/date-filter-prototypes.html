@@ -60,6 +60,7 @@
   .month-cell.in-range { background: #e0e7ff; border-color: #c7d2fe; color: #4338ca; }
   .month-cell.edge { background: #6366f1; color: #fff; border-color: #6366f1; }
   .month-cell.disabled { opacity: 0.3; cursor: default; }
+  .month-cell.preview { background: #ede9fe; border-color: #ddd6fe; color: #6d28d9; }
 </style>
 </head>
 <body>
@@ -294,13 +295,23 @@
 
   function absMonth(y, m) { return y * 12 + m; }
 
+  let hoverMonth = null, hoverYear = null;
+
   function updateGrid() {
     const cells = gridEl.querySelectorAll('.month-cell:not(.disabled)');
     cells.forEach(c => {
-      c.classList.remove('edge', 'in-range');
+      c.classList.remove('edge', 'in-range', 'preview');
       const cm = absMonth(parseInt(c.dataset.year), parseInt(c.dataset.month));
       if (startMonth !== null && endMonth === null) {
-        if (cm === absMonth(startYear, startMonth)) c.classList.add('edge');
+        const startAbs = absMonth(startYear, startMonth);
+        if (cm === startAbs) c.classList.add('edge');
+        // hover preview: show what range would be selected
+        if (hoverMonth !== null) {
+          const hoverAbs = absMonth(hoverYear, hoverMonth);
+          let s = Math.min(startAbs, hoverAbs), e = Math.max(startAbs, hoverAbs);
+          if (cm > s && cm < e) c.classList.add('preview');
+          if (cm === hoverAbs && cm !== startAbs) c.classList.add('preview');
+        }
       } else if (startMonth !== null && endMonth !== null) {
         let s = absMonth(startYear, startMonth), e = absMonth(endYear, endMonth);
         if (s > e) [s, e] = [e, s];
@@ -327,6 +338,19 @@
     tab.classList.add('active');
     selectedYear = parseInt(tab.dataset.year);
     buildGrid();
+  });
+
+  gridEl.addEventListener('mouseover', e => {
+    const cell = e.target.closest('.month-cell:not(.disabled)');
+    if (!cell) return;
+    hoverMonth = parseInt(cell.dataset.month);
+    hoverYear = parseInt(cell.dataset.year);
+    updateGrid();
+  });
+
+  gridEl.addEventListener('mouseleave', () => {
+    hoverMonth = null; hoverYear = null;
+    updateGrid();
   });
 
   gridEl.addEventListener('click', e => {
