@@ -18,7 +18,14 @@ make run       # Start dev server (opens browser automatically)
 
 ## Stopping the Server
 
-Press `Ctrl+C` in the terminal, or use the stop command:
+Press `Ctrl+C` in the terminal, or find and kill the process by port:
+
+```bash
+lsof -i :<port>       # Find process on a specific port
+kill <PID>            # Kill the process
+```
+
+Or use the stop command:
 
 ```bash
 make stop PORT=XXXX   # Stop server on specific port
