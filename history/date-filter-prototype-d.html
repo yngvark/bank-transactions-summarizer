@@ -196,6 +196,40 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
   min-height: 1.2em;
 }
 
+/* ---- From/To date fields ---- */
+.period-fields-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+.period-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.period-input {
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  outline: none;
+  width: 140px;
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.period-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* ---- Statistics section (actual app styles) ---- */
 .statistics-section {
   background: var(--surface);
@@ -296,6 +330,12 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
 
         <!-- NEW: Period picker (Prototype D) -->
         <div class="period-picker">
+          <div class="period-fields-wrapper">
+            <span class="period-text">From</span>
+            <input type="date" class="period-input" id="dateFrom">
+            <span class="period-text">To</span>
+            <input type="date" class="period-input" id="dateTo">
+          </div>
           <div class="year-tabs" id="yearTabs">
             <button class="year-tab" data-year="2024">2024</button>
             <button class="year-tab active" data-year="2025">2025</button>
@@ -522,7 +562,48 @@ function updateTable() {
   body.appendChild(sumTr);
 }
 
+// ---- Sync date inputs ↔ month grid ----
+function ymToDate(ym, end) {
+  const [y, m] = ym.split('-').map(Number);
+  if (end) {
+    // Last day of month
+    return `${y}-${String(m).padStart(2,'0')}-${new Date(y, m, 0).getDate()}`;
+  }
+  return `${y}-${String(m).padStart(2,'0')}-01`;
+}
+function dateToYM(d) {
+  return d.slice(0, 7); // "2025-03-15" → "2025-03"
+}
+
+function syncDateInputsFromGrid() {
+  document.getElementById('dateFrom').value = ymToDate(startYM, false);
+  document.getElementById('dateTo').value = ymToDate(endYM, true);
+}
+
+function handleDateInputChange() {
+  const fromVal = document.getElementById('dateFrom').value;
+  const toVal = document.getElementById('dateTo').value;
+  if (!fromVal || !toVal) return;
+  startYM = dateToYM(fromVal);
+  endYM = dateToYM(toVal);
+  // Switch year tab to match the start year
+  const newYear = parseInt(startYM.split('-')[0]);
+  if (newYear !== selectedYear) {
+    selectedYear = newYear;
+    document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`.year-tab[data-year="${newYear}"]`);
+    if (tab) tab.classList.add('active');
+    buildGrid();
+  } else {
+    updateGrid();
+  }
+}
+
 // ---- Event listeners ----
+
+// Date inputs
+document.getElementById('dateFrom').addEventListener('change', handleDateInputChange);
+document.getElementById('dateTo').addEventListener('change', handleDateInputChange);
 
 // Year tabs
 document.getElementById('yearTabs').addEventListener('click', e => {
@@ -551,6 +632,7 @@ document.getElementById('monthGrid').addEventListener('click', e => {
     pickState = 'idle';
     anchorYM = null;
     hoverYM = null;
+    syncDateInputsFromGrid();
   }
   updateGrid();
 });
@@ -586,6 +668,7 @@ document.getElementById('themeBtn').addEventListener('click', () => {
 
 // Init
 buildGrid();
+syncDateInputsFromGrid();
 </script>
 </body>
 </html>
