@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype A: Inline Hierarchical Dropdown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-hover: #2d3a56;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --secondary-color: #64748b;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --table-font-size: 0.8rem;
+  --table-header-font-size: 0.7rem;
+  --table-cell-padding: 0.5rem 0.6rem;
+}
+
+[data-theme="dark"] {
+  --primary-color: #8b9dc3;
+  --primary-hover: #a3b5d6;
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --secondary-color: #94a3b8;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --warning-light: rgba(251,191,36,0.1);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a78bfa, #6366f1);
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+
+/* Main */
+.app-content { max-width: 95%; margin: 0 auto; padding: 2rem; }
+
+section { margin-bottom: 2.5rem; }
+section h2 {
+  font-size: 1.25rem; font-weight: 600; color: var(--text-primary);
+  margin: 0 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem;
+  letter-spacing: -0.02em;
+}
+section h2::before {
+  content: ''; display: inline-block; width: 4px; height: 1.2em;
+  background: linear-gradient(180deg, var(--accent-color), #a78bfa);
+  border-radius: 2px; flex-shrink: 0;
+}
+section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); }
+
+.transactions-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+/* Prototype badge */
+.prototype-badge {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.4rem 1rem; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 600; margin-bottom: 1.5rem;
+}
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: var(--table-font-size); }
+th, td { padding: var(--table-cell-padding); text-align: left; border-bottom: 1px solid var(--border-color); }
+th {
+  background-color: var(--background); color: var(--text-secondary);
+  font-weight: 600; font-size: var(--table-header-font-size);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  position: sticky; top: 0; z-index: 10;
+}
+tbody tr { transition: background-color var(--transition); }
+tbody tr:hover { background-color: var(--primary-light); }
+tbody tr:nth-child(even) { background-color: var(--background); }
+tbody tr:nth-child(even):hover { background-color: var(--primary-light); }
+
+td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Merchant category highlight on hover */
+tr.highlight-merchant {
+  outline: 2px solid var(--accent-color);
+  outline-offset: -1px;
+  background-color: rgba(99,102,241,0.06) !important;
+}
+
+/* Category cell */
+td.cat-cell {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+td.cat-cell:hover .cat-display { background-color: rgba(99,102,241,0.06); }
+td.cat-cell:hover .edit-hint { opacity: 1; }
+
+.cat-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  transition: background-color var(--transition);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.edit-hint {
+  opacity: 0;
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+  transition: opacity var(--transition);
+  margin-left: 0.25rem;
+}
+
+/* Uncategorized styling */
+.cat-uncategorized .cat-display {
+  border: 1.5px dashed var(--warning);
+  background-color: var(--warning-light);
+  color: var(--warning);
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+}
+.cat-uncategorized .cat-display .warn-icon {
+  font-size: 0.75rem;
+}
+.cat-uncategorized:hover .cat-display {
+  background-color: rgba(245,158,11,0.15) !important;
+  border-color: var(--warning);
+}
+
+/* Category arrow separator */
+.cat-arrow { color: var(--text-secondary); font-size: 0.65rem; margin: 0 0.15rem; }
+
+/* Dropdown overlay */
+.dropdown-backdrop {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 99;
+}
+.dropdown-backdrop.open { display: block; }
+
+.dropdown {
+  display: none;
+  position: absolute;
+  z-index: 100;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  min-width: 260px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.dropdown.open { display: block; }
+
+.dropdown-header {
+  padding: 0.6rem 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--background);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dropdown-item {
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.1s;
+  border-bottom: 1px solid var(--border-color);
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background-color: var(--primary-light); }
+.dropdown-item.selected { background-color: rgba(99,102,241,0.08); color: var(--accent-color); font-weight: 600; }
+
+.dropdown-item .item-icon {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; flex-shrink: 0;
+}
+
+.dropdown-item .item-text { flex: 1; }
+.dropdown-item .item-chevron { color: var(--text-secondary); font-size: 0.65rem; }
+
+/* Subcategory level */
+.dropdown-item.sub { padding-left: 1.4rem; }
+.dropdown-item.sub .item-icon { width: 20px; height: 20px; font-size: 0.65rem; }
+
+/* Back button */
+.dropdown-back {
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.1s;
+}
+.dropdown-back:hover { background-color: var(--primary-light); }
+
+/* Primary category icons/colors */
+.icon-mat { background: #dcfce7; color: #16a34a; }
+.icon-reise { background: #dbeafe; color: #2563eb; }
+.icon-personlig { background: #f3e8ff; color: #7c3aed; }
+.icon-hus { background: #fef3c7; color: #d97706; }
+.icon-kontanter { background: #f1f5f9; color: #475569; }
+.icon-ovrig { background: #f3f4f6; color: #6b7280; }
+
+[data-theme="dark"] .icon-mat { background: rgba(34,197,94,0.15); color: #34d399; }
+[data-theme="dark"] .icon-reise { background: rgba(59,130,246,0.15); color: #60a5fa; }
+[data-theme="dark"] .icon-personlig { background: rgba(139,92,246,0.15); color: #a78bfa; }
+[data-theme="dark"] .icon-hus { background: rgba(245,158,11,0.15); color: #fbbf24; }
+[data-theme="dark"] .icon-kontanter { background: rgba(148,163,184,0.15); color: #94a3b8; }
+[data-theme="dark"] .icon-ovrig { background: rgba(107,114,128,0.15); color: #9ca3af; }
+
+/* Confirmation bar */
+.confirm-bar {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.05));
+  border: 1px solid var(--success);
+  border-radius: var(--radius);
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  animation: slideIn 0.3s ease;
+}
+.confirm-bar.visible { display: flex; }
+.confirm-bar .check-icon { color: var(--success); font-size: 1.1rem; }
+.confirm-bar .confirm-text { flex: 1; }
+.confirm-bar .confirm-count { font-weight: 700; color: var(--success); }
+.confirm-bar .dismiss-btn {
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; font-size: 1rem; padding: 0.2rem;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem; z-index: 50;
+  width: 40px; height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+  backdrop-filter: blur(8px);
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.2); }
+
+/* Description panel */
+.description {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+}
+.description h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.3rem; }
+
+[data-theme="dark"] .app-header {
+  background: linear-gradient(135deg, #0f0e26 0%, #1e1b4b 50%, #252366 100%);
+}
+</style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+    <span id="theme-icon">&#9790;</span>
+  </button>
+
+  <header class="app-header">
+    <h1>Bank Transactions</h1>
+    <p class="app-subtitle">Analyze and categorize your spending</p>
+  </header>
+
+  <main class="app-content">
+    <div class="description">
+      <span class="prototype-badge">Prototype A</span>
+      <h3>Inline Hierarchical Dropdown</h3>
+      <ul>
+        <li>Click any category cell to reassign via a 2-level dropdown</li>
+        <li>Uncategorized transactions are highlighted with amber dashed border</li>
+        <li>Hovering an uncategorized cell highlights all rows with the same merchant category</li>
+        <li>Assigning a category shows confirmation that all matching transactions were updated</li>
+      </ul>
+    </div>
+
+    <section class="transactions-section">
+      <h2>Transactions <span class="count">(10)</span></h2>
+
+      <div style="overflow-x: auto;">
+        <table id="tx-table">
+          <thead>
+            <tr>
+              <th>Dato</th>
+              <th>Tekst</th>
+              <th>Type</th>
+              <th>Belop</th>
+              <th>Leverandorkategori</th>
+              <th>Kategori</th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+
+      <div class="confirm-bar" id="confirm-bar">
+        <span class="check-icon">&#10003;</span>
+        <span class="confirm-text" id="confirm-text"></span>
+        <button class="dismiss-btn" onclick="dismissConfirm()">&times;</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="dropdown-backdrop" id="dropdown-backdrop"></div>
+  <div class="dropdown" id="dropdown"></div>
+
+  <script>
+const transactions = [
+  { date: '15.03.2026', text: 'REMA 1000 STORO', type: 'Kjop', amount: -847, merchant: 'Grocery Stores, Supermarkets', category: ['Mat og drikke', 'Dagligvarer'] },
+  { date: '14.03.2026', text: 'ESPRESSO HOUSE OSLO', type: 'Kjop', amount: -89, merchant: 'Eating places and Restaurants', category: ['Mat og drikke', 'Restauranter og barer'] },
+  { date: '13.03.2026', text: 'POWER STORO', type: 'Kjop', amount: -2499, merchant: 'Electronic Sales', category: ['Personlig forbruk', 'PC og elektroutstyr'] },
+  { date: '12.03.2026', text: 'SPOTIFY PREMIUM', type: 'Kjop', amount: -119, merchant: 'Music Streaming Services', category: null },
+  { date: '11.03.2026', text: 'NSB AS OSLO', type: 'Kjop', amount: -389, merchant: 'Passenger Railways', category: ['Reise', 'Reise og transport'] },
+  { date: '10.03.2026', text: 'TISE.COM', type: 'Kjop', amount: -450, merchant: 'Online Marketplace', category: null },
+  { date: '09.03.2026', text: 'VINMONOPOLET', type: 'Kjop', amount: -299, merchant: 'Package Stores - Beer, Wine', category: ['Mat og drikke', 'Dagligvarer'] },
+  { date: '08.03.2026', text: 'KIWI 487 GRUNERLOKKA', type: 'Kjop', amount: -234, merchant: 'Grocery Stores, Supermarkets', category: ['Mat og drikke', 'Dagligvarer'] },
+  { date: '07.03.2026', text: 'UBER *TRIP', type: 'Kjop', amount: -187, merchant: 'Taxicabs and Limousines', category: ['Reise', 'Kjoretoy og Leiebil'] },
+  { date: '06.03.2026', text: 'VIPPS *TRENINGSSENTER', type: 'Kjop', amount: -399, merchant: 'Fitness Centers', category: null },
+];
+
+const categories = {
+  'Mat og drikke':     { icon: 'icon-mat',       emoji: '&#127829;', subs: ['Dagligvarer', 'Restauranter og barer'] },
+  'Reise':             { icon: 'icon-reise',      emoji: '&#9992;',   subs: ['Flyselskap', 'Hotel og opphold', 'Reise og transport', 'Taxfree', 'Kjoretoy og Leiebil'] },
+  'Personlig forbruk': { icon: 'icon-personlig',  emoji: '&#128091;', subs: ['PC og elektroutstyr', 'Sport og fritid', 'Klaer og sko', 'Hobby og Fritid'] },
+  'Hus og innbo':      { icon: 'icon-hus',        emoji: '&#127968;', subs: ['Interior og varehus'] },
+  'Kontanter':         { icon: 'icon-kontanter',  emoji: '&#128179;', subs: ['Kontaktuttak', 'Pengeoverforing'] },
+  'Ovrig bruk':        { icon: 'icon-ovrig',      emoji: '&#128230;', subs: ['Ovrig bruk'] },
+};
+
+const fmt = new Intl.NumberFormat('nb-NO', { style: 'decimal', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+function renderTable() {
+  const tbody = document.getElementById('tx-body');
+  tbody.innerHTML = '';
+  transactions.forEach((tx, i) => {
+    const tr = document.createElement('tr');
+    tr.dataset.index = i;
+    tr.dataset.merchant = tx.merchant;
+
+    const isUncat = !tx.category;
+    let catHtml;
+    if (isUncat) {
+      catHtml = `<span class="cat-display"><span class="warn-icon">&#9888;</span> Ukjent kategori</span>`;
+    } else {
+      catHtml = `<span class="cat-display">${tx.category[0]} <span class="cat-arrow">&#10148;</span> ${tx.category[1]}<span class="edit-hint">&#9998;</span></span>`;
+    }
+
+    tr.innerHTML = `
+      <td>${tx.date}</td>
+      <td>${tx.text}</td>
+      <td>${tx.type}</td>
+      <td class="amount">${fmt.format(tx.amount)}</td>
+      <td>${tx.merchant}</td>
+      <td class="cat-cell ${isUncat ? 'cat-uncategorized' : ''}" data-index="${i}">${catHtml}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Add event listeners
+  document.querySelectorAll('td.cat-cell').forEach(cell => {
+    cell.addEventListener('click', e => openDropdown(e, parseInt(cell.dataset.index)));
+  });
+
+  // Hover highlight for uncategorized
+  document.querySelectorAll('td.cat-uncategorized').forEach(cell => {
+    const idx = parseInt(cell.dataset.index);
+    const merchant = transactions[idx].merchant;
+    cell.addEventListener('mouseenter', () => highlightMerchant(merchant, true));
+    cell.addEventListener('mouseleave', () => highlightMerchant(merchant, false));
+  });
+}
+
+function highlightMerchant(merchant, on) {
+  document.querySelectorAll(`tr[data-merchant="${CSS.escape(merchant)}"]`).forEach(tr => {
+    tr.classList.toggle('highlight-merchant', on);
+  });
+}
+
+let currentDropdownIndex = null;
+let dropdownLevel = 'primary'; // 'primary' or 'sub'
+let selectedPrimary = null;
+
+function openDropdown(e, index) {
+  e.stopPropagation();
+  currentDropdownIndex = index;
+  dropdownLevel = 'primary';
+  selectedPrimary = null;
+
+  const dropdown = document.getElementById('dropdown');
+  const backdrop = document.getElementById('dropdown-backdrop');
+
+  // Position dropdown near the cell
+  const cell = e.currentTarget;
+  const rect = cell.getBoundingClientRect();
+  dropdown.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  dropdown.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 300) + 'px';
+
+  renderDropdownPrimary();
+  dropdown.classList.add('open');
+  backdrop.classList.add('open');
+}
+
+function renderDropdownPrimary() {
+  const dropdown = document.getElementById('dropdown');
+  let html = '<div class="dropdown-header">Velg kategori</div>';
+  for (const [name, info] of Object.entries(categories)) {
+    html += `
+      <div class="dropdown-item" onclick="selectPrimary('${name}')">
+        <span class="item-icon ${info.icon}">${info.emoji}</span>
+        <span class="item-text">${name}</span>
+        <span class="item-chevron">&#9654;</span>
+      </div>`;
+  }
+  dropdown.innerHTML = html;
+}
+
+function selectPrimary(name) {
+  selectedPrimary = name;
+  dropdownLevel = 'sub';
+  const dropdown = document.getElementById('dropdown');
+  const info = categories[name];
+  let html = `<div class="dropdown-back" onclick="goBack()">&#9664; ${name}</div>`;
+  html += `<div class="dropdown-header">Velg underkategori</div>`;
+  for (const sub of info.subs) {
+    const tx = transactions[currentDropdownIndex];
+    const isCurrent = tx.category && tx.category[0] === name && tx.category[1] === sub;
+    html += `
+      <div class="dropdown-item sub ${isCurrent ? 'selected' : ''}" onclick="selectCategory('${name}', '${sub}')">
+        <span class="item-icon ${info.icon}" style="font-size:0.6rem">${info.emoji}</span>
+        <span class="item-text">${sub}</span>
+        ${isCurrent ? '<span style="color:var(--accent-color);font-size:0.7rem">&#10003;</span>' : ''}
+      </div>`;
+  }
+  dropdown.innerHTML = html;
+}
+
+function goBack() {
+  dropdownLevel = 'primary';
+  selectedPrimary = null;
+  renderDropdownPrimary();
+}
+
+function selectCategory(primary, sub) {
+  const tx = transactions[currentDropdownIndex];
+  const merchant = tx.merchant;
+
+  // Apply to ALL transactions with same merchant category
+  let count = 0;
+  transactions.forEach(t => {
+    if (t.merchant === merchant) {
+      t.category = [primary, sub];
+      count++;
+    }
+  });
+
+  closeDropdown();
+  renderTable();
+  showConfirm(merchant, primary, sub, count);
+}
+
+function closeDropdown() {
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('dropdown-backdrop').classList.remove('open');
+  currentDropdownIndex = null;
+}
+
+function showConfirm(merchant, primary, sub, count) {
+  const bar = document.getElementById('confirm-bar');
+  const text = document.getElementById('confirm-text');
+  text.innerHTML = `Kategori <strong>${primary} &#10148; ${sub}</strong> tilordnet <span class="confirm-count">${count}</span> transaksjon${count > 1 ? 'er' : ''} med leverandorkategori &laquo;${merchant}&raquo;`;
+  bar.classList.add('visible');
+}
+
+function dismissConfirm() {
+  document.getElementById('confirm-bar').classList.remove('visible');
+}
+
+// Close dropdown on backdrop click
+document.getElementById('dropdown-backdrop').addEventListener('click', closeDropdown);
+
+// Theme toggle
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('theme-icon').innerHTML = isDark ? '&#9790;' : '&#9788;';
+}
+
+// Init
+renderTable();
+  </script>
+</body>
+</html>
