@@ -211,6 +211,24 @@ td.cat-cell:hover .cat-uncat-display { background: rgba(245,158,11,0.2) !importa
   background: var(--primary-light); font-weight: 500;
 }
 
+/* Type toggle */
+.rule-type-toggle { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+.rule-type-toggle button {
+  flex: 1; padding: 0.45rem 0.8rem; border: none; background: var(--surface);
+  color: var(--text-secondary); font-size: 0.78rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.rule-type-toggle button.active { background: var(--accent-color); color: white; }
+.rule-type-toggle button:not(.active):hover { background: var(--primary-light); }
+
+/* Pattern input */
+.rd-input {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
+  border-radius: 8px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace;
+  background: var(--surface); color: var(--text-primary); outline: none;
+}
+.rd-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+
 /* Preview */
 .rd-preview {
   background: var(--background); border: 1px solid var(--border-color);
@@ -336,6 +354,19 @@ td.cat-cell:hover .cat-uncat-display { background: rgba(245,158,11,0.2) !importa
         <label>Kategori</label>
         <div class="rd-cat-badge" id="rd-cat"></div>
       </div>
+      <div id="rd-pattern-fields">
+        <div class="rd-field">
+          <label>M&#248;nstertype</label>
+          <div class="rule-type-toggle">
+            <button class="active" id="btn-sub" onclick="setRuleType('substring')">Delstreng</button>
+            <button id="btn-re" onclick="setRuleType('regex')">Regex</button>
+          </div>
+        </div>
+        <div class="rd-field">
+          <label>M&#248;nster (matcher p&#229; transaksjonstekst)</label>
+          <input type="text" class="rd-input" id="rd-pattern" oninput="updatePreview()" placeholder="Skriv inn m&#248;nster...">
+        </div>
+      </div>
       <div class="rd-field">
         <label>Forh&#229;ndsvisning</label>
         <div class="rd-preview" id="rd-preview"></div>
@@ -390,9 +421,10 @@ let rules = loadRules();
 let sortCol = null, sortDir = null;
 let pendingCat = null, pendingTxId = null;
 let deleteMode = false;
+let ruleType = 'substring';
 
-// Each tx gets a mutable .cat field
-txData.forEach(tx => { tx.cat = tx.defCat ? [...tx.defCat] : null; });
+// Each tx gets a mutable .cat field (set by applyRules)
+txData.forEach(tx => { tx.cat = null; });
 
 const fmt = new Intl.NumberFormat('nb-NO', { useGrouping:true, minimumFractionDigits:0, maximumFractionDigits:0 });
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -402,10 +434,6 @@ function loadRules() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)
 function saveRules() { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); }
 
 // ===== PATTERN =====
-function findRuleForText(text) {
-  return rules.find(r => r.type === 'substring' && r.pattern === text);
-}
-
 function getMatches(pattern, type) {
   if (!pattern) return [];
   if (type === 'substring') {
@@ -416,9 +444,32 @@ function getMatches(pattern, type) {
   catch { return []; }
 }
 
+function findRuleForTx(tx) {
+  let match = null;
+  for (const r of rules) {
+    if (r.type === 'substring' && tx.text.toLowerCase().includes(r.pattern.toLowerCase())) match = r;
+    else if (r.type === 'regex') {
+      try { if (new RegExp(r.pattern, 'i').test(tx.text)) match = r; } catch {}
+    }
+  }
+  return match;
+}
+
 // ===== RULES =====
+function seedDefaultRules() {
+  if (localStorage.getItem(STORAGE_KEY) !== null) return;
+  const seen = new Set();
+  for (const tx of txData) {
+    if (tx.defCat && !seen.has(tx.text)) {
+      seen.add(tx.text);
+      rules.push({ type:'substring', pattern:tx.text, category:[...tx.defCat] });
+    }
+  }
+  saveRules();
+}
+
 function applyRules() {
-  txData.forEach(tx => { tx.cat = tx.defCat ? [...tx.defCat] : null; });
+  txData.forEach(tx => { tx.cat = null; });
   for (const rule of rules) {
     const ms = getMatches(rule.pattern, rule.type);
     ms.forEach(tx => { tx.cat = [...rule.category]; });
@@ -503,7 +554,7 @@ function openDropdown(e, txId) {
 function renderPrimary() {
   const dd = document.getElementById('dropdown');
   const tx = txData.find(t=>t.id===pendingTxId);
-  const hasRule = tx && findRuleForText(tx.text);
+  const hasRule = tx && findRuleForTx(tx);
   let h = '<div class="dd-header">Velg kategori</div>';
   for (const [name, info] of Object.entries(cats)) {
     h += '<div class="dd-item" onclick="pickPrimary(\''+esc(name)+'\')"><span class="dd-emoji">'+info.emoji+'</span><span class="dd-text">'+esc(name)+'</span><span class="dd-chevron">\u25b6</span></div>';
@@ -544,53 +595,91 @@ function closeDropdown() {
 }
 
 // ===== RULE DIALOG =====
+function setRuleType(t) {
+  ruleType = t;
+  document.getElementById('btn-sub').classList.toggle('active', t==='substring');
+  document.getElementById('btn-re').classList.toggle('active', t==='regex');
+  updatePreview();
+}
+
 function showRuleDialog() {
   const tx = txData.find(t=>t.id===pendingTxId);
-  const existing = findRuleForText(tx.text);
+  const existing = findRuleForTx(tx);
   const btnCreate = document.getElementById('btn-create');
   const btnDelete = document.getElementById('btn-delete');
   const catField = document.getElementById('rd-cat-field');
+  const patternFields = document.getElementById('rd-pattern-fields');
 
   if (deleteMode) {
     catField.style.display = 'none';
+    patternFields.style.display = 'none';
     btnCreate.style.display = 'none';
     btnDelete.style.display = '';
   } else {
     const info = cats[pendingCat[0]]; const emoji = info ? info.emoji : '\u2753';
     document.getElementById('rd-cat').innerHTML = emoji+' '+esc(pendingCat[0])+' &#10148; '+esc(pendingCat[1]);
     catField.style.display = '';
+    patternFields.style.display = '';
     btnCreate.style.display = '';
-    btnCreate.textContent = existing ? 'Oppdater regel \u2713' : 'Opprett regel \u2713';
+
+    if (existing) {
+      ruleType = existing.type;
+      document.getElementById('rd-pattern').value = existing.pattern;
+      btnCreate.textContent = 'Oppdater regel \u2713';
+    } else {
+      ruleType = 'substring';
+      document.getElementById('rd-pattern').value = tx.text;
+      btnCreate.textContent = 'Opprett regel \u2713';
+    }
+    document.getElementById('btn-sub').classList.toggle('active', ruleType==='substring');
+    document.getElementById('btn-re').classList.toggle('active', ruleType==='regex');
     btnDelete.style.display = existing ? '' : 'none';
   }
 
-  updatePreview(tx.text);
+  updatePreview();
   document.getElementById('rule-dialog').classList.add('open');
   document.getElementById('dialog-backdrop').classList.add('open');
+  if (!deleteMode) document.getElementById('rd-pattern').focus();
 }
 
-function updatePreview(pattern) {
+function updatePreview() {
+  const patternEl = document.getElementById('rd-pattern');
+  const pattern = patternEl ? patternEl.value : '';
   const pv = document.getElementById('rd-preview');
-  const ms = getMatches(pattern, 'substring');
+  const btn = document.getElementById('btn-create');
+  if (!pattern.trim()) { pv.innerHTML = '<span class="no-match">Skriv inn et m\u00f8nster for \u00e5 se treff</span>'; btn.disabled = true; return; }
+  if (ruleType === 'regex') { try { new RegExp(pattern); } catch(e) { pv.innerHTML = '<span class="regex-error">Ugyldig regex: '+esc(e.message)+'</span>'; btn.disabled = true; return; } }
+  const ms = getMatches(pattern, ruleType);
+  btn.disabled = ms.length === 0;
   if (!ms.length) { pv.innerHTML = '<span class="no-match">Ingen transaksjoner matcher</span>'; return; }
   let h = '<span class="match-count">\u2713 Treff: '+ms.length+' transaksjon'+(ms.length>1?'er':'')+'</span>';
   ms.forEach(tx => {
-    h += '<div class="match-item"><span>'+esc(tx.text)+'</span><span class="match-amount">'+fmt.format(tx.amount)+' kr</span></div>';
+    let display = esc(tx.text);
+    if (ruleType === 'substring') {
+      const idx = tx.text.toLowerCase().indexOf(pattern.toLowerCase());
+      if (idx >= 0) display = esc(tx.text.substring(0,idx))+'<span class="match-hl">'+esc(tx.text.substring(idx,idx+pattern.length))+'</span>'+esc(tx.text.substring(idx+pattern.length));
+    } else {
+      try { const m = tx.text.match(new RegExp(pattern,'i')); if(m) display = esc(tx.text.substring(0,m.index))+'<span class="match-hl">'+esc(m[0])+'</span>'+esc(tx.text.substring(m.index+m[0].length)); } catch{}
+    }
+    h += '<div class="match-item"><span>'+display+'</span><span class="match-amount">'+fmt.format(tx.amount)+' kr</span></div>';
   });
   pv.innerHTML = h;
 }
 
 function createRule() {
   const tx = txData.find(t=>t.id===pendingTxId);
-  if (!tx || !pendingCat) return;
-  const existing = findRuleForText(tx.text);
+  const pattern = document.getElementById('rd-pattern').value.trim();
+  if (!pattern || !pendingCat) return;
+  const existing = findRuleForTx(tx);
   if (existing) {
+    existing.type = ruleType;
+    existing.pattern = pattern;
     existing.category = [...pendingCat];
   } else {
-    rules.push({ type:'substring', pattern:tx.text, category:[...pendingCat] });
+    rules.push({ type:ruleType, pattern:pattern, category:[...pendingCat] });
   }
   saveRules(); applyRules(); closeRuleDialog(); renderTable();
-  const n = getMatches(tx.text, 'substring').length;
+  const n = getMatches(pattern, ruleType).length;
   const verb = existing ? 'oppdatert' : 'opprettet';
   showToast('Regel '+verb+' \u2014 '+n+' transaksjon'+(n>1?'er':'')+' oppdatert');
 }
@@ -598,8 +687,9 @@ function createRule() {
 function deleteRuleFromDialog() {
   const tx = txData.find(t=>t.id===pendingTxId);
   if (!tx) return;
-  const idx = rules.findIndex(r => r.type === 'substring' && r.pattern === tx.text);
-  if (idx >= 0) {
+  const rule = findRuleForTx(tx);
+  if (rule) {
+    const idx = rules.indexOf(rule);
     rules.splice(idx, 1);
     saveRules(); applyRules(); closeRuleDialog(); renderTable();
     showToast('Regel slettet');
@@ -634,6 +724,7 @@ document.addEventListener('keydown', e => {
 });
 
 // ===== INIT =====
+seedDefaultRules();
 applyRules();
 renderTable();
 </script>
