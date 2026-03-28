@@ -185,7 +185,6 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
 .month-cell.in-range { background: #e0e7ff; border-color: #c7d2fe; color: #4338ca; }
 .month-cell.edge { background: var(--accent-color); color: #fff; border-color: var(--accent-color); font-weight: 600; }
 .month-cell.preview { background: #ede9fe; border-color: #ddd6fe; color: #6d28d9; }
-.month-cell.disabled { opacity: 0.25; cursor: default; pointer-events: none; }
 [data-theme="dark"] .month-cell.in-range { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
 [data-theme="dark"] .month-cell.edge { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
 [data-theme="dark"] .month-cell.preview { background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.25); color: #c4b5fd; }
@@ -250,11 +249,6 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
   background-color: var(--primary-color) !important; color: white; font-weight: 600;
 }
 
-/* Dimmed columns outside selected range */
-.statistics-section table th.col-dimmed,
-.statistics-section table td.col-dimmed { opacity: 0.3; }
-.statistics-section table th.col-active,
-.statistics-section table td.col-active { opacity: 1; }
 
 /* Theme toggle */
 .theme-toggle {
@@ -341,8 +335,7 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
 // ---- Mock data ----
 const ALL_MONTHS = [];
 for (let y = 2024; y <= 2026; y++) {
-  const maxM = y === 2026 ? 3 : 12;
-  for (let m = 1; m <= maxM; m++) ALL_MONTHS.push(`${y}-${String(m).padStart(2,'0')}`);
+  for (let m = 1; m <= 12; m++) ALL_MONTHS.push(`${y}-${String(m).padStart(2,'0')}`);
 }
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -378,6 +371,7 @@ CATEGORIES.forEach(cat => {
 // ---- Period picker state ----
 let selectedYear = 2025;
 let startYM = '2025-01', endYM = '2025-12';
+let anchorYM = null;  // first-picked month (uncommitted)
 let hoverYM = null;
 let pickState = 'idle'; // idle | first-picked
 
@@ -394,14 +388,13 @@ function buildGrid() {
     div.textContent = m;
     const ym = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
     div.dataset.ym = ym;
-    if (!ALL_MONTHS.includes(ym)) div.classList.add('disabled');
     grid.appendChild(div);
   });
   updateGrid();
 }
 
 function updateGrid() {
-  const cells = document.querySelectorAll('#monthGrid .month-cell:not(.disabled)');
+  const cells = document.querySelectorAll('#monthGrid .month-cell');
   const sAbs = absYM(startYM), eAbs = absYM(endYM);
   let lo = Math.min(sAbs, eAbs), hi = Math.max(sAbs, eAbs);
 
@@ -409,14 +402,14 @@ function updateGrid() {
     c.classList.remove('edge', 'in-range', 'preview');
     const cm = absYM(c.dataset.ym);
 
-    if (pickState === 'first-picked') {
-      // Only the first-picked anchor is "edge"
-      if (cm === sAbs) c.classList.add('edge');
+    if (pickState === 'first-picked' && anchorYM) {
+      const aAbs = absYM(anchorYM);
+      if (cm === aAbs) c.classList.add('edge');
       // Hover preview
       if (hoverYM) {
         const hAbs = absYM(hoverYM);
-        let pLo = Math.min(sAbs, hAbs), pHi = Math.max(sAbs, hAbs);
-        if (cm >= pLo && cm <= pHi && cm !== sAbs) c.classList.add('preview');
+        let pLo = Math.min(aAbs, hAbs), pHi = Math.max(aAbs, hAbs);
+        if (cm >= pLo && cm <= pHi && cm !== aAbs) c.classList.add('preview');
       }
     } else {
       // Committed range
@@ -431,13 +424,13 @@ function updateGrid() {
 
 function updateSummary() {
   const el = document.getElementById('periodSummary');
-  if (pickState === 'first-picked') {
+  if (pickState === 'first-picked' && anchorYM) {
     if (hoverYM) {
-      const a = absYM(startYM), b = absYM(hoverYM);
+      const a = absYM(anchorYM), b = absYM(hoverYM);
       const lo = ymFromAbs(Math.min(a, b)), hi = ymFromAbs(Math.max(a, b));
       el.textContent = lo === hi ? fmtYM(lo) : `${fmtYM(lo)} \u2013 ${fmtYM(hi)}`;
     } else {
-      el.textContent = fmtYM(startYM);
+      el.textContent = fmtYM(anchorYM);
     }
   } else {
     el.textContent = startYM === endYM ? fmtYM(startYM) : `${fmtYM(startYM)} \u2013 ${fmtYM(endYM)}`;
@@ -447,35 +440,26 @@ function updateSummary() {
 // ---- Statistics table ----
 function updateTable() {
   const sAbs = absYM(startYM), eAbs = absYM(endYM);
-  let lo = Math.min(sAbs, eAbs), hi = Math.max(sAbs, eAbs);
+  const lo = Math.min(sAbs, eAbs), hi = Math.max(sAbs, eAbs);
 
-  // If in first-picked + hover, use preview range for dimming
-  if (pickState === 'first-picked' && hoverYM) {
-    const hAbs = absYM(hoverYM);
-    lo = Math.min(sAbs, hAbs);
-    hi = Math.max(sAbs, hAbs);
-  }
-
+  // Only show months within the selected range
   const visibleMonths = ALL_MONTHS.filter(ym => {
     const a = absYM(ym);
     return a >= lo && a <= hi;
   });
 
-  // Build header
+  // Build header — only selected months
   const head = document.getElementById('statsHead');
   head.innerHTML = '<th>Category</th>';
-  ALL_MONTHS.forEach(ym => {
-    const a = absYM(ym);
-    const active = a >= lo && a <= hi;
+  visibleMonths.forEach(ym => {
     const th = document.createElement('th');
     th.textContent = ym;
-    th.className = active ? 'col-active' : 'col-dimmed';
     head.appendChild(th);
   });
-  const thSum = document.createElement('th'); thSum.textContent = 'Sum'; thSum.className = 'col-active'; head.appendChild(thSum);
-  const thAvg = document.createElement('th'); thAvg.textContent = 'Average'; thAvg.className = 'col-active'; head.appendChild(thAvg);
+  const thSum = document.createElement('th'); thSum.textContent = 'Sum'; head.appendChild(thSum);
+  const thAvg = document.createElement('th'); thAvg.textContent = 'Average'; head.appendChild(thAvg);
 
-  // Build body
+  // Build body — only selected months
   const body = document.getElementById('statsBody');
   body.innerHTML = '';
   const fmt = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
@@ -492,27 +476,25 @@ function updateTable() {
     tdName.appendChild(document.createTextNode(cat.name));
     tr.appendChild(tdName);
 
-    let sum = 0, count = 0;
-    ALL_MONTHS.forEach(ym => {
-      const a = absYM(ym);
-      const active = a >= lo && a <= hi;
+    let sum = 0;
+    visibleMonths.forEach(ym => {
       const td = document.createElement('td');
-      td.className = `num-cell ${active ? 'col-active' : 'col-dimmed'}`;
+      td.className = 'num-cell';
       const v = mockData[cat.name][ym] || 0;
       td.textContent = fmt.format(v);
-      if (active) { sum += v; count++; }
+      sum += v;
       tr.appendChild(td);
     });
 
     const tdSum = document.createElement('td');
-    tdSum.className = 'num-cell col-active';
+    tdSum.className = 'num-cell';
     tdSum.style.fontWeight = '600';
     tdSum.textContent = fmt.format(sum);
     tr.appendChild(tdSum);
 
     const tdAvg = document.createElement('td');
-    tdAvg.className = 'num-cell col-active';
-    tdAvg.textContent = count ? fmt.format(Math.round(sum / count)) : '0';
+    tdAvg.className = 'num-cell';
+    tdAvg.textContent = visibleMonths.length ? fmt.format(Math.round(sum / visibleMonths.length)) : '0';
     tr.appendChild(tdAvg);
 
     body.appendChild(tr);
@@ -525,22 +507,18 @@ function updateTable() {
   sumTdLabel.textContent = 'Total';
   sumTr.appendChild(sumTdLabel);
 
-  ALL_MONTHS.forEach(ym => {
-    const a = absYM(ym);
-    const active = a >= lo && a <= hi;
+  visibleMonths.forEach(ym => {
     let colTotal = 0;
     CATEGORIES.filter(c => c.depth === 0).forEach(c => { colTotal += mockData[c.name][ym] || 0; });
     const td = document.createElement('td');
-    td.className = active ? 'col-active' : 'col-dimmed';
     td.textContent = fmt.format(colTotal);
     sumTr.appendChild(td);
   });
   const totalSum = CATEGORIES.filter(c => c.depth === 0).reduce((s, c) => {
-    return s + ALL_MONTHS.filter(ym => absYM(ym) >= lo && absYM(ym) <= hi).reduce((ss, ym) => ss + (mockData[c.name][ym] || 0), 0);
+    return s + visibleMonths.reduce((ss, ym) => ss + (mockData[c.name][ym] || 0), 0);
   }, 0);
-  const activeCount = ALL_MONTHS.filter(ym => absYM(ym) >= lo && absYM(ym) <= hi).length;
   const tdTS = document.createElement('td'); tdTS.textContent = fmt.format(totalSum); sumTr.appendChild(tdTS);
-  const tdTA = document.createElement('td'); tdTA.textContent = activeCount ? fmt.format(Math.round(totalSum / activeCount)) : '0'; sumTr.appendChild(tdTA);
+  const tdTA = document.createElement('td'); tdTA.textContent = visibleMonths.length ? fmt.format(Math.round(totalSum / visibleMonths.length)) : '0'; sumTr.appendChild(tdTA);
   body.appendChild(sumTr);
 }
 
@@ -558,20 +536,20 @@ document.getElementById('yearTabs').addEventListener('click', e => {
 
 // Month grid click
 document.getElementById('monthGrid').addEventListener('click', e => {
-  const cell = e.target.closest('.month-cell:not(.disabled)');
+  const cell = e.target.closest('.month-cell');
   if (!cell) return;
   const ym = cell.dataset.ym;
 
   if (pickState === 'idle') {
-    startYM = ym;
-    endYM = ym;
+    anchorYM = ym;
     pickState = 'first-picked';
   } else {
     // Commit range
-    const a = absYM(startYM), b = absYM(ym);
+    const a = absYM(anchorYM), b = absYM(ym);
     startYM = ymFromAbs(Math.min(a, b));
     endYM = ymFromAbs(Math.max(a, b));
     pickState = 'idle';
+    anchorYM = null;
     hoverYM = null;
   }
   updateGrid();
@@ -579,7 +557,7 @@ document.getElementById('monthGrid').addEventListener('click', e => {
 
 // Month grid hover
 document.getElementById('monthGrid').addEventListener('mouseover', e => {
-  const cell = e.target.closest('.month-cell:not(.disabled)');
+  const cell = e.target.closest('.month-cell');
   if (!cell) return;
   hoverYM = cell.dataset.ym;
   if (pickState === 'first-picked') updateGrid();
@@ -587,6 +565,16 @@ document.getElementById('monthGrid').addEventListener('mouseover', e => {
 document.getElementById('monthGrid').addEventListener('mouseleave', () => {
   hoverYM = null;
   if (pickState === 'first-picked') updateGrid();
+});
+
+// Escape cancels selection
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && pickState === 'first-picked') {
+    pickState = 'idle';
+    anchorYM = null;
+    hoverYM = null;
+    updateGrid();
+  }
 });
 
 // Theme toggle
