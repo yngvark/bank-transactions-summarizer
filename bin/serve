@@ -1,0 +1,34 @@
+#!/usr/bin/env -S uv --quiet run --script
+# /// script
+# requires-python = ">=3.10"
+# ///
+import argparse
+import functools
+import http.server
+import os
+import sys
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Serve a directory over HTTP")
+    parser.add_argument("directory", help="Directory to serve")
+    parser.add_argument("--port", type=int, default=8080, help="Port to serve on (default: 8080)")
+    args = parser.parse_args()
+
+    directory = os.path.abspath(args.directory)
+    if not os.path.isdir(directory):
+        print(f"Error: {args.directory} is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=directory)
+    server = http.server.HTTPServer(("localhost", args.port), handler)
+    print(f"Serving {directory} at http://localhost:{args.port}")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nStopped.")
+        server.server_close()
+
+
+if __name__ == "__main__":
+    main()
