@@ -1,31 +1,38 @@
 import { describe, it, expect } from 'vitest';
 import { parseTransactions } from './parser';
 import { RawTransaction, CategoryMapping } from '../../../shared/types';
-import * as XLSX from 'xlsx';
-import * as fs from 'fs';
+import readXlsxFile from 'read-excel-file/node';
 import * as path from 'path';
 import categoryMapping from '../data/categories.json';
 
-function loadFixtureTransactions(): RawTransaction[] {
+async function loadFixtureTransactions(): Promise<RawTransaction[]> {
   const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions.xlsx');
-  const data = fs.readFileSync(filePath);
-  const workbook = XLSX.read(data, { type: 'buffer', cellDates: true });
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  return XLSX.utils.sheet_to_json<RawTransaction>(worksheet);
+  const sheets = await readXlsxFile(filePath);
+  const rows = sheets[0].data;
+  const headers = rows[0] as unknown as string[];
+  return rows.slice(1).map((row) => {
+    const obj: Record<string, unknown> = {};
+    headers.forEach((header, i) => {
+      if (header !== null) {
+        obj[header] = row[i];
+      }
+    });
+    return obj as unknown as RawTransaction;
+  });
 }
 
 describe('parseTransactions', () => {
   describe('with XLSX fixture', () => {
-    it('parses transactions from XLSX file', () => {
-      const raw = loadFixtureTransactions();
+    it('parses transactions from XLSX file', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       // The "From 123456798012" Innbetaling with positive amount is filtered out
       expect(result).toHaveLength(4);
     });
 
-    it('assigns correct categories from XLSX data', () => {
-      const raw = loadFixtureTransactions();
+    it('assigns correct categories from XLSX data', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       const categories = result.map((t) => t.Category);
@@ -34,8 +41,8 @@ describe('parseTransactions', () => {
       expect(categories).toContain('Mat og drikke ➡ Restauranter og barer'); // Eating places
     });
 
-    it('converts string dates to Date objects', () => {
-      const raw = loadFixtureTransactions();
+    it('converts string dates to Date objects', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       for (const t of result) {

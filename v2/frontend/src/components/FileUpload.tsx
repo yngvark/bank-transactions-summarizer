@@ -1,4 +1,5 @@
 import { ChangeEvent, DragEvent, useState } from 'react';
+import readXlsxFile from 'read-excel-file/browser';
 import { RawTransaction } from '../../../shared/types';
 
 interface FileUploadProps {
@@ -10,26 +11,24 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const processFile = async (file: File) => {
-    if (!file.name.match(/\.xlsx?$/i)) {
+    if (!file.name.match(/\.xlsx$/i)) {
       return;
     }
 
-    const reader = new FileReader();
+    const sheets = await readXlsxFile(file);
+    const rows = sheets[0].data;
+    const headers = rows[0] as (string | null)[];
+    const transactions = rows.slice(1).map((row) => {
+      const obj: Record<string, unknown> = {};
+      headers.forEach((header, i) => {
+        if (header !== null) {
+          obj[header] = row[i];
+        }
+      });
+      return obj as unknown as RawTransaction;
+    });
 
-    reader.onload = async (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer);
-
-      // Import xlsx dynamically
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const transactions = XLSX.utils.sheet_to_json<RawTransaction>(worksheet);
-
-      onFileLoad(transactions, file.name);
-    };
-
-    reader.readAsArrayBuffer(file);
+    onFileLoad(transactions, file.name);
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +69,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
       <input
         type="file"
         id="fileInput"
-        accept=".xlsx, .xls"
+        accept=".xlsx"
         onChange={handleFileChange}
       />
       <svg className="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -86,7 +85,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
         <span className="file-icon">📄</span>
         <span className="file-name">{currentFileName}</span>
       </div>
-      <p className="upload-helper-text">Supports .xlsx and .xls files</p>
+      <p className="upload-helper-text">Supports .xlsx files</p>
     </div>
   );
 }
