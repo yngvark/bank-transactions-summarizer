@@ -1,4 +1,4 @@
-.PHONY: dev help install build run stop serve
+.PHONY: dev help install build run stop serve test
 
 PORT ?= 5173
 
@@ -19,6 +19,9 @@ run: install ## Run frontend in development mode (use PORT=XXXX for custom port)
 
 stop: ## Stop the development server
 	@lsof -ti:$(PORT) | xargs kill 2>/dev/null && echo "Stopped server on port $(PORT)" || echo "No server running on port $(PORT)"
+
+test: install ## Run unit tests
+	@(cd v2/frontend && npm test)
 
 SERVE_PORT ?= 8080
 serve: ## Serve a directory over HTTP for prototypes (use DIR=path SERVE_PORT=XXXX)
