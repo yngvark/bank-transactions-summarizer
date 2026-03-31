@@ -1,4 +1,4 @@
-.PHONY: dev help install build run stop serve test
+.PHONY: dev help install build run stop serve test install-e2e
 
 PORT ?= 5173
 
@@ -20,8 +20,13 @@ run: install ## Run frontend in development mode (use PORT=XXXX for custom port)
 stop: ## Stop the development server
 	@lsof -ti:$(PORT) | xargs kill 2>/dev/null && echo "Stopped server on port $(PORT)" || echo "No server running on port $(PORT)"
 
-test: install ## Run unit tests
+install-e2e: ## Install E2E test dependencies
+	@(cd v2 && npm install)
+	@(cd v2 && npx playwright install --with-deps)
+
+test: install install-e2e build ## Run unit and E2E tests
 	@(cd v2/frontend && npm test)
+	@(cd v2 && npm run test:e2e)
 
 SERVE_PORT ?= 8080
 serve: ## Serve a directory over HTTP for prototypes (use DIR=path SERVE_PORT=XXXX)
