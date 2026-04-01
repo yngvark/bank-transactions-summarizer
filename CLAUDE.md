@@ -19,8 +19,8 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 - ✅ ALWAYS use playwright skill for verifying UI or frontend changes
 - ✅ ALWAYS commit changes when done
-- ✅ ALWAYS include screenshots in PRs (store in `history/` folder)
+- ✅ ALWAYS include screenshots in PR descriptions (dont store files)
 
-## AI Planning Documents
+# Other
 
-Store all AI-generated planning/design docs (PLAN.md, ARCHITECTURE.md, etc.) in `history/`, not the project root.
+- As a last step when adding features, write a design documentation in markdown. Put it into <repository root>/docs. The aim is for future AI agents or humans to understand why a feature was made, and the context around it. The design document should usually be part of the same commit as the rest of functionality, if doing one commit.
