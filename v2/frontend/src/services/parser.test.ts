@@ -1,24 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { parseTransactions } from './parser';
 import { RawTransaction, CategoryMapping } from '../../../shared/types';
-import readXlsxFile from 'read-excel-file/node';
+import XLSX from 'xlsx';
+import * as fs from 'fs';
 import * as path from 'path';
 import categoryMapping from '../data/categories.json';
 
-async function loadFixtureTransactions(): Promise<RawTransaction[]> {
+function loadFixtureTransactions(): RawTransaction[] {
   const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions.xlsx');
-  const sheets = await readXlsxFile(filePath);
-  const rows = sheets[0].data;
-  const headers = rows[0] as unknown as string[];
-  return rows.slice(1).map((row) => {
-    const obj: Record<string, unknown> = {};
-    headers.forEach((header, i) => {
-      if (header !== null) {
-        obj[header] = row[i];
-      }
-    });
-    return obj as unknown as RawTransaction;
-  });
+  const buffer = fs.readFileSync(filePath);
+  const workbook = XLSX.read(buffer, { cellDates: true });
+  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+  return XLSX.utils.sheet_to_json<RawTransaction>(worksheet);
 }
 
 describe('parseTransactions', () => {
