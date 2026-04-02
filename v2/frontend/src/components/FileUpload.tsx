@@ -6,29 +6,44 @@ interface FileUploadProps {
   onFileLoad: (transactions: RawTransaction[], fileName: string) => void;
 }
 
+function worksheetToJson<T>(worksheet: import('@protobi/exceljs').Worksheet): T[] {
+  const headers: string[] = [];
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = String(cell.value);
+  });
+
+  const results: T[] = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj: Record<string, unknown> = {};
+    row.eachCell((cell, colNumber) => {
+      if (headers[colNumber]) {
+        obj[headers[colNumber]] = cell.value;
+      }
+    });
+    results.push(obj as T);
+  });
+  return results;
+}
+
 function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const processFile = async (file: File) => {
-    if (!file.name.match(/\.xlsx?$/i)) {
+    if (!file.name.match(/\.xlsx$/i)) {
       return;
     }
 
     const reader = new FileReader();
-
     reader.onload = async (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer);
-
-      // Import xlsx dynamically
-      const XLSX = await import('xlsx');
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-      const firstSheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheetName];
-      const transactions = XLSX.utils.sheet_to_json<RawTransaction>(worksheet);
-
+      const ExcelJS = await import('@protobi/exceljs');
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(e.target?.result as ArrayBuffer);
+      const worksheet = workbook.worksheets[0];
+      const transactions = worksheetToJson<RawTransaction>(worksheet);
       onFileLoad(transactions, file.name);
     };
-
     reader.readAsArrayBuffer(file);
   };
 
@@ -70,7 +85,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
       <input
         type="file"
         id="fileInput"
-        accept=".xlsx, .xls"
+        accept=".xlsx"
         onChange={handleFileChange}
       />
       <svg className="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -86,7 +101,7 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
         <span className="file-icon">📄</span>
         <span className="file-name">{currentFileName}</span>
       </div>
-      <p className="upload-helper-text">Supports .xlsx and .xls files</p>
+      <p className="upload-helper-text">Supports .xlsx files</p>
     </div>
   );
 }
