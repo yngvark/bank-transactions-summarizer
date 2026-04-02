@@ -17,11 +17,4 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 ## Developing rules
 
-- ✅ ALWAYS use playwright skill for verifying UI or frontend changes
-- ❌ NEVER use `npx playwright` or `npx @playwright/test` — always use the playwright skill instead
-- ✅ ALWAYS commit changes when done
-- ✅ ALWAYS include screenshots in PR descriptions (dont store files)
-
-# Other
-
-- As a last step when adding features, write a design documentation in markdown. Put it into <repository root>/docs. The aim is for future AI agents or humans to understand why a feature was made, and the context around it. The design document should usually be part of the same commit as the rest of functionality, if doing one commit.
+- ✅ ALWAYS include screenshots in PR descriptions. Put them in folder "screenshots" at repository root.
