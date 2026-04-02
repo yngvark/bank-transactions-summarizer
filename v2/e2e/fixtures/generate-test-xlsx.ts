@@ -1,8 +1,14 @@
-import XLSX from 'xlsx';
+import ExcelJS from '@protobi/exceljs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const columns = [
+  'TransactionDate', 'BookDate', 'ValueDate', 'Text', 'Type',
+  'Currency Amount', 'Currency Rate', 'Currency', 'Amount',
+  'Merchant Area', 'Merchant Category',
+];
 
 const transactions = [
   {
@@ -72,9 +78,15 @@ const transactions = [
   },
 ];
 
-const ws = XLSX.utils.json_to_sheet(transactions);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-XLSX.writeFile(wb, path.join(__dirname, 'test-transactions.xlsx'));
+const workbook = new ExcelJS.Workbook();
+const worksheet = workbook.addWorksheet('Transactions');
+
+worksheet.columns = columns.map((key) => ({ header: key, key }));
+
+for (const tx of transactions) {
+  worksheet.addRow(tx);
+}
+
+await workbook.xlsx.writeFile(path.join(__dirname, 'test-transactions.xlsx'));
 
 console.log('Generated test-transactions.xlsx');

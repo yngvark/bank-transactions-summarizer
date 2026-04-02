@@ -10,10 +10,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource/inter": "^5.2.8",
+    "@protobi/exceljs": "4.4.0-protobi.9",
     "d3": "^7.8.5",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "xlsx": "^0.18.5"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

@@ -1,31 +1,50 @@
 import { describe, it, expect } from 'vitest';
 import { parseTransactions } from './parser';
 import { RawTransaction, CategoryMapping } from '../../../shared/types';
-import * as XLSX from 'xlsx';
+import ExcelJS from '@protobi/exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import categoryMapping from '../data/categories.json';
 
-function loadFixtureTransactions(): RawTransaction[] {
+async function loadFixtureTransactions(): Promise<RawTransaction[]> {
   const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions.xlsx');
-  const data = fs.readFileSync(filePath);
-  const workbook = XLSX.read(data, { type: 'buffer', cellDates: true });
-  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-  return XLSX.utils.sheet_to_json<RawTransaction>(worksheet);
+  const buffer = fs.readFileSync(filePath);
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+  const worksheet = workbook.worksheets[0];
+
+  const headers: string[] = [];
+  const headerRow = worksheet.getRow(1);
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = String(cell.value);
+  });
+
+  const results: RawTransaction[] = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj: Record<string, unknown> = {};
+    row.eachCell((cell, colNumber) => {
+      if (headers[colNumber]) {
+        obj[headers[colNumber]] = cell.value;
+      }
+    });
+    results.push(obj as unknown as RawTransaction);
+  });
+  return results;
 }
 
 describe('parseTransactions', () => {
   describe('with XLSX fixture', () => {
-    it('parses transactions from XLSX file', () => {
-      const raw = loadFixtureTransactions();
+    it('parses transactions from XLSX file', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       // The "From 123456798012" Innbetaling with positive amount is filtered out
       expect(result).toHaveLength(4);
     });
 
-    it('assigns correct categories from XLSX data', () => {
-      const raw = loadFixtureTransactions();
+    it('assigns correct categories from XLSX data', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       const categories = result.map((t) => t.Category);
@@ -34,8 +53,8 @@ describe('parseTransactions', () => {
       expect(categories).toContain('Mat og drikke ➡ Restauranter og barer'); // Eating places
     });
 
-    it('converts string dates to Date objects', () => {
-      const raw = loadFixtureTransactions();
+    it('converts string dates to Date objects', async () => {
+      const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
       for (const t of result) {
