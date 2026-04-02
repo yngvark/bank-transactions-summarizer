@@ -18,6 +18,7 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 ## Developing rules
 
 - ✅ ALWAYS use playwright skill for verifying UI or frontend changes
+- ❌ NEVER use `npx playwright` or `npx @playwright/test` — always use the playwright skill instead
 - ✅ ALWAYS commit changes when done
 - ✅ ALWAYS include screenshots in PRs (store in `history/` folder)
 
