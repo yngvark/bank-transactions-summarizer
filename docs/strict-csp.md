@@ -19,7 +19,6 @@ font-src 'self';
 connect-src 'self';
 form-action 'none';
 base-uri 'self';
-frame-ancestors 'none';
 ```
 
 ### Why build-only
@@ -28,9 +27,9 @@ In dev mode, Vite injects inline `<style>` tags for CSS HMR and `@vitejs/plugin-
 
 ### Why meta tag instead of HTTP headers
 
-GitHub Pages doesn't support custom HTTP response headers. The `<meta>` tag approach works identically for most directives, with two caveats:
-- `frame-ancestors` is ignored in meta tags by spec (but included for documentation intent; the GitHub Pages `X-Frame-Options` header provides equivalent protection).
+GitHub Pages doesn't support custom HTTP response headers. The `<meta>` tag approach works identically for most directives, with one caveat:
 - `report-uri`/`report-to` directives don't work in meta tags (not needed for this project).
+- `frame-ancestors` is not supported in meta tags by spec, so it is omitted. GitHub Pages provides `X-Frame-Options` header for clickjacking protection.
 
 ## Why these directives
 
@@ -44,7 +43,6 @@ GitHub Pages doesn't support custom HTTP response headers. The `<meta>` tag appr
 | `connect-src` | `'self'` | No external API calls; file reading uses FileReader (not fetch) |
 | `form-action` | `'none'` | No forms submit to a URL |
 | `base-uri` | `'self'` | Prevents `<base>` tag injection attacks |
-| `frame-ancestors` | `'none'` | Prevents clickjacking (note: not enforced via meta tag, see above) |
 
 ## Implementation
 

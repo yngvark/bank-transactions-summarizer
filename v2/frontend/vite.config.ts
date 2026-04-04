@@ -17,7 +17,6 @@ function cspPlugin(): Plugin {
           "connect-src 'self'",
           "form-action 'none'",
           "base-uri 'self'",
-          "frame-ancestors 'none'",
         ].join('; ');
         return html.replace(
           '<head>',
