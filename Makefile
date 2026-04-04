@@ -22,7 +22,6 @@ stop: ## Stop the development server
 
 install-e2e: ## Install E2E test dependencies
 	@(cd v2 && npm install)
-	@(cd v2 && npx playwright install --with-deps)
 
 test: install install-e2e build ## Run unit and E2E tests
 	@(cd v2/frontend && npm test)

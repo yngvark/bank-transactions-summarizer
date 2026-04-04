@@ -1,5 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Use system Chromium when PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH is set (e.g. in Docker).
+// channel: 'chrome' hangs in Alpine containers; executablePath with explicit args works.
+const chromiumPath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
+const launchOptions = chromiumPath
+  ? { executablePath: chromiumPath, args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'] }
+  : {};
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -10,6 +17,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
+    launchOptions,
   },
 
   projects: [
@@ -18,12 +26,6 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },

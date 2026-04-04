@@ -17,6 +17,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install Playwright browsers
+        run: cd v2 && npm install && npx playwright install --with-deps chromium
+
       - name: Run tests
         run: make test
 
