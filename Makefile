@@ -1,4 +1,4 @@
-.PHONY: dev help install build run stop serve test install-e2e
+.PHONY: dev help install build run stop serve ci install-e2e
 
 PORT ?= 5173
 
@@ -23,7 +23,7 @@ stop: ## Stop the development server
 install-e2e: ## Install E2E test dependencies
 	@(cd v2 && npm install)
 
-test: install install-e2e build ## Run unit and E2E tests
+ci: install install-e2e build ## Run unit and E2E tests
 	@(cd v2/frontend && npm test)
 	@(cd v2 && npm run test:e2e)
 
