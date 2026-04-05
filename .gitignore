@@ -23,4 +23,5 @@ playwright/.cache/
 
 # Claude
 .claude/worktrees/
+.claude/settings.local.json
 .aletheia/
