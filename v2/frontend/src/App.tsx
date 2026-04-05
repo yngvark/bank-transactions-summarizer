@@ -64,20 +64,15 @@ function App() {
   useEffect(() => {
     if (allTransactions.length === 0) return;
 
-    const parsedTransactions = allTransactions
-      .map((d) => ({
-        ...d,
-        TransactionDateParsed: new Date(d.TransactionDate),
-      }))
-      .sort((a, b) => a.TransactionDateParsed.getTime() - b.TransactionDateParsed.getTime());
+    const dates = allTransactions.flatMap((d) => [
+      new Date(d.TransactionDate),
+      new Date(d.BookDate),
+    ]);
 
-    if (parsedTransactions.length === 0) return;
-
-    const latestTransaction = parsedTransactions[parsedTransactions.length - 1];
-    const year = latestTransaction.TransactionDateParsed.getFullYear();
+    const latestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+    const year = latestDate.getFullYear();
     const yearStart = `${year}-01-01`;
 
-    const latestDate = latestTransaction.TransactionDateParsed;
     const latestDateISO = `${latestDate.getFullYear()}-${String(
       latestDate.getMonth() + 1
     ).padStart(2, '0')}-${String(latestDate.getDate()).padStart(2, '0')}`;
