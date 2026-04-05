@@ -26,5 +26,8 @@ playwright/.cache/
 .claude/settings.local.json
 .aletheia/
 
+# OS
+.DS_Store
+
 # Other
 temp/
