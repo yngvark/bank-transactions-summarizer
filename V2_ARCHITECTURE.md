@@ -362,7 +362,7 @@ bank-transactions-summarizer/
    - **Recommendation**: Single user for v2, add auth later if needed
 
 4. **Deployment**: Desktop app or web app?
-   - **Recommendation**: Keep as local web app (npm start)
+   - **Recommendation**: Keep as local web app (pnpm start)
 
 5. **Color Scheme**: Keep current or implement z-scores immediately?
    - **Recommendation**: Keep current in phase 3, improve in phase 5

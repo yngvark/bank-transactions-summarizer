@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: pnpm
+          cache-dependency-path: v2/pnpm-lock.yaml
 
       - name: Install Playwright browsers
         run: cd v2 && pnpm install && pnpm exec playwright install --with-deps chromium
