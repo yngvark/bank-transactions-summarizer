@@ -7,7 +7,7 @@ A frontend-only React app for summarizing bank transactions.
 ## Prerequisites
 
 - Node.js (v18+)
-- npm
+- pnpm
 
 ## Getting Started
 

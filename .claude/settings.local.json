@@ -23,9 +23,9 @@
       "Bash(playwright-cli click:*)",
       "Bash(playwright-cli press:*)",
       "Bash(grep -E \"\\\\.\\(ts|js|json\\)$\")",
-      "Bash(npm install:*)",
-      "Bash(npx tsx:*)",
-      "Bash(npx vitest:*)"
+      "Bash(pnpm install:*)",
+      "Bash(pnpm exec tsx:*)",
+      "Bash(pnpm exec vitest:*)"
     ],
     "deny": [],
     "ask": []

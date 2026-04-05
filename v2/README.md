@@ -28,12 +28,12 @@ End-to-end tests are written with Playwright. See [TESTING.md](./TESTING.md) for
 ```bash
 # Install dependencies (one-time setup)
 cd v2
-npm install
-npx playwright install --with-deps
+pnpm install
+pnpm exec playwright install --with-deps
 
 # Run all tests
-npm run test:e2e
+pnpm run test:e2e
 
 # Run with UI (recommended for development)
-npm run test:e2e:ui
+pnpm run test:e2e:ui
 ```

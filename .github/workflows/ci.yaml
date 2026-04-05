@@ -13,12 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install Playwright browsers
-        run: cd v2 && npm install && npx playwright install --with-deps chromium
+        run: cd v2 && pnpm install && pnpm exec playwright install --with-deps chromium
 
       - name: Run tests
         run: make ci
