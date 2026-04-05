@@ -9,6 +9,11 @@
 # Node.js
 node_modules/
 .pnpm-store/
+vite.config.js
+
+# Environment files
+.env
+.env.*
 
 # Playwright
 playwright-report/

@@ -1,6 +1,20 @@
 import { defineConfig, loadEnv, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const cspDirectives = [
+  "default-src 'none'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self'",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "worker-src 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'none'",
+  "base-uri 'self'",
+].join('; ');
+
 function cspPlugin(): Plugin {
   return {
     name: 'strict-csp',
@@ -8,19 +22,9 @@ function cspPlugin(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        const csp = [
-          "default-src 'none'",
-          "script-src 'self'",
-          "style-src 'self'",
-          "img-src 'self'",
-          "font-src 'self'",
-          "connect-src 'self'",
-          "form-action 'none'",
-          "base-uri 'self'",
-        ].join('; ');
         return html.replace(
           '<head>',
-          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${csp}" />`
+          `<head>\n    <meta http-equiv="Content-Security-Policy" content="${cspDirectives}" />`
         );
       },
     },

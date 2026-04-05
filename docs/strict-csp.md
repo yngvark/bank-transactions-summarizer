@@ -17,6 +17,9 @@ style-src 'self';
 img-src 'self';
 font-src 'self';
 connect-src 'self';
+worker-src 'none';
+object-src 'none';
+frame-ancestors 'none';
 form-action 'none';
 base-uri 'self';
 ```
@@ -25,11 +28,15 @@ base-uri 'self';
 
 In dev mode, Vite injects inline `<style>` tags for CSS HMR and `@vitejs/plugin-react` adds an inline script preamble for React Fast Refresh. Both would be blocked by a strict CSP, breaking the dev experience. Since CSP in dev mode provides no security value, the plugin uses `apply: 'build'` to only inject the tag in production.
 
+### Dev-mode CSP is not feasible (investigated and rejected)
+
+Adding CSP as a server header in `vite.config.ts` `server.headers` was attempted but breaks the app entirely. Vite's dev server requires `unsafe-inline` (for HMR style injection and React Fast Refresh preamble) and `unsafe-eval` (for module evaluation). A CSP that permits both of those provides no meaningful protection, so dev-mode CSP is intentionally omitted.
+
 ### Why meta tag instead of HTTP headers
 
 GitHub Pages doesn't support custom HTTP response headers. The `<meta>` tag approach works identically for most directives, with one caveat:
 - `report-uri`/`report-to` directives don't work in meta tags (not needed for this project).
-- `frame-ancestors` is not supported in meta tags by spec, so it is omitted. GitHub Pages provides `X-Frame-Options` header for clickjacking protection.
+- `frame-ancestors` is not supported in meta tags by spec (browsers ignore it), but is declared in the source for intent documentation. GitHub Pages provides `X-Frame-Options` header for clickjacking protection.
 
 ## Why these directives
 
@@ -42,6 +49,9 @@ GitHub Pages doesn't support custom HTTP response headers. The `<meta>` tag appr
 | `font-src` | `'self'` | @fontsource fonts are bundled by Vite as local assets |
 | `connect-src` | `'self'` | No external API calls; file reading uses FileReader (not fetch) |
 | `form-action` | `'none'` | No forms submit to a URL |
+| `worker-src` | `'none'` | No Web Workers used; prevents abuse |
+| `object-src` | `'none'` | No Flash/plugin embeds; prevents legacy plugin attacks |
+| `frame-ancestors` | `'none'` | Prevents clickjacking (note: ignored in meta tags, enforced by GitHub Pages `X-Frame-Options`) |
 | `base-uri` | `'self'` | Prevents `<base>` tag injection attacks |
 
 ## Implementation
