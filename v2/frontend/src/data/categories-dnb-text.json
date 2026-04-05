@@ -1,0 +1,14 @@
+[
+  { "pattern": "Rema|Kiwi|Coop|Meny|Bunnpris|Joker|Spar\\b|Extra\\b|Europris", "merchantCategory": "Grocery Stores, Supermarkets" },
+  { "pattern": "Espresso House|Starbucks|Peppes|McDonald|Burger King|Restaurant|Cafe|Kafe", "merchantCategory": "Eating places and Restaurants" },
+  { "pattern": "Komplett|Elkjøp|Power\\b|Netonnet", "merchantCategory": "Electronic Sales" },
+  { "pattern": "\\bSAS\\b|Norwegian Air|Widerøe|Flyr", "merchantCategory": "Airlines" },
+  { "pattern": "XXL|Sport1|Intersport|Sportshuset", "merchantCategory": "Sporting Goods Stores" },
+  { "pattern": "H&M|Zara|Cubus|Dressmann|Volt|Nille", "merchantCategory": "Miscellaneous and Specialty Retail S" },
+  { "pattern": "Vinmonopolet", "merchantCategory": "Package Stores – Beer, Wine, and Liq" },
+  { "pattern": "Taxi|Uber\\b|Bolt\\b", "merchantCategory": "Taxicabs and Limousines" },
+  { "pattern": "Vy\\b|Ruter|AtB|Kolumbus|Skyss", "merchantCategory": "Passenger Railways" },
+  { "pattern": "Hotels?\\.com|Airbnb|Scandic|Thon Hotel|Nordic Choice|Radisson", "merchantCategory": "Lodging – Hotels, Motels, Resorts, C" },
+  { "pattern": "Overføring|Kontoregulering|Vipps", "merchantCategory": "Money Orders – Wire Transfer" },
+  { "pattern": "Minibank|Kontantuttak", "merchantCategory": "Financial Institutions – ATM" }
+]

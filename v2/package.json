@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
+    "@protobi/exceljs": "^4.4.0-protobi.9",
     "@types/node": "^22.10.5"
   }
 }

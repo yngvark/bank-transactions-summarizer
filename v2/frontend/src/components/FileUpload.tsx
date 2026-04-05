@@ -1,19 +1,23 @@
 import { ChangeEvent, DragEvent, useState } from 'react';
 import { RawTransaction } from '../../../shared/types';
+import { normalizeTransactions } from '../services/bankAdapters';
 
 interface FileUploadProps {
   currentFileName: string;
   onFileLoad: (transactions: RawTransaction[], fileName: string) => void;
 }
 
-function worksheetToJson<T>(worksheet: import('@protobi/exceljs').Worksheet): T[] {
+function parseWorksheet(worksheet: import('@protobi/exceljs').Worksheet): {
+  headers: string[];
+  rows: Record<string, unknown>[];
+} {
   const headers: string[] = [];
   const headerRow = worksheet.getRow(1);
   headerRow.eachCell((cell, colNumber) => {
     headers[colNumber] = String(cell.value);
   });
 
-  const results: T[] = [];
+  const rows: Record<string, unknown>[] = [];
   worksheet.eachRow((row, rowNumber) => {
     if (rowNumber === 1) return;
     const obj: Record<string, unknown> = {};
@@ -22,9 +26,9 @@ function worksheetToJson<T>(worksheet: import('@protobi/exceljs').Worksheet): T[
         obj[headers[colNumber]] = cell.value;
       }
     });
-    results.push(obj as T);
+    rows.push(obj);
   });
-  return results;
+  return { headers: headers.filter(Boolean), rows };
 }
 
 function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
@@ -41,7 +45,8 @@ function FileUpload({ currentFileName, onFileLoad }: FileUploadProps) {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(e.target?.result as ArrayBuffer);
       const worksheet = workbook.worksheets[0];
-      const transactions = worksheetToJson<RawTransaction>(worksheet);
+      const { headers, rows } = parseWorksheet(worksheet);
+      const transactions = normalizeTransactions(headers, rows);
       onFileLoad(transactions, file.name);
     };
     reader.readAsArrayBuffer(file);
