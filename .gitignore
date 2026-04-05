@@ -8,6 +8,7 @@
 
 # Node.js
 node_modules/
+.pnpm-store/
 
 # Playwright
 playwright-report/
@@ -15,5 +16,6 @@ test-results/
 playwright/.cache/
 .playwright-cli
 
-# Claude worktrees
+# Claude
 .claude/worktrees/
+.aletheia/
