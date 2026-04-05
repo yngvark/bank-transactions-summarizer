@@ -25,3 +25,6 @@ playwright/.cache/
 .claude/worktrees/
 .claude/settings.local.json
 .aletheia/
+
+# Other
+temp/
