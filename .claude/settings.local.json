@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bd:*)",
+      "Bash(make:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv source v1/)",
+      "Bash(git mv:*)",
+      "Bash(git mv README.md v1/)",
+      "Bash(git worktree list)",
+      "Bash(wc:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "mcp__plugin_beads",
+      "Bash(playwright-cli open:*)",
+      "Bash(playwright-cli screenshot:*)",
+      "Bash(playwright-cli close:*)",
+      "Skill(playwright-cli)",
+      "Bash(playwright-cli goto:*)",
+      "Bash(playwright-cli snapshot:*)",
+      "Bash(playwright-cli click:*)",
+      "Bash(playwright-cli press:*)",
+      "Bash(grep -E \"\\\\.\\(ts|js|json\\)$\")",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm exec tsx:*)",
+      "Bash(pnpm exec vitest:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
