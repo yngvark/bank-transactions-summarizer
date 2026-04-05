@@ -7,7 +7,7 @@ import * as path from 'path';
 import categoryMapping from '../data/categories.json';
 
 async function loadFixtureTransactions(): Promise<RawTransaction[]> {
-  const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions.xlsx');
+  const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions-bank-norwegian.xlsx');
   const buffer = fs.readFileSync(filePath);
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));

@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const fixtureFile = path.resolve(__dirname, 'fixtures/test-transactions.xlsx');
+const fixtureFile = path.resolve(__dirname, 'fixtures/test-transactions-bank-norwegian.xlsx');
 
 test.describe('XLSX file import', () => {
   test('uploading an XLSX file displays statistics and transactions', async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe('XLSX file import', () => {
     await page.waitForSelector('.statistics-section table tbody tr');
 
     // Verify the file name is displayed
-    await expect(page.locator('.file-name')).toContainText('test-transactions.xlsx');
+    await expect(page.locator('.file-name')).toContainText('test-transactions-bank-norwegian.xlsx');
 
     // Verify statistics table has rows (categories were processed)
     const statRows = page.locator('.statistics-section table tbody tr');
