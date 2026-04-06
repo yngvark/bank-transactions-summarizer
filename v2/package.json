@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
-    "@protobi/exceljs": "^4.4.0-protobi.9",
+    "@protobi/exceljs": "github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212",
     "@types/node": "^22.10.5"
   }
 }

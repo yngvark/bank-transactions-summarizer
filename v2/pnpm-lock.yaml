@@ -12,8 +12,8 @@ importers:
         specifier: ^1.48.0
         version: 1.57.0
       '@protobi/exceljs':
-        specifier: ^4.4.0-protobi.9
-        version: 4.4.0-protobi.9
+        specifier: github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212
+        version: https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212
       '@types/node':
         specifier: ^22.10.5
         version: 22.19.7
@@ -39,8 +39,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@protobi/exceljs@4.4.0-protobi.9':
-    resolution: {integrity: sha512-h3ai5NRnVa3taLMy/MyWJTNCnwL3NryxlZf6wlhiOTKrsnZ8A9rvIkscYVOjNzs6GD5sUu7AdlUKTNGh5NPeBQ==}
+  '@protobi/exceljs@https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212':
+    resolution: {tarball: https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212}
+    version: 4.4.0-protobi.8
     engines: {node: '>=8.3.0'}
 
   '@types/node@14.18.63':
@@ -557,7 +558,7 @@ snapshots:
     dependencies:
       playwright: 1.57.0
 
-  '@protobi/exceljs@4.4.0-protobi.9':
+  '@protobi/exceljs@https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212':
     dependencies:
       archiver: 7.0.1
       dayjs: 1.11.20

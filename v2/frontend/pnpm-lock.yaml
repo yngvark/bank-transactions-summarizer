@@ -12,8 +12,8 @@ importers:
         specifier: ^5.2.8
         version: 5.2.8
       '@protobi/exceljs':
-        specifier: 4.4.0-protobi.9
-        version: 4.4.0-protobi.9
+        specifier: github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212
+        version: https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212
       d3:
         specifier: ^7.8.5
         version: 7.9.0
@@ -241,8 +241,9 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
-  '@protobi/exceljs@4.4.0-protobi.9':
-    resolution: {integrity: sha512-h3ai5NRnVa3taLMy/MyWJTNCnwL3NryxlZf6wlhiOTKrsnZ8A9rvIkscYVOjNzs6GD5sUu7AdlUKTNGh5NPeBQ==}
+  '@protobi/exceljs@https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212':
+    resolution: {tarball: https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212}
+    version: 4.4.0-protobi.8
     engines: {node: '>=8.3.0'}
 
   '@rolldown/binding-android-arm64@1.0.0-rc.12':
@@ -2033,7 +2034,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@protobi/exceljs@4.4.0-protobi.9':
+  '@protobi/exceljs@https://codeload.github.com/yngvark/exceljs/tar.gz/8404952a3561fc8f5f44cf22a5cab0c973d36212':
     dependencies:
       archiver: 7.0.1
       dayjs: 1.11.20
