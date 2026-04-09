@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Transactions — Date Filter Prototype D</title>
+<style>
+/* ---- App variables (copied from actual app) ---- */
+:root {
+  --primary-color: #3b4a6b;
+  --primary-hover: #2d3a56;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --secondary-color: #64748b;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4,0,0.2,1);
+  --table-font-size: 0.75rem;
+  --table-header-font-size: 0.65rem;
+  --table-cell-padding: 0.4rem 0.5rem;
+}
+[data-theme="dark"] {
+  --primary-color: #8b9dc3;
+  --primary-hover: #a3b5d6;
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --secondary-color: #94a3b8;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ---- Header (actual app) ---- */
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a78bfa, #6366f1);
+}
+.app-header h1 { margin: 0 0 0.25rem; font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.app-subtitle { margin: 0; opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+[data-theme="dark"] .app-header { background: linear-gradient(135deg, #0f0e26 0%, #1e1b4b 50%, #252366 100%); }
+
+/* ---- Main content ---- */
+.app-content { max-width: 95%; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2.5rem; }
+section h2 {
+  font-size: 1.25rem; font-weight: 600; color: var(--text-primary);
+  margin: 0 0 1.25rem; display: flex; align-items: center; gap: 0.5rem; letter-spacing: -0.02em;
+}
+section h2::before {
+  content: ''; display: inline-block; width: 4px; height: 1.2em;
+  background: linear-gradient(180deg, var(--accent-color), #a78bfa); border-radius: 2px; flex-shrink: 0;
+}
+section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-secondary); }
+
+/* ---- Controls section ---- */
+.controls-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+.search-container { display: flex; flex-direction: column; gap: 1rem; }
+.search-wrapper { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: center; }
+.search-input {
+  flex: 1; min-width: 200px; max-width: 400px;
+  padding: 0.625rem 1rem; border: 1px solid var(--border-color); border-radius: var(--radius);
+  font-size: 0.9375rem; font-family: inherit; outline: none;
+  background: var(--surface); color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.search-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+.search-input::placeholder { color: var(--text-secondary); }
+.regular-button {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--accent-color) 0%, #818cf8 100%);
+  color: white; font-size: 0.875rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; border: none; border-radius: var(--radius);
+  box-shadow: 0 2px 4px rgba(99,102,241,0.25), 0 1px 2px rgba(0,0,0,0.1);
+  transition: all var(--transition);
+}
+.regular-button:hover {
+  background: linear-gradient(135deg, var(--accent-hover) 0%, #6366f1 100%);
+  box-shadow: 0 4px 8px rgba(99,102,241,0.35), 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+.randomize-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  box-shadow: 0 2px 4px rgba(139,92,246,0.25), 0 1px 2px rgba(0,0,0,0.1);
+}
+.randomize-button:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+  box-shadow: 0 4px 8px rgba(139,92,246,0.35), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ---- Period picker (NEW — Prototype D) ---- */
+.period-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
+}
+.period-picker-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.year-tabs {
+  display: flex;
+  gap: 3px;
+  background: var(--border-color);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.year-tab {
+  padding: 0.375rem 0.875rem;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.year-tab:hover { color: var(--text-primary); }
+.year-tab.active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 420px;
+}
+.month-cell {
+  padding: 0.45rem 0.25rem;
+  text-align: center;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 500;
+  user-select: none;
+}
+.month-cell:hover { background: var(--primary-light); border-color: #cbd5e1; color: var(--text-primary); }
+.month-cell.in-range { background: #e0e7ff; border-color: #c7d2fe; color: #4338ca; }
+.month-cell.edge { background: var(--accent-color); color: #fff; border-color: var(--accent-color); font-weight: 600; }
+.month-cell.preview { background: #ede9fe; border-color: #ddd6fe; color: #6d28d9; }
+[data-theme="dark"] .month-cell.in-range { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
+[data-theme="dark"] .month-cell.edge { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+[data-theme="dark"] .month-cell.preview { background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.25); color: #c4b5fd; }
+
+.period-summary {
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  font-weight: 500;
+  min-height: 1.2em;
+}
+
+/* ---- From/To date fields ---- */
+.period-fields-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+}
+.period-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.period-input {
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  outline: none;
+  width: 140px;
+  background: var(--surface);
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.period-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+/* ---- Statistics section (actual app styles) ---- */
+.statistics-section {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+.statistics-controls-bar {
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: 0.75rem 1rem; background: var(--background);
+  border-radius: var(--radius); margin-bottom: 1rem; flex-wrap: wrap;
+}
+.statistics-controls-bar .control-group { display: flex; align-items: center; gap: 0.5rem; }
+.statistics-controls-bar button {
+  padding: 0.4rem 0.8rem; border: 1px solid var(--border-color); border-radius: 6px;
+  background: var(--surface); cursor: pointer; font-size: 0.8rem; color: var(--text-secondary);
+  font-family: inherit; transition: all 0.15s;
+}
+.statistics-controls-bar button:hover { background: var(--primary-light); border-color: #94a3b8; }
+.table-wrapper { overflow-x: auto; border-radius: var(--radius); margin: 0 -0.5rem; padding: 0 0.5rem; }
+.statistics-section table {
+  width: 100%; border-collapse: separate; border-spacing: 2px;
+  font-size: var(--table-font-size); background-color: transparent;
+}
+.statistics-section table th,
+.statistics-section table td {
+  padding: var(--table-cell-padding); text-align: left; border-bottom: none; border-radius: 4px;
+}
+.statistics-section table th {
+  background-color: var(--background); color: var(--text-secondary);
+  font-weight: 600; font-size: var(--table-header-font-size);
+  text-transform: uppercase; letter-spacing: 0.05em; position: sticky; top: 0; z-index: 10;
+}
+.statistics-section table th:first-child,
+.statistics-section table td:first-child { white-space: nowrap; position: sticky; left: 0; z-index: 5; }
+.statistics-section table th:first-child { z-index: 15; }
+.statistics-section table td:first-child { background-color: var(--surface); font-weight: 500; }
+.statistics-section td.num-cell {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; text-align: right; white-space: nowrap;
+}
+.statistics-section tr.depth-0 { background: #e2e8f0; font-weight: 700; font-size: 0.85rem; }
+.statistics-section tr.depth-0 td { border-bottom: 2px solid #cbd5e1; }
+.statistics-section tr.depth-0 td:first-child { background: #e2e8f0; }
+.statistics-section tr.depth-1 { background: #f1f5f9; font-weight: 600; font-size: 0.8rem; }
+.statistics-section tr.depth-1 td { border-bottom: 1px solid #e2e8f0; }
+.statistics-section tr.depth-1 td:first-child { background: #f1f5f9; }
+.statistics-section tr.depth-2 { background: #f8fafc; font-weight: 400; font-size: 0.78rem; }
+.statistics-section tr.depth-2 td:first-child { background: #f8fafc; }
+.statistics-section table tr.sum td {
+  background-color: var(--primary-color) !important; color: white; font-weight: 600;
+}
+
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem; z-index: 100;
+}
+.theme-toggle button {
+  width: 36px; height: 36px; border: 1px solid var(--border-color); background: var(--surface);
+  border-radius: var(--radius); cursor: pointer; font-size: 1.1rem; color: var(--text-primary);
+  transition: all var(--transition);
+}
+.theme-toggle button:hover { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+
+/* File upload (simplified) */
+.file-upload-section {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem;
+  padding: 1.5rem; margin-bottom: 1.5rem;
+  border: 2px dashed var(--border-color); border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(99,102,241,0.03) 0%, rgba(139,92,246,0.03) 100%);
+}
+.file-name { font-size: 0.875rem; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<div class="theme-toggle"><button id="themeBtn">&#9790;</button></div>
+
+<div class="app">
+  <header class="app-header">
+    <h1>Bank Transactions</h1>
+    <p class="app-subtitle">Analyze and categorize your spending</p>
+  </header>
+
+  <main class="app-content">
+    <!-- Controls -->
+    <section class="controls-section">
+      <div class="file-upload-section">
+        <span class="file-name">random-data.xlsx</span>
+      </div>
+
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" placeholder="Search transactions...">
+          <button class="regular-button randomize-button">Load Sample Data</button>
+        </div>
+
+        <!-- NEW: Period picker (Prototype D) -->
+        <div class="period-picker">
+          <div class="period-fields-wrapper">
+            <span class="period-text">From</span>
+            <input type="date" class="period-input" id="dateFrom">
+            <span class="period-text">To</span>
+            <input type="date" class="period-input" id="dateTo">
+          </div>
+          <div class="year-tabs" id="yearTabs">
+            <button class="year-tab" data-year="2024">2024</button>
+            <button class="year-tab active" data-year="2025">2025</button>
+            <button class="year-tab" data-year="2026">2026</button>
+          </div>
+          <div class="month-grid" id="monthGrid"></div>
+          <div class="period-summary" id="periodSummary">Jan 2025 &ndash; Dec 2025</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statistics -->
+    <section class="statistics-section">
+      <h2>Spending by Category</h2>
+      <div class="statistics-controls-bar">
+        <div class="control-group">
+          <button>Collapse</button>
+          <button>Expand</button>
+        </div>
+        <div class="control-group">
+          <button>Collapse All</button>
+          <button>Expand All</button>
+        </div>
+        <button>Heatmap</button>
+      </div>
+      <div class="table-wrapper">
+        <table id="statsTable">
+          <thead><tr id="statsHead"></tr></thead>
+          <tbody id="statsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+// ---- Mock data ----
+const ALL_MONTHS = [];
+for (let y = 2024; y <= 2026; y++) {
+  for (let m = 1; m <= 12; m++) ALL_MONTHS.push(`${y}-${String(m).padStart(2,'0')}`);
+}
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const CATEGORIES = [
+  { name: 'Expenses', depth: 0, seed: 8000 },
+  { name: 'Groceries', depth: 1, seed: 3000 },
+  { name: 'REMA 1000', depth: 2, seed: 1500 },
+  { name: 'Kiwi', depth: 2, seed: 800 },
+  { name: 'Meny', depth: 2, seed: 700 },
+  { name: 'Transport', depth: 1, seed: 1200 },
+  { name: 'Ruter', depth: 2, seed: 800 },
+  { name: 'Vy', depth: 2, seed: 400 },
+  { name: 'Eating Out', depth: 1, seed: 1800 },
+  { name: 'Restaurants', depth: 2, seed: 1200 },
+  { name: 'Cafes', depth: 2, seed: 600 },
+  { name: 'Entertainment', depth: 1, seed: 900 },
+  { name: 'Streaming', depth: 2, seed: 400 },
+  { name: 'Events', depth: 2, seed: 500 },
+  { name: 'Housing', depth: 1, seed: 1100 },
+];
+
+// Generate mock values
+const mockData = {};
+const rng = (seed) => ((seed * 16807) % 2147483647) / 2147483647;
+CATEGORIES.forEach(cat => {
+  mockData[cat.name] = {};
+  ALL_MONTHS.forEach((ym, i) => {
+    const v = Math.round(cat.seed * (0.6 + 0.8 * rng(cat.seed * (i + 1) + i * 7)));
+    mockData[cat.name][ym] = v;
+  });
+});
+
+// ---- Period picker state ----
+let selectedYear = 2025;
+let startYM = '2025-01', endYM = '2025-12';
+let anchorYM = null;  // first-picked month (uncommitted)
+let hoverYM = null;
+let pickState = 'idle'; // idle | first-picked
+
+function absYM(ym) { const [y, m] = ym.split('-').map(Number); return y * 12 + (m - 1); }
+function ymFromAbs(a) { return `${Math.floor(a / 12)}-${String((a % 12) + 1).padStart(2, '0')}`; }
+function fmtYM(ym) { const [y, m] = ym.split('-').map(Number); return `${MONTH_NAMES[m - 1]} ${y}`; }
+
+function buildGrid() {
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = '';
+  MONTH_NAMES.forEach((m, i) => {
+    const div = document.createElement('div');
+    div.className = 'month-cell';
+    div.textContent = m;
+    const ym = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
+    div.dataset.ym = ym;
+    grid.appendChild(div);
+  });
+  updateGrid();
+}
+
+function updateGrid() {
+  const cells = document.querySelectorAll('#monthGrid .month-cell');
+  const sAbs = absYM(startYM), eAbs = absYM(endYM);
+  let lo = Math.min(sAbs, eAbs), hi = Math.max(sAbs, eAbs);
+
+  cells.forEach(c => {
+    c.classList.remove('edge', 'in-range', 'preview');
+    const cm = absYM(c.dataset.ym);
+
+    if (pickState === 'first-picked' && anchorYM) {
+      const aAbs = absYM(anchorYM);
+      if (cm === aAbs) c.classList.add('edge');
+      // Hover preview
+      if (hoverYM) {
+        const hAbs = absYM(hoverYM);
+        let pLo = Math.min(aAbs, hAbs), pHi = Math.max(aAbs, hAbs);
+        if (cm >= pLo && cm <= pHi && cm !== aAbs) c.classList.add('preview');
+      }
+    } else {
+      // Committed range
+      if (cm === lo || cm === hi) c.classList.add('edge');
+      else if (cm > lo && cm < hi) c.classList.add('in-range');
+    }
+  });
+
+  updateSummary();
+  updateTable();
+}
+
+function updateSummary() {
+  const el = document.getElementById('periodSummary');
+  if (pickState === 'first-picked' && anchorYM) {
+    if (hoverYM) {
+      const a = absYM(anchorYM), b = absYM(hoverYM);
+      const lo = ymFromAbs(Math.min(a, b)), hi = ymFromAbs(Math.max(a, b));
+      el.textContent = lo === hi ? fmtYM(lo) : `${fmtYM(lo)} \u2013 ${fmtYM(hi)}`;
+    } else {
+      el.textContent = fmtYM(anchorYM);
+    }
+  } else {
+    el.textContent = startYM === endYM ? fmtYM(startYM) : `${fmtYM(startYM)} \u2013 ${fmtYM(endYM)}`;
+  }
+}
+
+// ---- Statistics table ----
+function updateTable() {
+  const sAbs = absYM(startYM), eAbs = absYM(endYM);
+  const lo = Math.min(sAbs, eAbs), hi = Math.max(sAbs, eAbs);
+
+  // Only show months within the selected range
+  const visibleMonths = ALL_MONTHS.filter(ym => {
+    const a = absYM(ym);
+    return a >= lo && a <= hi;
+  });
+
+  // Build header — only selected months
+  const head = document.getElementById('statsHead');
+  head.innerHTML = '<th>Category</th>';
+  visibleMonths.forEach(ym => {
+    const th = document.createElement('th');
+    th.textContent = ym;
+    head.appendChild(th);
+  });
+  const thSum = document.createElement('th'); thSum.textContent = 'Sum'; head.appendChild(thSum);
+  const thAvg = document.createElement('th'); thAvg.textContent = 'Average'; head.appendChild(thAvg);
+
+  // Build body — only selected months
+  const body = document.getElementById('statsBody');
+  body.innerHTML = '';
+  const fmt = new Intl.NumberFormat('nb-NO', { maximumFractionDigits: 0 });
+
+  CATEGORIES.forEach(cat => {
+    const tr = document.createElement('tr');
+    tr.className = `depth-${Math.min(cat.depth, 3)}`;
+
+    const tdName = document.createElement('td');
+    const indent = document.createElement('span');
+    indent.style.display = 'inline-block';
+    indent.style.width = `${cat.depth * 16}px`;
+    tdName.appendChild(indent);
+    tdName.appendChild(document.createTextNode(cat.name));
+    tr.appendChild(tdName);
+
+    let sum = 0;
+    visibleMonths.forEach(ym => {
+      const td = document.createElement('td');
+      td.className = 'num-cell';
+      const v = mockData[cat.name][ym] || 0;
+      td.textContent = fmt.format(v);
+      sum += v;
+      tr.appendChild(td);
+    });
+
+    const tdSum = document.createElement('td');
+    tdSum.className = 'num-cell';
+    tdSum.style.fontWeight = '600';
+    tdSum.textContent = fmt.format(sum);
+    tr.appendChild(tdSum);
+
+    const tdAvg = document.createElement('td');
+    tdAvg.className = 'num-cell';
+    tdAvg.textContent = visibleMonths.length ? fmt.format(Math.round(sum / visibleMonths.length)) : '0';
+    tr.appendChild(tdAvg);
+
+    body.appendChild(tr);
+  });
+
+  // Footer sum row
+  const sumTr = document.createElement('tr');
+  sumTr.className = 'sum';
+  const sumTdLabel = document.createElement('td');
+  sumTdLabel.textContent = 'Total';
+  sumTr.appendChild(sumTdLabel);
+
+  visibleMonths.forEach(ym => {
+    let colTotal = 0;
+    CATEGORIES.filter(c => c.depth === 0).forEach(c => { colTotal += mockData[c.name][ym] || 0; });
+    const td = document.createElement('td');
+    td.textContent = fmt.format(colTotal);
+    sumTr.appendChild(td);
+  });
+  const totalSum = CATEGORIES.filter(c => c.depth === 0).reduce((s, c) => {
+    return s + visibleMonths.reduce((ss, ym) => ss + (mockData[c.name][ym] || 0), 0);
+  }, 0);
+  const tdTS = document.createElement('td'); tdTS.textContent = fmt.format(totalSum); sumTr.appendChild(tdTS);
+  const tdTA = document.createElement('td'); tdTA.textContent = visibleMonths.length ? fmt.format(Math.round(totalSum / visibleMonths.length)) : '0'; sumTr.appendChild(tdTA);
+  body.appendChild(sumTr);
+}
+
+// ---- Sync date inputs ↔ month grid ----
+function ymToDate(ym, end) {
+  const [y, m] = ym.split('-').map(Number);
+  if (end) {
+    // Last day of month
+    return `${y}-${String(m).padStart(2,'0')}-${new Date(y, m, 0).getDate()}`;
+  }
+  return `${y}-${String(m).padStart(2,'0')}-01`;
+}
+function dateToYM(d) {
+  return d.slice(0, 7); // "2025-03-15" → "2025-03"
+}
+
+function syncDateInputsFromGrid() {
+  document.getElementById('dateFrom').value = ymToDate(startYM, false);
+  document.getElementById('dateTo').value = ymToDate(endYM, true);
+}
+
+function handleDateInputChange() {
+  const fromVal = document.getElementById('dateFrom').value;
+  const toVal = document.getElementById('dateTo').value;
+  if (!fromVal || !toVal) return;
+  startYM = dateToYM(fromVal);
+  endYM = dateToYM(toVal);
+  // Switch year tab to match the start year
+  const newYear = parseInt(startYM.split('-')[0]);
+  if (newYear !== selectedYear) {
+    selectedYear = newYear;
+    document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.querySelector(`.year-tab[data-year="${newYear}"]`);
+    if (tab) tab.classList.add('active');
+    buildGrid();
+  } else {
+    updateGrid();
+  }
+}
+
+// ---- Event listeners ----
+
+// Date inputs
+document.getElementById('dateFrom').addEventListener('change', handleDateInputChange);
+document.getElementById('dateTo').addEventListener('change', handleDateInputChange);
+
+// Year tabs
+document.getElementById('yearTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.year-tab');
+  if (!tab) return;
+  document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  selectedYear = parseInt(tab.dataset.year);
+  buildGrid();
+});
+
+// Month grid click
+document.getElementById('monthGrid').addEventListener('click', e => {
+  const cell = e.target.closest('.month-cell');
+  if (!cell) return;
+  const ym = cell.dataset.ym;
+
+  if (pickState === 'idle') {
+    anchorYM = ym;
+    pickState = 'first-picked';
+  } else {
+    // Commit range
+    const a = absYM(anchorYM), b = absYM(ym);
+    startYM = ymFromAbs(Math.min(a, b));
+    endYM = ymFromAbs(Math.max(a, b));
+    pickState = 'idle';
+    anchorYM = null;
+    hoverYM = null;
+    syncDateInputsFromGrid();
+  }
+  updateGrid();
+});
+
+// Month grid hover
+document.getElementById('monthGrid').addEventListener('mouseover', e => {
+  const cell = e.target.closest('.month-cell');
+  if (!cell) return;
+  hoverYM = cell.dataset.ym;
+  if (pickState === 'first-picked') updateGrid();
+});
+document.getElementById('monthGrid').addEventListener('mouseleave', () => {
+  hoverYM = null;
+  if (pickState === 'first-picked') updateGrid();
+});
+
+// Escape cancels selection
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && pickState === 'first-picked') {
+    pickState = 'idle';
+    anchorYM = null;
+    hoverYM = null;
+    updateGrid();
+  }
+});
+
+// Theme toggle
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '\u263E' : '\u2600';
+});
+
+// Init
+buildGrid();
+syncDateInputsFromGrid();
+</script>
+</body>
+</html>
