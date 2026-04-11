@@ -28,3 +28,4 @@ Do NOT run `npx playwright` or `pnpm run test:e2e` directly.
 ## Developing rules
 
 - ✅ ALWAYS include screenshots in PR descriptions. Put them in folder "screenshots" at repository root.
+- ✅ ALWAYS include the PR preview link in PR descriptions: `https://yngvark.github.io/bank-transactions-summarizer/pr-preview/pr-<number>/`
