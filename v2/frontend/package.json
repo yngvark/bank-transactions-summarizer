@@ -12,24 +12,24 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@protobi/exceljs": "github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212",
-    "d3": "^7.8.5",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "d3": "^7.9.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@types/d3": "^7.4.3",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript-eslint/eslint-plugin": "^8.57.1",
-    "@typescript-eslint/parser": "^8.57.1",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "typescript": "^5.3.3",
-    "vite": "^8.0.3",
-    "vitest": "^4.1.2"
+    "typescript": "^5.9.3",
+    "vite": "^8.0.8",
+    "vitest": "^4.1.4"
   }
 }
