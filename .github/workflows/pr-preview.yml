@@ -4,10 +4,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
 
-permissions:
-  contents: write
-  pull-requests: write
-
 concurrency: preview-${{ github.ref }}
 
 jobs:
