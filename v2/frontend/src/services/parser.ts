@@ -10,19 +10,20 @@ export function parseTransactions(
       ...row,
       Text: row.Text.trim(),
       'Merchant Category': row['Merchant Category'] ? row['Merchant Category'].trim() : '',
-      TransactionDate:
-        typeof row.TransactionDate === 'string'
-          ? new Date(row.TransactionDate)
-          : row.TransactionDate,
-      BookDate:
-        typeof row.BookDate === 'string' ? new Date(row.BookDate) : row.BookDate,
-      ValueDate:
-        typeof row.ValueDate === 'string' ? new Date(row.ValueDate) : row.ValueDate,
+      TransactionDate: toDateOrNull(row.TransactionDate),
+      BookDate: toDateOrNull(row.BookDate),
+      ValueDate: toDateOrNull(row.ValueDate),
     }))
     .map((row) => ({
       ...row,
       Category: getCategoryFromMapping(categoryMapping, row['Merchant Category']),
     })) as Transaction[];
+}
+
+function toDateOrNull(v: Date | string | null | undefined): Date | null {
+  if (v == null || v === '') return null;
+  if (v instanceof Date) return v;
+  return new Date(v);
 }
 
 function removeMyOwnInvoicePayments(row: RawTransaction): boolean {

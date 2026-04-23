@@ -39,8 +39,8 @@ describe('parseTransactions', () => {
       const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
-      // The "From 123456798012" Innbetaling with positive amount is filtered out
-      expect(result).toHaveLength(4);
+      // 4 settled + 1 Reservert (pending) rows; the "From …" invoice row is filtered out
+      expect(result).toHaveLength(5);
     });
 
     it('assigns correct categories from XLSX data', async () => {
@@ -53,14 +53,29 @@ describe('parseTransactions', () => {
       expect(categories).toContain('Mat og drikke ➡ Restauranter og barer'); // Eating places
     });
 
-    it('converts string dates to Date objects', async () => {
+    it('converts string dates to Date objects for settled rows', async () => {
       const raw = await loadFixtureTransactions();
       const result = parseTransactions(categoryMapping, raw);
 
-      for (const t of result) {
+      const settled = result.filter((t) => t.Type !== 'Reservert');
+      expect(settled.length).toBeGreaterThan(0);
+      for (const t of settled) {
         expect(t.TransactionDate).toBeInstanceOf(Date);
         expect(t.BookDate).toBeInstanceOf(Date);
         expect(t.ValueDate).toBeInstanceOf(Date);
+      }
+    });
+
+    it('keeps Reservert rows from XLSX with null dates', async () => {
+      const raw = await loadFixtureTransactions();
+      const result = parseTransactions(categoryMapping, raw);
+
+      const pending = result.filter((t) => t.Type === 'Reservert');
+      expect(pending.length).toBeGreaterThan(0);
+      for (const t of pending) {
+        expect(t.TransactionDate).toBeNull();
+        expect(t.BookDate).toBeNull();
+        expect(t.ValueDate).toBeNull();
       }
     });
   });
@@ -192,6 +207,93 @@ describe('parseTransactions', () => {
       expect(result[0].TransactionDate.getFullYear()).toBe(2023);
       expect(result[0].TransactionDate.getMonth()).toBe(5); // June = 5
       expect(result[0].TransactionDate.getDate()).toBe(15);
+    });
+
+    it('keeps Reservert rows with null date fields', () => {
+      const raw: RawTransaction[] = [
+        {
+          TransactionDate: null,
+          BookDate: null,
+          ValueDate: null,
+          Text: 'Pending at ZARA',
+          Type: 'Reservert',
+          'Currency Amount': -299,
+          'Currency Rate': 1,
+          Currency: 'NOK',
+          Amount: -299,
+          'Merchant Area': 'OSLO',
+          'Merchant Category': 'Electronic Sales',
+        },
+      ];
+
+      const result = parseTransactions(mapping, raw);
+      expect(result).toHaveLength(1);
+      expect(result[0].TransactionDate).toBeNull();
+      expect(result[0].BookDate).toBeNull();
+      expect(result[0].ValueDate).toBeNull();
+      expect(result[0].Type).toBe('Reservert');
+      expect(result[0].Category).toBe('Personlig forbruk ➡ PC og elektroutstyr');
+    });
+
+    it('handles Reservert mixed with normal rows', () => {
+      const raw: RawTransaction[] = [
+        {
+          TransactionDate: null,
+          BookDate: null,
+          ValueDate: null,
+          Text: 'Pending at ZARA',
+          Type: 'Reservert',
+          'Currency Amount': -299,
+          'Currency Rate': 1,
+          Currency: 'NOK',
+          Amount: -299,
+          'Merchant Area': 'OSLO',
+          'Merchant Category': 'Electronic Sales',
+        },
+        {
+          TransactionDate: '2023-03-15',
+          BookDate: '2023-03-15',
+          ValueDate: '2023-03-15',
+          Text: 'KOMPLETT.NO',
+          Type: 'Kjøp',
+          'Currency Amount': -499,
+          'Currency Rate': 1,
+          Currency: 'NOK',
+          Amount: -499,
+          'Merchant Area': 'OSLO',
+          'Merchant Category': 'Electronic Sales',
+        },
+      ];
+
+      const result = parseTransactions(mapping, raw);
+      expect(result).toHaveLength(2);
+      const pending = result.find((r) => r.Type === 'Reservert');
+      const normal = result.find((r) => r.Type === 'Kjøp');
+      expect(pending?.TransactionDate).toBeNull();
+      expect(normal?.TransactionDate).toBeInstanceOf(Date);
+    });
+
+    it('treats undefined dates the same as null', () => {
+      const raw: RawTransaction[] = [
+        {
+          TransactionDate: undefined as unknown as null,
+          BookDate: undefined as unknown as null,
+          ValueDate: undefined as unknown as null,
+          Text: 'Pending',
+          Type: 'Reservert',
+          'Currency Amount': -10,
+          'Currency Rate': 1,
+          Currency: 'NOK',
+          Amount: -10,
+          'Merchant Area': 'OSLO',
+          'Merchant Category': 'Electronic Sales',
+        },
+      ];
+
+      const result = parseTransactions(mapping, raw);
+      expect(result[0].TransactionDate).toBeNull();
+      expect(result[0].BookDate).toBeNull();
+      expect(result[0].ValueDate).toBeNull();
     });
 
     it('preserves Date objects that are already Date instances', () => {

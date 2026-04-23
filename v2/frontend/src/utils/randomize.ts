@@ -127,6 +127,11 @@ function generateRandomTransaction(): RawTransaction {
   };
 }
 
+function toTime(v: Date | string | null): number {
+  if (v == null) return Number.POSITIVE_INFINITY;
+  return (v instanceof Date ? v : new Date(v)).getTime();
+}
+
 export function generateRandomTransactions(): RawTransaction[] {
   const transactions: RawTransaction[] = [];
   for (let i = 0; i < 500; i++) {
@@ -134,9 +139,9 @@ export function generateRandomTransactions(): RawTransaction[] {
   }
 
   transactions.sort((a, b) => {
-    const dateA = a.TransactionDate instanceof Date ? a.TransactionDate : new Date(a.TransactionDate);
-    const dateB = b.TransactionDate instanceof Date ? b.TransactionDate : new Date(b.TransactionDate);
-    return dateA.getTime() - dateB.getTime();
+    const dateA = toTime(a.TransactionDate);
+    const dateB = toTime(b.TransactionDate);
+    return dateA - dateB;
   });
 
   return transactions;

@@ -29,4 +29,27 @@ test.describe('XLSX file import', () => {
     await expect(page.locator('text=ESPRESSO HOUSE')).toBeVisible();
     await expect(page.locator('text=Subscription for NETFLIX')).toBeVisible();
   });
+
+  test('Reservert (pending) rows show in list but are excluded from statistics', async ({ page }) => {
+    await page.goto('/', { timeout: 60000 });
+
+    const fileInput = page.locator('#fileInput');
+    await fileInput.setInputFiles(fixtureFile);
+
+    await page.waitForSelector('.statistics-section table tbody tr');
+
+    // Pending row is visible in the transaction list
+    await expect(page.locator('#transactions-table').getByText('Pending at ZARA')).toBeVisible();
+
+    // Settled fixture data spans only 2023-03 and 2023-04 — the pending row has no date
+    // and must not introduce a third month column.
+    const headerCells = page.locator('.statistics-section table thead th');
+    const headerTexts = await headerCells.allTextContents();
+    const monthHeaders = headerTexts.filter((t) => /^\d{4}-\d{2}$/.test(t.trim()));
+    expect(monthHeaders).toEqual(['2023-03', '2023-04']);
+
+    // The pending amount (-299) must not appear in any statistics cell.
+    const statsText = await page.locator('.statistics-section table').innerText();
+    expect(statsText).not.toContain('-299');
+  });
 });

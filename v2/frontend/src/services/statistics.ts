@@ -3,12 +3,14 @@ import { Transaction, GroupedStatistics, RawRowData } from '../../../shared/type
 import { buildCategoryTree } from './categoryTree';
 
 export function calculateStatistics(transactionsWithCategory: Transaction[]): GroupedStatistics {
-  const groupedData = groupData(transactionsWithCategory);
+  // Pending ("Reservert") rows have no TransactionDate — exclude them from aggregation.
+  const dated = transactionsWithCategory.filter(
+    (t): t is Transaction & { TransactionDate: Date } => t.TransactionDate != null
+  );
+  const groupedData = groupData(dated);
 
   const yearMonths = Array.from(groupedData.keys()).sort();
-  const categories = Array.from(
-    new Set(transactionsWithCategory.map((d) => d.Category))
-  ).sort();
+  const categories = Array.from(new Set(dated.map((d) => d.Category))).sort();
 
   const numberFormatter = new Intl.NumberFormat('nb-NO', {
     style: 'decimal',
@@ -69,7 +71,9 @@ export function calculateStatistics(transactionsWithCategory: Transaction[]): Gr
   };
 }
 
-function groupData(parsedData: Transaction[]): d3.InternMap<string, d3.InternMap<string, number>> {
+function groupData(
+  parsedData: Array<Transaction & { TransactionDate: Date }>
+): d3.InternMap<string, d3.InternMap<string, number>> {
   return d3.rollup(
     parsedData,
     (v) => d3.sum(v, (d) => d.Amount),

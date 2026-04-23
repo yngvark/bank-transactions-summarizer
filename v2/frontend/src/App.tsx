@@ -38,13 +38,13 @@ function App() {
 
     if (periodFrom) {
       filtered = filtered.filter(
-        (row) => new Date(row.BookDate) >= new Date(periodFrom)
+        (row) => row.BookDate == null || new Date(row.BookDate) >= new Date(periodFrom)
       );
     }
 
     if (periodTo) {
       filtered = filtered.filter(
-        (row) => new Date(row.BookDate) <= new Date(periodTo)
+        (row) => row.BookDate == null || new Date(row.BookDate) <= new Date(periodTo)
       );
     }
 
@@ -64,10 +64,12 @@ function App() {
   useEffect(() => {
     if (allTransactions.length === 0) return;
 
-    const dates = allTransactions.flatMap((d) => [
-      new Date(d.TransactionDate),
-      new Date(d.BookDate),
-    ]);
+    const dates = allTransactions
+      .flatMap((d) => [d.TransactionDate, d.BookDate])
+      .filter((d): d is Date | string => d != null && d !== '')
+      .map((d) => new Date(d));
+
+    if (dates.length === 0) return;
 
     const latestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
     const year = latestDate.getFullYear();

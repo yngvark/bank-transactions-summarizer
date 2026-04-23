@@ -1,8 +1,8 @@
 // Raw transaction from Excel file
 export interface RawTransaction {
-  TransactionDate: Date | string;
-  BookDate: Date | string;
-  ValueDate: Date | string;
+  TransactionDate: Date | string | null;
+  BookDate: Date | string | null;
+  ValueDate: Date | string | null;
   Text: string;
   Type: string;
   'Currency Amount': number;
@@ -13,11 +13,11 @@ export interface RawTransaction {
   'Merchant Category': string;
 }
 
-// Transaction with category applied
+// Transaction with category applied. Dates may be null for pending ("Reservert") rows.
 export interface Transaction extends RawTransaction {
-  TransactionDate: Date;
-  BookDate: Date;
-  ValueDate: Date;
+  TransactionDate: Date | null;
+  BookDate: Date | null;
+  ValueDate: Date | null;
   Category: string;
 }
 

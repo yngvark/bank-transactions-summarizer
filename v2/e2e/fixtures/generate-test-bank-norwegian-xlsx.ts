@@ -76,6 +76,19 @@ const transactions = [
     'Merchant Area': '',
     'Merchant Category': '',
   },
+  {
+    TransactionDate: null,
+    BookDate: null,
+    ValueDate: null,
+    Text: 'Pending at ZARA',
+    Type: 'Reservert',
+    'Currency Amount': -299.00,
+    'Currency Rate': 1,
+    Currency: 'NOK',
+    Amount: -299.00,
+    'Merchant Area': 'OSLO',
+    'Merchant Category': 'Clothing Stores, MEN, WOMEN, and CHIL',
+  },
 ];
 
 const workbook = new ExcelJS.Workbook();
