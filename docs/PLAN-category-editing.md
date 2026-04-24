@@ -4,7 +4,7 @@
 
 ## Related docs
 - `DESIGN-category-editing.md` &mdash; design exploration and prototype comparison
-- `prototype-a-inline-dropdown.html`, `prototype-b-management-panel.html`, `prototype-c-smart-suggestions.html`, `prototype-d-inline-sortable.html`
+- `../prototypes/prototype-a-inline-dropdown.html`, `../prototypes/prototype-b-management-panel.html`, `../prototypes/prototype-c-smart-suggestions.html`, `../prototypes/prototype-d-inline-sortable.html`
 
 ## Open design questions
 
@@ -23,6 +23,6 @@
 
 3. **In-dialog resolution.** If the preview surfaces a conflict, the same dialog should offer a one-click fix (&ldquo;Delete the blocking pattern&rdquo;, or &ldquo;Move this pattern above it&rdquo;). Notification without a fix path is a dead end.
 
-**Note on prototype D.** An earlier version of prototype D auto-created one pattern per unique merchant on first load, which produced a bug where broadening a pattern only updated some of the matched transactions. The prototype has been corrected to match the intended model: transactions start with the merchant-code default (from `categories.json`, represented as `defCat` in the prototype demo data), and user-created patterns are applied on top. See the &ldquo;Design notes&rdquo; section at the bottom of `prototype-d-inline-sortable.html`.
+**Note on prototype D.** An earlier version of prototype D auto-created one pattern per unique merchant on first load, which produced a bug where broadening a pattern only updated some of the matched transactions. The prototype has been corrected to match the intended model: transactions start with the merchant-code default (from `categories.json`, represented as `defCat` in the prototype demo data), and user-created patterns are applied on top. See the &ldquo;Design notes&rdquo; section at the bottom of `../prototypes/prototype-d-inline-sortable.html`.
 
 The open design question captured here (what to do when the user writes two of their own overlapping patterns) is not yet demonstrated in any prototype &mdash; the current prototype uses last-created-wins by implicit array order, which is not a commitment for the real app.

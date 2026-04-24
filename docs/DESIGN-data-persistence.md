@@ -4,7 +4,7 @@
 
 Categories are static (`categories.json`, 36 merchant-code mappings). No way to edit categories from the UI. No persistence of user changes. Uncategorized transactions are a dead end.
 
-The prototype (`history/prototype-d-inline-sortable.html`) demonstrates inline category editing with text-pattern rules and localStorage persistence, but needs a proper data architecture before integration.
+The prototype (`../prototypes/prototype-d-inline-sortable.html`) demonstrates inline category editing with text-pattern rules and localStorage persistence, but needs a proper data architecture before integration.
 
 ## Data Model
 

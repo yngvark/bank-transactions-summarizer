@@ -15,7 +15,7 @@ Categories are stored in a static JSON file (`v2/frontend/src/data/categories.js
 
 Three standalone HTML/CSS prototypes were built to explore different UX approaches. All use the app's existing design tokens and support light/dark mode.
 
-### A: Inline Hierarchical Dropdown (`prototype-a-inline-dropdown.html`)
+### A: Inline Hierarchical Dropdown (`../prototypes/prototype-a-inline-dropdown.html`)
 
 Category cells in the transaction table are directly clickable. Clicking opens a two-level dropdown: first pick a primary category, then a subcategory. Uncategorized cells are styled with an amber dashed border to draw attention. Assigning a category automatically applies to all transactions sharing that merchant category, with a confirmation bar.
 
@@ -23,7 +23,7 @@ Category cells in the transaction table are directly clickable. Clicking opens a
 
 **Weaknesses**: Must scroll through the table to find uncategorized rows. No overview of how many uncategorized merchants exist. Doesn't scale well if there are many uncategorized transactions spread across pages.
 
-### B: Category Management Panel (`prototype-b-management-panel.html`)
+### B: Category Management Panel (`../prototypes/prototype-b-management-panel.html`)
 
 A floating action button (bottom-right) shows a badge with the count of uncategorized merchants. Clicking opens a 420px slide-in panel from the right. The panel's top section lists all uncategorized merchant categories with dropdowns to assign them. The bottom section shows an accordion of all existing categories grouped by primary category. Hovering a merchant card in the panel highlights matching rows in the table.
 
@@ -31,7 +31,7 @@ A floating action button (bottom-right) shows a badge with the count of uncatego
 
 **Weaknesses**: Takes significant screen space. Higher learning curve -- the panel is a separate UI concept to discover. Less useful on mobile.
 
-### C: Pill Tags with Searchable Combobox (`prototype-c-smart-suggestions.html`)
+### C: Pill Tags with Searchable Combobox (`../prototypes/prototype-c-smart-suggestions.html`)
 
 Categories are displayed as color-coded pill tags (green for food, blue for travel, purple for personal, red dashed for uncategorized). Each primary category gets a distinct color, making the column scannable at a glance. Clicking any pill opens a searchable combobox with categories grouped by primary. After selecting, a popover asks whether to update all transactions with that merchant category or just the current one. A toast notification confirms the action with an undo option. Includes a "+ Create new category" option.
 
