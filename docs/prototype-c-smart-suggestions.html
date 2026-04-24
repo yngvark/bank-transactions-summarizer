@@ -114,6 +114,11 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
 .description h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
 .description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
 .description li { margin-bottom: 0.3rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+@media (max-width: 640px) { .description .pros-cons { grid-template-columns: 1fr; } }
 
 /* Table */
 table { width: 100%; border-collapse: collapse; font-size: var(--table-font-size); }
@@ -443,6 +448,27 @@ tr.batch-highlight {
         <li>Toast notification confirms the change with an undo option</li>
         <li>"+ Opprett ny kategori" option at the bottom of the dropdown</li>
       </ul>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros vs others</h4>
+          <ul>
+            <li>Searchable picker scales with many categories (A, B, D use plain dropdowns)</li>
+            <li>Explicit undo via toast notification (unique)</li>
+            <li>Choose &ldquo;update all&rdquo; vs &ldquo;just this one&rdquo; &mdash; precise scope control</li>
+            <li>Create new category inline without leaving the table</li>
+            <li>Color-coded pills are the most visually scannable</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons vs others</h4>
+          <ul>
+            <li>Extra confirmation step adds clicks (A applies immediately)</li>
+            <li>No panel view for bulk editing many merchants at once (B has one)</li>
+            <li>No sort-based grouping of uncategorized rows (D offers this)</li>
+            <li>No rule persistence across sessions (D persists rules in localStorage)</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <section class="transactions-section">

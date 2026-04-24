@@ -94,6 +94,11 @@ section h2 .count { font-size: 0.85rem; font-weight: 500; color: var(--text-seco
 .description ul { padding-left: 1.25rem; font-size: 0.82rem; color: var(--text-secondary); }
 .description li { margin-bottom: 0.2rem; }
 .description h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+@media (max-width: 640px) { .description .pros-cons { grid-template-columns: 1fr; } }
 
 /* Table */
 table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
@@ -319,6 +324,26 @@ td.cat-cell:hover .cat-uncat-display { background: rgba(245,158,11,0.2) !importa
         <li><strong>Sort by Kategori</strong> to group uncategorized for bulk editing</li>
         <li>Rules persist in localStorage across sessions</li>
       </ul>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros vs others</h4>
+          <ul>
+            <li>Sort by Kategori groups uncategorized rows for fast bulk editing (unique)</li>
+            <li>Rules persist across sessions via localStorage (unique)</li>
+            <li>Emoji prefixes aid quick visual scanning</li>
+            <li>Combines inline editing (like A) with workflow tooling</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons vs others</h4>
+          <ul>
+            <li>Extra concept to learn (rules) &mdash; higher cognitive load</li>
+            <li>No searchable picker (C has a combobox)</li>
+            <li>No dedicated bulk panel (B has one)</li>
+            <li>No explicit undo (C has a toast)</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <section class="card">

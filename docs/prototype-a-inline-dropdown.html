@@ -337,6 +337,11 @@ td.cat-cell:hover .edit-hint { opacity: 1; }
 .description h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
 .description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
 .description li { margin-bottom: 0.3rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+@media (max-width: 640px) { .description .pros-cons { grid-template-columns: 1fr; } }
 
 [data-theme="dark"] .app-header {
   background: linear-gradient(135deg, #0f0e26 0%, #1e1b4b 50%, #252366 100%);
@@ -363,6 +368,26 @@ td.cat-cell:hover .edit-hint { opacity: 1; }
         <li>Hovering an uncategorized cell highlights all rows with the same merchant category</li>
         <li>Assigning a category shows confirmation that all matching transactions were updated</li>
       </ul>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros vs others</h4>
+          <ul>
+            <li>Fewest clicks per edit &mdash; no confirmation step (unlike C)</li>
+            <li>No context switch: stays in the table (unlike B&rsquo;s panel)</li>
+            <li>Minimal UI chrome &mdash; easiest to learn</li>
+            <li>Updates all matching transactions automatically</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons vs others</h4>
+          <ul>
+            <li>No search &mdash; 2-level dropdown doesn&rsquo;t scale with many categories (C is searchable)</li>
+            <li>No bulk overview of uncategorized items (B lists them all, D can sort them together)</li>
+            <li>No undo affordance (C has a toast with undo)</li>
+            <li>No rule persistence across sessions (D persists rules in localStorage)</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <section class="transactions-section">

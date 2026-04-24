@@ -133,6 +133,11 @@ section h2 .count { font-size: 0.875rem; font-weight: 500; color: var(--text-sec
 .description h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
 .description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
 .description li { margin-bottom: 0.3rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+@media (max-width: 640px) { .description .pros-cons { grid-template-columns: 1fr; } }
 
 /* Table */
 table { width: 100%; border-collapse: collapse; font-size: var(--table-font-size); }
@@ -488,6 +493,26 @@ body.panel-open .fab { display: none; }
         <li>All existing categories shown in collapsible accordion below</li>
         <li>Hovering a merchant card highlights matching table rows</li>
       </ul>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros vs others</h4>
+          <ul>
+            <li>Best for bulk work &mdash; all uncategorized merchants visible at once (unique)</li>
+            <li>Separates browsing from editing; transaction table stays clean</li>
+            <li>Accordion gives a complete overview of existing categories</li>
+            <li>Hover-to-highlight links panel actions to table rows</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons vs others</h4>
+          <ul>
+            <li>Context switch &mdash; leaves the table to categorize (A, C, D edit inline)</li>
+            <li>Slower for one-off fixes noticed while scanning transactions</li>
+            <li>Hidden behind a floating button &mdash; weaker discoverability</li>
+            <li>No undo affordance (C has a toast with undo)</li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <section class="transactions-section">
