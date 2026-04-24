@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)",
+      "Bash(git worktree list)",
+      "Bash(wc:*)",
+      "Bash(cat:*)",
+      "Bash(playwright-cli open:*)",
+      "Bash(playwright-cli screenshot:*)",
+      "Bash(playwright-cli close:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

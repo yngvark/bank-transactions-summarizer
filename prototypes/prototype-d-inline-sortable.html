@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype D: Inline Editing + Sortable + Rules</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --warning-text: #92400e;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --warning-bg: rgba(251,191,36,0.12);
+  --warning-text: #fbbf24;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); color: var(--text-primary); line-height: 1.5;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white; padding: 1.25rem 1.5rem; text-align: center; position: relative;
+}
+.app-header::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #6366f1, #a78bfa, #6366f1);
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.25rem; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+[data-theme="dark"] .app-header { background: linear-gradient(135deg, #0f0e26 0%, #1e1b4b 50%, #252366 100%); }
+
+/* Layout */
+.app-content { max-width: 95%; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2rem; }
+section h2 {
+  font-size: 1.15rem; font-weight: 600; margin: 0 0 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+section h2::before {
+  content: ''; width: 4px; height: 1.2em;
+  background: linear-gradient(180deg, var(--accent-color), #a78bfa);
+  border-radius: 2px; flex-shrink: 0;
+}
+section h2 .count { font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); }
+.card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+}
+
+/* Description */
+.prototype-badge {
+  display: inline-flex; align-items: center;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.35rem 0.9rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 1rem;
+}
+.description ul { padding-left: 1.25rem; font-size: 0.82rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.2rem; }
+.description h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.9rem; padding-top: 0.9rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+@media (max-width: 640px) { .description .pros-cons { grid-template-columns: 1fr; } }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+th, td { padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+th {
+  background: var(--background); color: var(--text-secondary);
+  font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+  position: sticky; top: 0; z-index: 10;
+}
+tbody tr { transition: background var(--transition); }
+tbody tr:hover { background: var(--primary-light); }
+tbody tr:nth-child(even) { background: var(--background); }
+tbody tr:nth-child(even):hover { background: var(--primary-light); }
+td.amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.merchant-col { font-size: 0.72rem; color: var(--text-secondary); }
+
+/* Sortable headers */
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--accent-color); }
+th .sort-icon { font-size: 0.6rem; margin-left: 0.3rem; opacity: 0.3; }
+th.sort-asc .sort-icon, th.sort-desc .sort-icon { opacity: 1; color: var(--accent-color); }
+
+/* Category cell */
+td.cat-cell { cursor: pointer; position: relative; user-select: none; }
+td.cat-cell:hover .cat-display:not(.cat-uncat-display) { background: rgba(99,102,241,0.06); }
+td.cat-cell:hover .edit-hint { opacity: 1; }
+
+.cat-display {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.2rem 0.5rem; border-radius: 6px;
+  transition: background var(--transition); font-size: 0.78rem; white-space: nowrap;
+}
+.cat-emoji { font-size: 0.9rem; line-height: 1; }
+.cat-arrow { color: var(--text-secondary); font-size: 0.65rem; margin: 0 0.15rem; }
+.edit-hint { opacity: 0; color: var(--text-secondary); font-size: 0.65rem; transition: opacity var(--transition); margin-left: 0.2rem; }
+
+/* Uncategorized - yellow box */
+.cat-uncat-display {
+  background: var(--warning-bg) !important;
+  border: 1.5px solid var(--warning);
+  color: var(--warning-text);
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+}
+td.cat-cell:hover .cat-uncat-display { background: rgba(245,158,11,0.2) !important; }
+
+/* Dropdown */
+.dropdown-backdrop { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99; }
+.dropdown-backdrop.open { display: block; }
+.dropdown {
+  display: none; position: absolute; z-index: 100;
+  background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  min-width: 280px; max-height: 340px; overflow-y: auto;
+}
+.dropdown.open { display: block; }
+.dd-header {
+  padding: 0.6rem 0.8rem; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color); background: var(--background);
+  position: sticky; top: 0; z-index: 1;
+}
+.dd-item {
+  padding: 0.55rem 0.8rem; cursor: pointer; font-size: 0.8rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  transition: background 0.1s; border-bottom: 1px solid var(--border-color);
+}
+.dd-item:last-child { border-bottom: none; }
+.dd-item:hover { background: var(--primary-light); }
+.dd-item.selected { background: rgba(99,102,241,0.08); color: var(--accent-color); font-weight: 600; }
+.dd-item .dd-emoji { font-size: 1rem; width: 24px; text-align: center; }
+.dd-item .dd-text { flex: 1; }
+.dd-item .dd-chevron { color: var(--text-secondary); font-size: 0.65rem; }
+.dd-item.sub { padding-left: 1.4rem; }
+.dd-back {
+  padding: 0.5rem 0.8rem; cursor: pointer; font-size: 0.75rem;
+  color: var(--accent-color); font-weight: 600; display: flex; align-items: center; gap: 0.35rem;
+  border-bottom: 1px solid var(--border-color); transition: background 0.1s;
+}
+.dd-back:hover { background: var(--primary-light); }
+
+/* Rule dialog */
+.dialog-backdrop {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 200; backdrop-filter: blur(2px);
+}
+.dialog-backdrop.open { display: block; }
+.rule-dialog {
+  display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 201; background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); width: 440px; max-height: 80vh; overflow-y: auto;
+}
+.rule-dialog.open { display: block; animation: fadeIn 0.15s ease; }
+.rd-header {
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.rd-header h3 { font-size: 0.95rem; font-weight: 700; }
+.rd-close {
+  width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border-color);
+  background: var(--surface); color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.rd-close:hover { background: var(--primary-light); }
+.rd-body { padding: 1.25rem; }
+.rd-field { margin-bottom: 1rem; }
+.rd-field label {
+  display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.35rem;
+}
+.rd-value { font-size: 0.85rem; font-weight: 500; }
+.rd-cat-badge {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.82rem;
+  background: var(--primary-light); font-weight: 500;
+}
+
+/* Type toggle */
+.rule-type-toggle { display: flex; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+.rule-type-toggle button {
+  flex: 1; padding: 0.45rem 0.8rem; border: none; background: var(--surface);
+  color: var(--text-secondary); font-size: 0.78rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.rule-type-toggle button.active { background: var(--accent-color); color: white; }
+.rule-type-toggle button:not(.active):hover { background: var(--primary-light); }
+
+/* Pattern input */
+.rd-input {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border-color);
+  border-radius: 8px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace;
+  background: var(--surface); color: var(--text-primary); outline: none;
+}
+.rd-input:focus { border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+
+/* Preview */
+.rd-preview {
+  background: var(--background); border: 1px solid var(--border-color);
+  border-radius: 8px; padding: 0.75rem; max-height: 160px; overflow-y: auto;
+}
+.rd-preview .match-count { font-size: 0.78rem; font-weight: 600; color: var(--success); display: block; margin-bottom: 0.4rem; }
+.rd-preview .no-match { font-size: 0.78rem; color: var(--text-secondary); font-style: italic; }
+.rd-preview .match-item {
+  font-size: 0.75rem; padding: 0.2rem 0; color: var(--text-secondary);
+  display: flex; justify-content: space-between;
+}
+.rd-preview .match-amount { font-variant-numeric: tabular-nums; }
+.match-hl { background: rgba(245,158,11,0.3); border-radius: 2px; padding: 0 2px; }
+.regex-error { font-size: 0.75rem; color: var(--danger); font-style: italic; }
+
+/* Dialog footer */
+.rd-footer {
+  padding: 1rem 1.25rem; border-top: 1px solid var(--border-color);
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+}
+.btn {
+  padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.15s;
+}
+.btn-cancel { background: var(--surface); border: 1px solid var(--border-color); color: var(--text-primary); }
+.btn-cancel:hover { background: var(--primary-light); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-color), #818cf8); border: none; color: white;
+}
+.btn-primary:hover { background: linear-gradient(135deg, var(--accent-hover), #6366f1); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Delete button in dialog */
+.btn-danger {
+  background: var(--surface); border: 1px solid var(--danger); color: var(--danger);
+  margin-right: auto;
+}
+.btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+/* Toast */
+.toast {
+  display: none; position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  padding: 0.7rem 1.2rem; background: var(--surface); border: 1px solid var(--success);
+  border-radius: var(--radius); box-shadow: var(--shadow-lg);
+  font-size: 0.82rem; z-index: 300; align-items: center; gap: 0.5rem;
+}
+.toast.visible { display: flex; animation: slideUp 0.3s ease; }
+.toast-icon { color: var(--success); font-size: 1.1rem; }
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem; z-index: 50;
+  width: 40px; height: 40px; border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1);
+  color: white; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); backdrop-filter: blur(8px);
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Bytt tema"><span id="theme-icon">&#9790;</span></button>
+
+  <header class="app-header">
+    <h1>Bank Transactions</h1>
+    <p class="app-subtitle">Analyze and categorize your spending</p>
+  </header>
+
+  <main class="app-content">
+    <div class="description card">
+      <span class="prototype-badge">Prototype D</span>
+      <h3>Inline Editing + Sortable Columns + Rule Engine</h3>
+      <ul>
+        <li>Emoji prefix on every category for quick scanning</li>
+        <li>Uncategorized transactions highlighted with yellow box</li>
+        <li>Click any category cell to assign or change category via 2-level dropdown</li>
+        <li>Rules match exact transaction text and apply to all identical transactions</li>
+        <li><strong>Sort by Kategori</strong> to group uncategorized for bulk editing</li>
+        <li>Rules persist in localStorage across sessions</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Pros vs others</h4>
+          <ul>
+            <li>Sort by Kategori groups uncategorized rows for fast bulk editing (unique)</li>
+            <li>Rules persist across sessions via localStorage (unique)</li>
+            <li>Emoji prefixes aid quick visual scanning</li>
+            <li>Combines inline editing (like A) with workflow tooling</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons vs others</h4>
+          <ul>
+            <li>Extra concept to learn (rules) &mdash; higher cognitive load</li>
+            <li>No searchable picker (C has a combobox)</li>
+            <li>No dedicated bulk panel (B has one)</li>
+            <li>No explicit undo (C has a toast)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>Transaksjoner <span class="count" id="tx-count">(20)</span></h2>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr>
+            <th class="sortable" data-col="date" onclick="toggleSort('date')">Dato <span class="sort-icon">&#8693;</span></th>
+            <th class="sortable" data-col="text" onclick="toggleSort('text')">Tekst <span class="sort-icon">&#8693;</span></th>
+            <th>Type</th>
+            <th class="sortable" data-col="amount" onclick="toggleSort('amount')">Bel&#248;p <span class="sort-icon">&#8693;</span></th>
+            <th>Leverand&#248;rkategori</th>
+            <th class="sortable" data-col="category" onclick="toggleSort('category')">Kategori <span class="sort-icon">&#8693;</span></th>
+          </tr></thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Design notes</h2>
+      <p style="font-size:0.85rem;margin-bottom:0.8rem;">
+        <strong>How categorization works here (matches the real app):</strong> each transaction starts with the category from the bank&#39;s merchant-code lookup (<code>defCat</code>, equivalent to <code>categories.json</code>). User-created patterns &mdash; string or regex &rarr; category &mdash; are applied on top and override the default. Uncategorized transactions (yellow box) are those with no merchant-code default and no matching user pattern.
+      </p>
+      <p style="font-size:0.85rem;margin-bottom:0.8rem;">
+        Try it: click <code>MENY STORO</code>, pick any category, change the pattern to regex <code>kiwi|meny</code>, save. Both transactions update. Earlier versions of this prototype auto-generated a pattern per merchant on load, which caused overlapping patterns to silently override each other &mdash; that has been removed.
+      </p>
+      <h3 style="font-size:0.95rem;font-weight:600;margin:0.8rem 0 0.4rem;">Open design question: user-created pattern overlaps</h3>
+      <p style="font-size:0.85rem;margin-bottom:0.6rem;">
+        The prototype currently uses last-created-wins (patterns applied in array order). This is fine when the user only creates non-overlapping patterns, but not decided for the real app. When the user writes two of their own patterns that overlap (e.g. narrow <code>MENY STORO</code> and later broad <code>kiwi|meny</code>), options include:
+      </p>
+      <ul style="padding-left:1.25rem;font-size:0.85rem;">
+        <li>First-match-wins against an explicit, user-visible ordered list (user can reorder).</li>
+        <li>Longest-pattern-wins (heuristic, no ordering UI needed, can surprise users).</li>
+        <li>Disallow overlap &mdash; force the user to resolve when creating/editing a pattern that would overlap an existing one.</li>
+      </ul>
+      <p style="font-size:0.85rem;margin-top:0.6rem;">
+        Whichever rule is chosen, the preview must show the <em>effective</em> result per row (&ldquo;will update&rdquo; vs &ldquo;blocked by pattern X&rdquo;), and the dialog should offer a one-click fix in the blocked case.
+      </p>
+    </section>
+
+  </main>
+
+  <div class="dropdown-backdrop" id="dd-backdrop" onclick="closeDropdown()"></div>
+  <div class="dropdown" id="dropdown"></div>
+
+  <div class="dialog-backdrop" id="dialog-backdrop" onclick="closeRuleDialog()"></div>
+  <div class="rule-dialog" id="rule-dialog">
+    <div class="rd-header">
+      <h3>Kategoriregel</h3>
+      <button class="rd-close" onclick="closeRuleDialog()">&times;</button>
+    </div>
+    <div class="rd-body">
+      <div class="rd-field" id="rd-cat-field">
+        <label>Kategori</label>
+        <div class="rd-cat-badge" id="rd-cat"></div>
+      </div>
+      <div id="rd-pattern-fields">
+        <div class="rd-field">
+          <label>M&#248;nstertype</label>
+          <div class="rule-type-toggle">
+            <button class="active" id="btn-sub" onclick="setRuleType('substring')">Delstreng</button>
+            <button id="btn-re" onclick="setRuleType('regex')">Regex</button>
+          </div>
+        </div>
+        <div class="rd-field">
+          <label>M&#248;nster (matcher p&#229; transaksjonstekst)</label>
+          <input type="text" class="rd-input" id="rd-pattern" oninput="updatePreview()" placeholder="Skriv inn m&#248;nster...">
+        </div>
+      </div>
+      <div class="rd-field">
+        <label>Forh&#229;ndsvisning</label>
+        <div class="rd-preview" id="rd-preview"></div>
+      </div>
+    </div>
+    <div class="rd-footer">
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteRuleFromDialog()" style="display:none">Slett regel</button>
+      <button class="btn btn-cancel" onclick="closeRuleDialog()">Avbryt</button>
+      <button class="btn btn-primary" id="btn-create" onclick="createRule()">Opprett regel &#10003;</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span class="toast-icon">&#10003;</span><span id="toast-text"></span></div>
+
+<script>
+// ===== DATA =====
+const txData = [
+  { id:0,  date:'28.03.2026', text:'REMA 1000 STORO',          type:'Kj\u00f8p', amount:-847,  mc:'Grocery Stores, Supermarkets', defCat:['Mat og drikke','Dagligvarer'] },
+  { id:1,  date:'27.03.2026', text:'SPOTIFY PREMIUM',          type:'Kj\u00f8p', amount:-119,  mc:'Music Streaming Services',     defCat:null },
+  { id:2,  date:'27.03.2026', text:'ESPRESSO HOUSE OSLO',      type:'Kj\u00f8p', amount:-89,   mc:'Eating places and Restaurants', defCat:['Mat og drikke','Restauranter og barer'] },
+  { id:3,  date:'26.03.2026', text:'POWER STORO',              type:'Kj\u00f8p', amount:-2499, mc:'Electronic Sales',              defCat:['Personlig forbruk','PC og elektroutstyr'] },
+  { id:4,  date:'25.03.2026', text:'NETFLIX.COM',              type:'Kj\u00f8p', amount:-159,  mc:'Digital Goods Media',           defCat:null },
+  { id:5,  date:'25.03.2026', text:'NSB AS OSLO',              type:'Kj\u00f8p', amount:-389,  mc:'Passenger Railways',            defCat:['Reise','Reise og transport'] },
+  { id:6,  date:'24.03.2026', text:'KIWI 487 GR\u00dcNERL\u00d8KKA', type:'Kj\u00f8p', amount:-234, mc:'Grocery Stores, Supermarkets', defCat:['Mat og drikke','Dagligvarer'] },
+  { id:7,  date:'24.03.2026', text:'VIPPS *TRENINGSSENTER',    type:'Kj\u00f8p', amount:-399,  mc:'Fitness Centers',               defCat:null },
+  { id:8,  date:'23.03.2026', text:'BURGER KING OSLO S',       type:'Kj\u00f8p', amount:-129,  mc:'Eating places and Restaurants', defCat:['Mat og drikke','Restauranter og barer'] },
+  { id:9,  date:'23.03.2026', text:'SAS OSLO-BERGEN',          type:'Kj\u00f8p', amount:-1299, mc:'Airlines',                      defCat:['Reise','Flyselskap'] },
+  { id:10, date:'22.03.2026', text:'IKEA FURUSET',             type:'Kj\u00f8p', amount:-3450, mc:'Furniture Stores',               defCat:['Hus og innbo','Interi\u00f8r og varehus'] },
+  { id:11, date:'22.03.2026', text:'SPOTIFY FAMILY',           type:'Kj\u00f8p', amount:-189,  mc:'Music Streaming Services',      defCat:null },
+  { id:12, date:'21.03.2026', text:'APPLE.COM/BILL',           type:'Kj\u00f8p', amount:-129,  mc:'Digital Goods Media',           defCat:null },
+  { id:13, date:'21.03.2026', text:'VINMONOPOLET STORO',       type:'Kj\u00f8p', amount:-299,  mc:'Package Stores - Beer, Wine',   defCat:['Mat og drikke','Dagligvarer'] },
+  { id:14, date:'20.03.2026', text:'H&M OSLO CITY',            type:'Kj\u00f8p', amount:-599,  mc:'Clothing Stores',               defCat:['Personlig forbruk','Kl\u00e6r og sko'] },
+  { id:15, date:'20.03.2026', text:'UBER *TRIP OSLO',          type:'Kj\u00f8p', amount:-187,  mc:'Taxicabs and Limousines',       defCat:['Reise','Kj\u00f8ret\u00f8y og Leiebil'] },
+  { id:16, date:'19.03.2026', text:'CHATGPT PLUS',             type:'Kj\u00f8p', amount:-219,  mc:'Computer Software Stores',      defCat:null },
+  { id:17, date:'19.03.2026', text:'MENY STORO',               type:'Kj\u00f8p', amount:-567,  mc:'Grocery Stores, Supermarkets',  defCat:['Mat og drikke','Dagligvarer'] },
+  { id:18, date:'18.03.2026', text:'XXL SPORT ALNA',           type:'Kj\u00f8p', amount:-899,  mc:'Sporting Goods Stores',         defCat:['Personlig forbruk','Sport og fritid'] },
+  { id:19, date:'18.03.2026', text:'ELKJ\u00d8P ALNA',        type:'Kj\u00f8p', amount:-1599, mc:'Electronic Sales',              defCat:['Personlig forbruk','PC og elektroutstyr'] },
+];
+
+const cats = {
+  'Mat og drikke':     { emoji:'\ud83c\udf55', subs:['Dagligvarer','Restauranter og barer'] },
+  'Reise':             { emoji:'\u2708\ufe0f', subs:['Flyselskap','Hotel og opphold','Reise og transport','Taxfree','Kj\u00f8ret\u00f8y og Leiebil'] },
+  'Personlig forbruk': { emoji:'\ud83d\udecd\ufe0f', subs:['PC og elektroutstyr','Sport og fritid','Kl\u00e6r og sko','Hobby og Fritid'] },
+  'Hus og innbo':      { emoji:'\ud83c\udfe0', subs:['Interi\u00f8r og varehus'] },
+  'Kontanter':         { emoji:'\ud83d\udcb3', subs:['Kontaktuttak','Pengeoverf\u00f8ring'] },
+  '\u00d8vrig bruk':   { emoji:'\ud83d\udce6', subs:['\u00d8vrig bruk'] },
+};
+
+// ===== STATE =====
+// Bumped from 'proto-d-rules' to reset old demo state that seeded per-merchant patterns.
+const STORAGE_KEY = 'proto-d-rules-v2';
+let rules = loadRules();
+let sortCol = null, sortDir = null;
+let pendingCat = null, pendingTxId = null;
+let deleteMode = false;
+let ruleType = 'substring';
+
+// Each tx gets a mutable .cat field (set by applyRules)
+txData.forEach(tx => { tx.cat = null; });
+
+const fmt = new Intl.NumberFormat('nb-NO', { useGrouping:true, minimumFractionDigits:0, maximumFractionDigits:0 });
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ===== LOCALSTORAGE =====
+function loadRules() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { return []; } }
+function saveRules() { localStorage.setItem(STORAGE_KEY, JSON.stringify(rules)); }
+
+// ===== PATTERN =====
+function getMatches(pattern, type) {
+  if (!pattern) return [];
+  if (type === 'substring') {
+    const p = pattern.toLowerCase();
+    return txData.filter(tx => tx.text.toLowerCase().includes(p));
+  }
+  try { const re = new RegExp(pattern,'i'); return txData.filter(tx => re.test(tx.text)); }
+  catch { return []; }
+}
+
+function findRuleForTx(tx) {
+  let match = null;
+  for (const r of rules) {
+    if (r.type === 'substring' && tx.text.toLowerCase().includes(r.pattern.toLowerCase())) match = r;
+    else if (r.type === 'regex') {
+      try { if (new RegExp(r.pattern, 'i').test(tx.text)) match = r; } catch {}
+    }
+  }
+  return match;
+}
+
+// ===== RULES =====
+// Mirrors the real app: each transaction starts with its merchant-code default (defCat,
+// equivalent to categories.json lookup). User patterns then override on top.
+function applyRules() {
+  txData.forEach(tx => { tx.cat = tx.defCat ? [...tx.defCat] : null; });
+  for (const rule of rules) {
+    const ms = getMatches(rule.pattern, rule.type);
+    ms.forEach(tx => { tx.cat = [...rule.category]; });
+  }
+}
+
+// ===== RENDER TABLE =====
+function getSorted() {
+  const arr = [...txData];
+  if (!sortCol || !sortDir) return arr;
+  arr.sort((a,b) => {
+    let va, vb;
+    switch(sortCol) {
+      case 'date': va = a.date.split('.').reverse().join(''); vb = b.date.split('.').reverse().join(''); break;
+      case 'text': va = a.text; vb = b.text; break;
+      case 'amount': va = a.amount; vb = b.amount; break;
+      case 'category': va = a.cat ? a.cat.join(' ') : ''; vb = b.cat ? b.cat.join(' ') : ''; break;
+    }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return arr;
+}
+
+function catHtml(tx) {
+  if (!tx.cat) return '<span class="cat-display cat-uncat-display">\u26a0\ufe0f Ukjent kategori</span>';
+  const info = cats[tx.cat[0]];
+  const emoji = info ? info.emoji : '\u2753';
+  return '<span class="cat-display"><span class="cat-emoji">'+emoji+'</span> '+esc(tx.cat[0])+' <span class="cat-arrow">&#10148;</span> '+esc(tx.cat[1])+'<span class="edit-hint">\u270e</span></span>';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tx-body');
+  tbody.innerHTML = '';
+  getSorted().forEach(tx => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = tx.id;
+    tr.innerHTML =
+      '<td>'+tx.date+'</td>'+
+      '<td>'+esc(tx.text)+'</td>'+
+      '<td>'+tx.type+'</td>'+
+      '<td class="amount">'+fmt.format(tx.amount)+' kr</td>'+
+      '<td class="merchant-col">'+esc(tx.mc)+'</td>'+
+      '<td class="cat-cell" data-id="'+tx.id+'">'+catHtml(tx)+'</td>';
+    tbody.appendChild(tr);
+  });
+  document.querySelectorAll('td.cat-cell').forEach(cell => {
+    cell.addEventListener('click', e => openDropdown(e, parseInt(cell.dataset.id)));
+  });
+  // Update sort headers
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    const icon = th.querySelector('.sort-icon');
+    if (th.dataset.col === sortCol && sortDir) {
+      th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      icon.innerHTML = sortDir === 'asc' ? '\u25b2' : '\u25bc';
+    } else { icon.innerHTML = '\u21c5'; }
+  });
+}
+
+// ===== SORTING =====
+function toggleSort(col) {
+  if (sortCol === col) { if (sortDir === 'asc') sortDir = 'desc'; else { sortCol = null; sortDir = null; } }
+  else { sortCol = col; sortDir = 'asc'; }
+  renderTable();
+}
+
+// ===== DROPDOWN =====
+function openDropdown(e, txId) {
+  e.stopPropagation();
+  pendingTxId = txId;
+  const cell = e.currentTarget, rect = cell.getBoundingClientRect();
+  const dd = document.getElementById('dropdown');
+  dd.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+  dd.style.left = Math.min(rect.left + window.scrollX, window.innerWidth - 320) + 'px';
+  renderPrimary();
+  dd.classList.add('open');
+  document.getElementById('dd-backdrop').classList.add('open');
+}
+
+function renderPrimary() {
+  const dd = document.getElementById('dropdown');
+  const tx = txData.find(t=>t.id===pendingTxId);
+  const hasRule = tx && findRuleForTx(tx);
+  let h = '<div class="dd-header">Velg kategori</div>';
+  for (const [name, info] of Object.entries(cats)) {
+    h += '<div class="dd-item" onclick="pickPrimary(\''+esc(name)+'\')"><span class="dd-emoji">'+info.emoji+'</span><span class="dd-text">'+esc(name)+'</span><span class="dd-chevron">\u25b6</span></div>';
+  }
+  if (hasRule) {
+    h += '<div class="dd-item" onclick="pickRemove()" style="color:var(--danger);border-top:1px solid var(--border-color)"><span class="dd-emoji">\u2715</span><span class="dd-text">Fjern kategori</span></div>';
+  }
+  dd.innerHTML = h;
+}
+
+function pickPrimary(name) {
+  const info = cats[name], tx = txData.find(t=>t.id===pendingTxId), dd = document.getElementById('dropdown');
+  let h = '<div class="dd-back" onclick="renderPrimary()">\u25c0 '+esc(name)+'</div><div class="dd-header">Velg underkategori</div>';
+  for (const sub of info.subs) {
+    const cur = tx.cat && tx.cat[0]===name && tx.cat[1]===sub;
+    h += '<div class="dd-item sub'+(cur?' selected':'')+'" onclick="pickSub(\''+esc(name)+'\',\''+esc(sub)+'\')"><span class="dd-emoji" style="font-size:0.85rem">'+info.emoji+'</span><span class="dd-text">'+esc(sub)+'</span>'+(cur?'<span style="color:var(--accent-color)">\u2713</span>':'')+'</div>';
+  }
+  dd.innerHTML = h;
+}
+
+function pickSub(primary, sub) {
+  closeDropdown();
+  pendingCat = [primary, sub];
+  deleteMode = false;
+  showRuleDialog();
+}
+
+function pickRemove() {
+  closeDropdown();
+  pendingCat = null;
+  deleteMode = true;
+  showRuleDialog();
+}
+
+function closeDropdown() {
+  document.getElementById('dropdown').classList.remove('open');
+  document.getElementById('dd-backdrop').classList.remove('open');
+}
+
+// ===== RULE DIALOG =====
+function setRuleType(t) {
+  ruleType = t;
+  document.getElementById('btn-sub').classList.toggle('active', t==='substring');
+  document.getElementById('btn-re').classList.toggle('active', t==='regex');
+  updatePreview();
+}
+
+function showRuleDialog() {
+  const tx = txData.find(t=>t.id===pendingTxId);
+  const existing = findRuleForTx(tx);
+  const btnCreate = document.getElementById('btn-create');
+  const btnDelete = document.getElementById('btn-delete');
+  const catField = document.getElementById('rd-cat-field');
+  const patternFields = document.getElementById('rd-pattern-fields');
+
+  if (deleteMode) {
+    catField.style.display = 'none';
+    patternFields.style.display = 'none';
+    btnCreate.style.display = 'none';
+    btnDelete.style.display = '';
+  } else {
+    const info = cats[pendingCat[0]]; const emoji = info ? info.emoji : '\u2753';
+    document.getElementById('rd-cat').innerHTML = emoji+' '+esc(pendingCat[0])+' &#10148; '+esc(pendingCat[1]);
+    catField.style.display = '';
+    patternFields.style.display = '';
+    btnCreate.style.display = '';
+
+    if (existing) {
+      ruleType = existing.type;
+      document.getElementById('rd-pattern').value = existing.pattern;
+      btnCreate.textContent = 'Oppdater regel \u2713';
+    } else {
+      ruleType = 'substring';
+      document.getElementById('rd-pattern').value = tx.text;
+      btnCreate.textContent = 'Opprett regel \u2713';
+    }
+    document.getElementById('btn-sub').classList.toggle('active', ruleType==='substring');
+    document.getElementById('btn-re').classList.toggle('active', ruleType==='regex');
+    btnDelete.style.display = existing ? '' : 'none';
+  }
+
+  updatePreview();
+  document.getElementById('rule-dialog').classList.add('open');
+  document.getElementById('dialog-backdrop').classList.add('open');
+  if (!deleteMode) document.getElementById('rd-pattern').focus();
+}
+
+function updatePreview() {
+  const patternEl = document.getElementById('rd-pattern');
+  const pattern = patternEl ? patternEl.value : '';
+  const pv = document.getElementById('rd-preview');
+  const btn = document.getElementById('btn-create');
+  if (!pattern.trim()) { pv.innerHTML = '<span class="no-match">Skriv inn et m\u00f8nster for \u00e5 se treff</span>'; btn.disabled = true; return; }
+  if (ruleType === 'regex') { try { new RegExp(pattern); } catch(e) { pv.innerHTML = '<span class="regex-error">Ugyldig regex: '+esc(e.message)+'</span>'; btn.disabled = true; return; } }
+  const ms = getMatches(pattern, ruleType);
+  btn.disabled = ms.length === 0;
+  if (!ms.length) { pv.innerHTML = '<span class="no-match">Ingen transaksjoner matcher</span>'; return; }
+  let h = '<span class="match-count">\u2713 Treff: '+ms.length+' transaksjon'+(ms.length>1?'er':'')+'</span>';
+  ms.forEach(tx => {
+    let display = esc(tx.text);
+    if (ruleType === 'substring') {
+      const idx = tx.text.toLowerCase().indexOf(pattern.toLowerCase());
+      if (idx >= 0) display = esc(tx.text.substring(0,idx))+'<span class="match-hl">'+esc(tx.text.substring(idx,idx+pattern.length))+'</span>'+esc(tx.text.substring(idx+pattern.length));
+    } else {
+      try { const m = tx.text.match(new RegExp(pattern,'i')); if(m) display = esc(tx.text.substring(0,m.index))+'<span class="match-hl">'+esc(m[0])+'</span>'+esc(tx.text.substring(m.index+m[0].length)); } catch{}
+    }
+    h += '<div class="match-item"><span>'+display+'</span><span class="match-amount">'+fmt.format(tx.amount)+' kr</span></div>';
+  });
+  pv.innerHTML = h;
+}
+
+function createRule() {
+  const tx = txData.find(t=>t.id===pendingTxId);
+  const pattern = document.getElementById('rd-pattern').value.trim();
+  if (!pattern || !pendingCat) return;
+  const existing = findRuleForTx(tx);
+  if (existing) {
+    existing.type = ruleType;
+    existing.pattern = pattern;
+    existing.category = [...pendingCat];
+  } else {
+    rules.push({ type:ruleType, pattern:pattern, category:[...pendingCat] });
+  }
+  saveRules(); applyRules(); closeRuleDialog(); renderTable();
+  const n = getMatches(pattern, ruleType).length;
+  const verb = existing ? 'oppdatert' : 'opprettet';
+  showToast('Regel '+verb+' \u2014 '+n+' transaksjon'+(n>1?'er':'')+' oppdatert');
+}
+
+function deleteRuleFromDialog() {
+  const tx = txData.find(t=>t.id===pendingTxId);
+  if (!tx) return;
+  const rule = findRuleForTx(tx);
+  if (rule) {
+    const idx = rules.indexOf(rule);
+    rules.splice(idx, 1);
+    saveRules(); applyRules(); closeRuleDialog(); renderTable();
+    showToast('Regel slettet');
+  }
+}
+
+function closeRuleDialog() {
+  document.getElementById('rule-dialog').classList.remove('open');
+  document.getElementById('dialog-backdrop').classList.remove('open');
+}
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(text) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = text;
+  t.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('visible'), 3000);
+}
+
+// ===== THEME =====
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme', dark?'':'dark');
+  document.getElementById('theme-icon').innerHTML = dark?'\u263e':'\u2600';
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeDropdown(); closeRuleDialog(); }
+});
+
+// ===== INIT =====
+applyRules();
+renderTable();
+</script>
+</body>
+</html>

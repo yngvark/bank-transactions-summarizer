@@ -24,6 +24,17 @@ export interface Transaction extends RawTransaction {
 // Category mapping from merchant category to hierarchical category path
 export type CategoryMapping = Record<string, string[]>;
 
+// User-defined text-pattern rule that overrides merchant-code categorization.
+// Rules are evaluated in array order; the first match wins.
+export type RuleType = 'substring' | 'regex';
+
+export interface TextPatternRule {
+  id: string;
+  type: RuleType;
+  pattern: string;
+  category: [string, string]; // [primary, sub]
+}
+
 // Raw row data for statistics
 export interface RawRowData {
   category: string;
