@@ -6,7 +6,16 @@
 - `DESIGN-category-editing.md` &mdash; design exploration and prototype comparison
 - `../prototypes/prototype-a-inline-dropdown.html`, `../prototypes/prototype-b-management-panel.html`, `../prototypes/prototype-c-smart-suggestions.html`, `../prototypes/prototype-d-inline-sortable.html`
 
-## Open design questions
+## Status update (2026-04-24)
+
+Prototype D has been ported to the production app. See
+`DESIGN-prototype-d-rules.md`. The overlap question below is resolved:
+**first-match-wins with a user-visible ordered list** — rules are evaluated in
+array order, and the `RulesPanel` component exposes up/down reorder. Broader
+persistence work (full `SaveFile`, Save/Load file UI) is tracked in
+`ISSUE-savefile-infrastructure.md`.
+
+## Resolved design questions
 
 ### Pattern conflict resolution when the user writes overlapping patterns
 
