@@ -363,6 +363,28 @@ td.cat-cell:hover .cat-uncat-display { background: rgba(245,158,11,0.2) !importa
       </div>
     </section>
 
+    <section class="card">
+      <h2>Design notes</h2>
+      <p style="font-size:0.85rem;margin-bottom:0.8rem;">
+        <strong>How categorization works here (matches the real app):</strong> each transaction starts with the category from the bank&#39;s merchant-code lookup (<code>defCat</code>, equivalent to <code>categories.json</code>). User-created patterns &mdash; string or regex &rarr; category &mdash; are applied on top and override the default. Uncategorized transactions (yellow box) are those with no merchant-code default and no matching user pattern.
+      </p>
+      <p style="font-size:0.85rem;margin-bottom:0.8rem;">
+        Try it: click <code>MENY STORO</code>, pick any category, change the pattern to regex <code>kiwi|meny</code>, save. Both transactions update. Earlier versions of this prototype auto-generated a pattern per merchant on load, which caused overlapping patterns to silently override each other &mdash; that has been removed.
+      </p>
+      <h3 style="font-size:0.95rem;font-weight:600;margin:0.8rem 0 0.4rem;">Open design question: user-created pattern overlaps</h3>
+      <p style="font-size:0.85rem;margin-bottom:0.6rem;">
+        The prototype currently uses last-created-wins (patterns applied in array order). This is fine when the user only creates non-overlapping patterns, but not decided for the real app. When the user writes two of their own patterns that overlap (e.g. narrow <code>MENY STORO</code> and later broad <code>kiwi|meny</code>), options include:
+      </p>
+      <ul style="padding-left:1.25rem;font-size:0.85rem;">
+        <li>First-match-wins against an explicit, user-visible ordered list (user can reorder).</li>
+        <li>Longest-pattern-wins (heuristic, no ordering UI needed, can surprise users).</li>
+        <li>Disallow overlap &mdash; force the user to resolve when creating/editing a pattern that would overlap an existing one.</li>
+      </ul>
+      <p style="font-size:0.85rem;margin-top:0.6rem;">
+        Whichever rule is chosen, the preview must show the <em>effective</em> result per row (&ldquo;will update&rdquo; vs &ldquo;blocked by pattern X&rdquo;), and the dialog should offer a one-click fix in the blocked case.
+      </p>
+    </section>
+
   </main>
 
   <div class="dropdown-backdrop" id="dd-backdrop" onclick="closeDropdown()"></div>
@@ -441,7 +463,8 @@ const cats = {
 };
 
 // ===== STATE =====
-const STORAGE_KEY = 'proto-d-rules';
+// Bumped from 'proto-d-rules' to reset old demo state that seeded per-merchant patterns.
+const STORAGE_KEY = 'proto-d-rules-v2';
 let rules = loadRules();
 let sortCol = null, sortDir = null;
 let pendingCat = null, pendingTxId = null;
@@ -481,20 +504,10 @@ function findRuleForTx(tx) {
 }
 
 // ===== RULES =====
-function seedDefaultRules() {
-  if (localStorage.getItem(STORAGE_KEY) !== null) return;
-  const seen = new Set();
-  for (const tx of txData) {
-    if (tx.defCat && !seen.has(tx.text)) {
-      seen.add(tx.text);
-      rules.push({ type:'substring', pattern:tx.text, category:[...tx.defCat] });
-    }
-  }
-  saveRules();
-}
-
+// Mirrors the real app: each transaction starts with its merchant-code default (defCat,
+// equivalent to categories.json lookup). User patterns then override on top.
 function applyRules() {
-  txData.forEach(tx => { tx.cat = null; });
+  txData.forEach(tx => { tx.cat = tx.defCat ? [...tx.defCat] : null; });
   for (const rule of rules) {
     const ms = getMatches(rule.pattern, rule.type);
     ms.forEach(tx => { tx.cat = [...rule.category]; });
@@ -749,7 +762,6 @@ document.addEventListener('keydown', e => {
 });
 
 // ===== INIT =====
-seedDefaultRules();
 applyRules();
 renderTable();
 </script>
