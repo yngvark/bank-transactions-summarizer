@@ -77,21 +77,39 @@ expand/collapse interferes with quick scanning.
 
 An "✏️ Edit categories" toggle pinned above the existing statistics table.
 While on, every category row in the table itself becomes editable: drag handle
-appears, emoji becomes a clickable picker, name becomes click-to-rename
-(Enter commits, Esc cancels), hover reveals delete. "+ Add subcategory under
-&lt;primary&gt;" rows appear after each primary's subs, plus a "+ Add primary
-category" at the bottom. Toggle off → table returns to read-only.
+appears, name becomes click-to-rename (Enter commits, Esc cancels), and hover
+reveals two actions — **+** to add a child node under that row, and **×** to
+delete the subtree rooted at that row. Top-level categories also expose a
+clickable emoji slot. A bottom "+ Add primary category" row creates a new
+top-level. Toggle off → table returns to read-only.
+
+The data model is recursive: every node has children, and the children can
+themselves have children, all the way down. The prototype demonstrates 5
+levels of depth (e.g. *Mat og drikke ➡ Restauranter og barer ➡ Take-away ➡
+Pizza ➡ Peppes*) and lets the user add a 6th from any "+" affordance. Sums
+roll up from leaves to every ancestor automatically.
+
+This matches the eventual data shape sketched in
+`docs/hierarchical-categories-design.md` (arbitrary-depth category paths) and
+the aggregation already implemented in `categoryTree.ts`. The current
+`SaveFile.categories: CategoryTree` type is hard-coded to two levels and
+would need to switch to a recursive shape (`{ name, emoji?, children: [...] }`)
+to back this prototype.
 
 **Strengths.** Direct manipulation: edit the thing you see. No new UI surface
-or navigation. Categories with no transactions can still be edited because the
+or navigation. Same affordance set works at every depth — no special "primary"
+vs "subcategory" distinction in the editing surface beyond emojis on
+top-level. Categories with no transactions can still be edited because the
 table renders their (zero-valued) rows in edit-mode.
 
 **Weaknesses.** Editing chrome competes with data display — risk of clutter,
 especially on narrow rows. Mobile viability is poor (small targets, drag
-handles in tight rows). Edits are immediate; no bulk discard.
+handles in tight rows, hover-only "+/×"). The "+" affordance is
+hover-revealed; discoverability rests on the hint banner. Edits are
+immediate; no bulk discard.
 
-![Edit-mode toggled on](../screenshots/proto-g-02-edit-mode.png)
-![After renaming Hus og innbo → Bolig](../screenshots/proto-g-03-after-rename.png)
+![Edit-mode toggled on, showing 5 levels of depth](../screenshots/proto-g-02-edit-mode.png)
+![Adding "Hawaii" as a child of Pizza creates a 5th-level node; sums roll up to every ancestor](../screenshots/proto-g-03-deep-tree.png)
 
 ## Trade-offs at a glance
 
@@ -103,6 +121,7 @@ handles in tight rows). Edits are immediate; no bulk discard.
 | Entry cost | 1 click + modal | 1 click + drawer | 1 click toggle |
 | Mobile-friendly | Yes (full-screen) | Partial (overlays) | No |
 | Maps to existing pattern | New | Mirrors `RulesPanel` | Mirrors sortable headers |
+| Max tree depth demonstrated | 2 (current `CategoryTree` shape) | 2 (current `CategoryTree` shape) | Arbitrary (recursive) |
 
 ## Recommendation
 
@@ -150,3 +169,9 @@ modal's "open → edit → save" loop is too heavy for incremental tweaks.
   `Improve category system with hierarchical categories` (#36). This document
   supersedes the original A/B/C exploration, which was actually about
   *rule* editing rather than tree editing.
+- 2026-04-25 — prototype G revised to support arbitrary tree depth (recursive
+  data model). E and F still demonstrate the current 2-level shape; if
+  arbitrary depth is the target, both would need similar revisions before
+  fair comparison. The "Max tree depth" row in the trade-off table reflects
+  what each prototype currently shows, not a fundamental limitation of the
+  pattern.

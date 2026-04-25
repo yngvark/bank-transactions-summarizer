@@ -127,14 +127,25 @@ section { margin-bottom: 2rem; }
   font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
 }
 .stats-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
-.stats-table tr.row-primary { font-weight: 600; }
-.stats-table tr.row-primary td { background: var(--surface); }
-.stats-table tr.row-sub td { color: var(--text-secondary); background: var(--surface); }
-.stats-table tr.row-sub td:first-child { padding-left: 2.4rem; }
+.stats-table tr td { background: var(--surface); }
+.stats-table tr.depth-0 { font-weight: 600; }
+.stats-table tr.depth-1 td, .stats-table tr.depth-2 td, .stats-table tr.depth-3 td, .stats-table tr.depth-4 td {
+  color: var(--text-secondary);
+}
 
 .stats-table .name-cell {
   display: flex; align-items: center; gap: 0.45rem;
 }
+.depth-pad { flex-shrink: 0; }
+
+/* Tree connector — subtle vertical lines for visual depth at deeper levels */
+.tree-rail {
+  width: 16px; flex-shrink: 0; align-self: stretch;
+  border-left: 1px dotted var(--border-color);
+  margin-right: -1px;
+}
+.editing .tree-rail { border-left-color: var(--edit-border); }
+
 .drag-handle {
   color: var(--text-secondary); cursor: grab; opacity: 0;
   width: 16px; flex-shrink: 0; user-select: none;
@@ -147,8 +158,8 @@ section { margin-bottom: 2rem; }
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
   font-size: 1.05rem; cursor: default; flex-shrink: 0;
 }
-.editing .emoji-btn { cursor: pointer; border-color: var(--border-color); background: var(--surface-2); }
-.editing .emoji-btn:hover { border-color: var(--accent-color); background: var(--primary-light); }
+.editing .emoji-btn.editable { cursor: pointer; border-color: var(--border-color); background: var(--surface-2); }
+.editing .emoji-btn.editable:hover { border-color: var(--accent-color); background: var(--primary-light); }
 
 .cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editing .cat-name { cursor: text; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px dashed transparent; }
@@ -171,20 +182,17 @@ section { margin-bottom: 2rem; }
 }
 .icon-btn:hover { background: var(--surface-2); color: var(--text-primary); }
 .icon-btn.danger:hover { color: var(--danger); }
+.icon-btn.add:hover { color: var(--accent-color); }
 
-/* Add row */
+/* Add primary row at the bottom of the table (only in edit mode) */
 tr.add-row { display: none; }
 .editing tr.add-row { display: table-row; }
-tr.add-row td {
-  padding: 0.4rem 0.7rem;
-  background: var(--edit-bg);
-}
+tr.add-row td { padding: 0.45rem 0.7rem; background: var(--edit-bg); }
 .add-btn {
   background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary);
   padding: 0.35rem 0.7rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-family: inherit;
 }
 .add-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
-.add-row.add-sub td:first-child { padding-left: 2.4rem; }
 
 /* Edit-mode hint banner */
 .edit-hint {
@@ -225,38 +233,38 @@ tr.add-row td {
 <header class="app-header">
   <div>
     <h1>Bank Transactions</h1>
-    <div class="app-subtitle">Prototype G — Inline edit-mode in statistics table</div>
+    <div class="app-subtitle">Prototype G — Inline edit-mode (arbitrary depth)</div>
   </div>
   <button class="theme-toggle" id="themeToggle">🌙 Dark</button>
 </header>
 
 <main class="app-content">
   <section class="card description">
-    <span class="prototype-badge">PROTOTYPE G</span>
-    <h3>Inline Edit-Mode in the Statistics Table</h3>
-    <p>An <strong>Edit categories</strong> toggle pinned above the existing statistics table. While on, every category row becomes inline-editable: emoji picker, rename in place, drag handles to reorder, "+" rows at each level to add. The user edits categories <em>where they're displayed</em>, with no separate UI surface.</p>
+    <span class="prototype-badge">PROTOTYPE G · v2</span>
+    <h3>Inline Edit-Mode in the Statistics Table — arbitrary depth</h3>
+    <p>An <strong>Edit categories</strong> toggle pinned above the existing statistics table. While on, every category row at <em>any depth</em> becomes inline-editable. The category tree is now arbitrarily deep — you can add a sub-sub-sub-category, rename it, drag it among its siblings, or delete it (with the whole subtree under it).</p>
     <ul>
       <li>Toggle <strong>✏️ Edit categories</strong> top-right of the statistics section.</li>
-      <li>While ON: drag handles, "+" rows, hover actions, and clickable emoji slots appear.</li>
-      <li>Click a category name to rename. Press <kbd>Enter</kbd> to commit, <kbd>Esc</kbd> to cancel.</li>
-      <li>Click the emoji to pick a new one (primaries only).</li>
-      <li>Hover a row to reveal the <strong>×</strong> delete button.</li>
+      <li>While ON: drag handles, hover actions, and click-to-rename appear at every depth.</li>
+      <li>Each row exposes <strong>+</strong> (add child under this node) and <strong>×</strong> (delete this subtree) on hover.</li>
+      <li>Click an emoji on a top-level category to change it. Press <kbd>Enter</kbd> to commit a rename, <kbd>Esc</kbd> to cancel.</li>
+      <li>Drag with the <span style="font-family:monospace;">⋮⋮</span> handle reorders within siblings only.</li>
     </ul>
     <div class="pros-cons">
       <div class="pros">
         <h4>Strengths</h4>
         <ul>
-          <li>Direct manipulation — edit the thing you see.</li>
-          <li>No new UI surface or navigation; matches mental model.</li>
-          <li>Categories with no transactions still render in edit-mode (otherwise hidden).</li>
+          <li>Arbitrary depth — sub-sub-…-categories with no model change to the UI.</li>
+          <li>Direct manipulation: edit the thing you see, where you see it.</li>
+          <li>One toggle in/out of edit mode; no separate UI surface to discover.</li>
         </ul>
       </div>
       <div class="cons">
         <h4>Weaknesses</h4>
         <ul>
-          <li>Editing chrome competes with data display — risk of clutter.</li>
-          <li>Mobile viability is poor (small targets, narrow rows).</li>
-          <li>No quick "discard all" — every edit is committed.</li>
+          <li>Deep trees push name columns far right at high depth.</li>
+          <li>Mobile viability remains poor — narrow rows + hover-only actions.</li>
+          <li>"+" affordance is hover-only — discoverability via hint banner alone.</li>
         </ul>
       </div>
     </div>
@@ -277,7 +285,7 @@ tr.add-row td {
     </div>
     <div class="stats-wrap" id="statsWrap">
       <div class="edit-hint">
-        Edit mode active. Click a name to rename · Click an emoji to change · Drag <span style="font-family:monospace;">⋮⋮</span> to reorder · Hover a row for delete · Press <kbd>Esc</kbd> to exit
+        Edit mode active. Click a name to rename · Hover a row for <strong>+</strong> (add child) and <strong>×</strong> (delete) · Drag <span style="font-family:monospace;">⋮⋮</span> to reorder within siblings · <kbd>Esc</kbd> exits
       </div>
       <table class="stats-table"><tbody id="statsTbody"></tbody></table>
     </div>
@@ -290,14 +298,50 @@ tr.add-row td {
 <script>
 const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
 
-let tree = {
-  "Mat og drikke": { emoji: "🍔", subcategories: ["Dagligvarer", "Restauranter og barer"] },
-  "Reise": { emoji: "✈️", subcategories: ["Flyselskap", "Hotel og opphold", "Reisearrangør", "Kjøretøy & Leiebil", "Reise og transport", "Taxfree"] },
-  "Personlig forbruk": { emoji: "🛍️", subcategories: ["PC og elektroutstyr", "Sport og fritid", "Klær og sko", "Hobby og Fritid"] },
-  "Hus og innbo": { emoji: "🏠", subcategories: ["Interiør og varehus"] },
-  "Kontanter og pengeoverføring": { emoji: "💵", subcategories: ["Kontaktuttak", "Pengeoverføring"] },
-  "Øvrig bruk": { emoji: "📦", subcategories: ["Øvrig bruk"] }
-};
+// Recursive tree: each node = { name, emoji?, children: [...] }.
+// Top-level nodes carry an emoji; deeper nodes do not (mirrors the existing
+// CategoryTree shape where only primaries carry an emoji). Fixture below
+// demonstrates 4 levels of depth.
+let tree = [
+  { name: "Mat og drikke", emoji: "🍔", children: [
+    { name: "Dagligvarer", children: [
+      { name: "Rema 1000", children: [] },
+      { name: "Kiwi", children: [] },
+      { name: "Meny", children: [] }
+    ]},
+    { name: "Restauranter og barer", children: [
+      { name: "Take-away", children: [
+        { name: "Pizza", children: [
+          { name: "Peppes", children: [] },
+          { name: "Domino's", children: [] }
+        ]},
+        { name: "Sushi", children: [] }
+      ]},
+      { name: "Restaurant", children: [] },
+      { name: "Bar", children: [] }
+    ]}
+  ]},
+  { name: "Reise", emoji: "✈️", children: [
+    { name: "Flyselskap", children: [
+      { name: "SAS", children: [] },
+      { name: "Norwegian", children: [] }
+    ]},
+    { name: "Hotel og opphold", children: [] },
+    { name: "Reise og transport", children: [
+      { name: "Tog", children: [] },
+      { name: "Taxi", children: [] }
+    ]}
+  ]},
+  { name: "Personlig forbruk", emoji: "🛍️", children: [
+    { name: "Klær og sko", children: [] },
+    { name: "Hobby og fritid", children: [] }
+  ]},
+  { name: "Hus og innbo", emoji: "🏠", children: [
+    { name: "Interiør og varehus", children: [] }
+  ]},
+  { name: "Øvrig bruk", emoji: "📦", children: [] }
+];
+
 let editing = false;
 
 const $ = (id) => document.getElementById(id);
@@ -315,9 +359,48 @@ $('themeToggle').addEventListener('click', () => {
   $('themeToggle').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
 });
 
+// --- Path helpers (each node identified by an array of sibling indices)
+function getNode(path) {
+  let parentChildren = tree;
+  let node = null;
+  for (const idx of path) { node = parentChildren[idx]; parentChildren = node.children; }
+  return node;
+}
+function getParentChildren(path) {
+  if (path.length === 0) return null;
+  let arr = tree;
+  for (let i = 0; i < path.length - 1; i++) arr = arr[path[i]].children;
+  return arr;
+}
+function pathStr(path) { return path.join('.'); }
+function pathFromAttr(attr) { return attr ? attr.split('.').map(Number) : []; }
+function countDescendants(node) {
+  let n = 0;
+  for (const c of node.children) n += 1 + countDescendants(c);
+  return n;
+}
+
+// --- Mock amount aggregation: leaves get a deterministic value from the name;
+// parents sum their children. Recomputed each render.
+function computeAmounts(node) {
+  if (node.children.length === 0) {
+    const base = 600 + (node.name.length * 60);
+    node._amounts = { jan: base, feb: Math.round(base * 1.1), mar: Math.round(base * 0.95) };
+  } else {
+    node._amounts = { jan: 0, feb: 0, mar: 0 };
+    for (const c of node.children) {
+      computeAmounts(c);
+      node._amounts.jan += c._amounts.jan;
+      node._amounts.feb += c._amounts.feb;
+      node._amounts.mar += c._amounts.mar;
+    }
+  }
+}
+
 function fmt(n) { return Math.round(n).toLocaleString('nb-NO'); }
 
 function renderTable() {
+  for (const root of tree) computeAmounts(root);
   const rows = [];
   rows.push(`<tr>
     <th style="width:55%;">Category</th>
@@ -326,50 +409,47 @@ function renderTable() {
     <th class="amount">Mar</th>
     <th class="amount">Sum</th>
   </tr>`);
-  for (const [name, info] of Object.entries(tree)) {
-    const total = (info.subcategories.length * 1234) + 2000;
-    rows.push(`
-      <tr class="row-primary" data-primary="${esc(name)}">
-        <td>
-          <div class="name-cell">
-            <span class="drag-handle" data-drag="primary" title="Drag to reorder">⋮⋮</span>
-            <button class="emoji-btn" data-emoji-for="${esc(name)}" title="${editing ? 'Click to change emoji' : ''}">${esc(info.emoji ?? '·')}</button>
-            <span class="cat-name" data-rename-primary="${esc(name)}">${esc(name)}</span>
-            <span class="row-actions"><button class="icon-btn danger" data-delete-primary="${esc(name)}" title="Delete primary">✕</button></span>
-          </div>
-        </td>
-        <td class="amount">${fmt(total)}</td>
-        <td class="amount">${fmt(total*0.9)}</td>
-        <td class="amount">${fmt(total*1.1)}</td>
-        <td class="amount">${fmt(total*3)}</td>
-      </tr>
-    `);
-    for (const sub of info.subcategories) {
-      const stotal = 800 + sub.length * 30;
+
+  function walk(nodes, depth, parentPath) {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const path = [...parentPath, i];
+      const amt = node._amounts;
+      const sum = amt.jan + amt.feb + amt.mar;
+      const isTopLevel = depth === 0;
+      const emojiHTML = isTopLevel
+        ? `<button class="emoji-btn editable" data-emoji-for="${pathStr(path)}" title="${editing ? 'Click to change emoji' : ''}">${esc(node.emoji ?? '·')}</button>`
+        : `<span class="emoji-btn" aria-hidden="true"></span>`;
+      // Indentation: drag handle + emoji slot + per-level rails for deeper nodes
+      const railHTML = depth > 0
+        ? Array.from({ length: depth }, () => '<span class="tree-rail"></span>').join('')
+        : '';
       rows.push(`
-        <tr class="row-sub" data-sub-of="${esc(name)}" data-sub="${esc(sub)}">
+        <tr class="depth-${depth}" data-path="${pathStr(path)}">
           <td>
             <div class="name-cell">
-              <span class="drag-handle" data-drag="sub" title="Drag to reorder">⋮⋮</span>
-              <span style="width: 28px; flex-shrink: 0;"></span>
-              <span class="cat-name" data-rename-sub="${esc(sub)}">${esc(sub)}</span>
-              <span class="row-actions"><button class="icon-btn danger" data-delete-sub="${esc(sub)}" title="Delete sub">✕</button></span>
+              <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
+              ${railHTML}
+              ${emojiHTML}
+              <span class="cat-name" data-rename="${pathStr(path)}">${esc(node.name)}</span>
+              <span class="row-actions">
+                <button class="icon-btn add" data-add-child="${pathStr(path)}" title="Add child under ${esc(node.name)}">+</button>
+                <button class="icon-btn danger" data-delete="${pathStr(path)}" title="Delete (with ${countDescendants(node)} descendant${countDescendants(node) === 1 ? '' : 's'})">✕</button>
+              </span>
             </div>
           </td>
-          <td class="amount">${fmt(stotal)}</td>
-          <td class="amount">${fmt(stotal*1.1)}</td>
-          <td class="amount">${fmt(stotal*0.95)}</td>
-          <td class="amount">${fmt(stotal*3)}</td>
+          <td class="amount">${fmt(amt.jan)}</td>
+          <td class="amount">${fmt(amt.feb)}</td>
+          <td class="amount">${fmt(amt.mar)}</td>
+          <td class="amount">${fmt(sum)}</td>
         </tr>
       `);
+      if (node.children.length) walk(node.children, depth + 1, path);
     }
-    // Add-sub row
-    rows.push(`
-      <tr class="add-row add-sub" data-primary-add-sub="${esc(name)}">
-        <td colspan="5"><button class="add-btn" data-add-sub="${esc(name)}">+ Add subcategory under ${esc(name)}</button></td>
-      </tr>
-    `);
   }
+  walk(tree, 0, []);
+
+  // Add-primary row
   rows.push(`
     <tr class="add-row">
       <td colspan="5"><button class="add-btn" id="addPrimary">+ Add primary category</button></td>
@@ -383,8 +463,7 @@ function setEditing(on) {
   $('statsWrap').classList.toggle('editing', editing);
   $('editToggle').classList.toggle('active', editing);
   $('editToggle').setAttribute('aria-pressed', String(editing));
-  if (editing) showToast('Edit mode on');
-  else showToast('Edit mode off');
+  showToast(editing ? 'Edit mode on' : 'Edit mode off');
   renderTable();
 }
 
@@ -399,50 +478,47 @@ document.addEventListener('keydown', (e) => {
 $('statsTbody').addEventListener('click', (e) => {
   if (!editing) return;
   if (e.target.matches('[data-emoji-for]')) {
-    const name = e.target.getAttribute('data-emoji-for');
+    const path = pathFromAttr(e.target.getAttribute('data-emoji-for'));
+    const node = getNode(path);
     showEmojiPicker(e.target.getBoundingClientRect(), (em) => {
-      tree[name].emoji = em; renderTable();
-      showToast(`Emoji updated for ${name}`);
+      node.emoji = em; renderTable();
+      showToast(`Emoji updated for ${node.name}`);
     });
-  } else if (e.target.matches('[data-delete-primary]')) {
-    const name = e.target.getAttribute('data-delete-primary');
-    if (!confirm(`Delete "${name}" and its ${tree[name].subcategories.length} subcategor${tree[name].subcategories.length === 1 ? 'y' : 'ies'}?`)) return;
-    delete tree[name];
+  } else if (e.target.matches('[data-delete]')) {
+    const path = pathFromAttr(e.target.getAttribute('data-delete'));
+    const node = getNode(path);
+    const desc = countDescendants(node);
+    const detail = desc > 0 ? ` and its ${desc} descendant${desc === 1 ? '' : 's'}` : '';
+    if (!confirm(`Delete "${node.name}"${detail}?`)) return;
+    const parent = getParentChildren(path);
+    parent.splice(path[path.length - 1], 1);
     renderTable();
-    showToast(`Deleted "${name}"`);
-  } else if (e.target.matches('[data-delete-sub]')) {
-    const subName = e.target.getAttribute('data-delete-sub');
-    const primary = e.target.closest('[data-sub-of]').getAttribute('data-sub-of');
-    tree[primary].subcategories = tree[primary].subcategories.filter(s => s !== subName);
-    renderTable();
-    showToast(`Deleted "${subName}"`);
-  } else if (e.target.matches('[data-add-sub]')) {
-    const primary = e.target.getAttribute('data-add-sub');
-    const subs = tree[primary].subcategories;
-    let cand = 'New subcategory', n = 1;
-    while (subs.includes(cand)) { n++; cand = `New subcategory ${n}`; }
-    subs.push(cand);
+    showToast(`Deleted "${node.name}"`);
+  } else if (e.target.matches('[data-add-child]')) {
+    const path = pathFromAttr(e.target.getAttribute('data-add-child'));
+    const node = getNode(path);
+    let cand = 'New category', n = 1;
+    while (node.children.some(c => c.name === cand)) { n++; cand = `New category ${n}`; }
+    node.children.push({ name: cand, children: [] });
     renderTable();
     setTimeout(() => {
-      const span = document.querySelector(`[data-sub-of="${esc(primary)}"][data-sub="${esc(cand)}"] [data-rename-sub]`);
-      if (span) startRename(span, (newName) => renameSub(primary, cand, newName));
+      const newPath = [...path, node.children.length - 1];
+      const span = document.querySelector(`[data-rename="${pathStr(newPath)}"]`);
+      if (span) startRename(span, (newName) => renameAt(newPath, newName));
     }, 0);
   } else if (e.target.id === 'addPrimary') {
     let cand = 'New category', n = 1;
-    while (tree[cand]) { n++; cand = `New category ${n}`; }
-    tree[cand] = { emoji: '📁', subcategories: [] };
+    while (tree.some(c => c.name === cand)) { n++; cand = `New category ${n}`; }
+    tree.push({ name: cand, emoji: '📁', children: [] });
     renderTable();
     setTimeout(() => {
-      const span = document.querySelector(`[data-rename-primary="${esc(cand)}"]`);
-      if (span) startRename(span, (newName) => renamePrimary(cand, newName));
+      const newPath = [tree.length - 1];
+      const span = document.querySelector(`[data-rename="${pathStr(newPath)}"]`);
+      if (span) startRename(span, (newName) => renameAt(newPath, newName));
     }, 0);
-  } else if (e.target.matches('[data-rename-primary]')) {
-    const name = e.target.getAttribute('data-rename-primary');
-    startRename(e.target, (newName) => renamePrimary(name, newName));
-  } else if (e.target.matches('[data-rename-sub]')) {
-    const subName = e.target.getAttribute('data-rename-sub');
-    const primary = e.target.closest('[data-sub-of]').getAttribute('data-sub-of');
-    startRename(e.target, (newName) => renameSub(primary, subName, newName));
+  } else if (e.target.matches('[data-rename]')) {
+    const path = pathFromAttr(e.target.getAttribute('data-rename'));
+    startRename(e.target, (newName) => renameAt(path, newName));
   }
 });
 
@@ -465,77 +541,56 @@ function startRename(span, onCommit) {
   });
 }
 
-function renamePrimary(oldName, newName) {
-  if (!newName || newName === oldName) { renderTable(); return; }
-  if (tree[newName]) { showToast(`A primary called "${newName}" already exists`); renderTable(); return; }
-  const reordered = {};
-  for (const k of Object.keys(tree)) reordered[k === oldName ? newName : k] = tree[k];
-  tree = reordered;
-  renderTable();
-  showToast(`Renamed → ${newName}`);
-}
-function renameSub(primary, oldName, newName) {
-  if (!newName || newName === oldName) { renderTable(); return; }
-  const subs = tree[primary].subcategories;
-  if (subs.includes(newName)) { showToast(`Subcategory "${newName}" already exists in ${primary}`); renderTable(); return; }
-  tree[primary].subcategories = subs.map(s => s === oldName ? newName : s);
+function renameAt(path, newName) {
+  const node = getNode(path);
+  if (!newName || newName === node.name) { renderTable(); return; }
+  const siblings = getParentChildren(path) ?? tree;
+  if (siblings.some(s => s !== node && s.name === newName)) {
+    showToast(`A sibling called "${newName}" already exists`); renderTable(); return;
+  }
+  node.name = newName;
   renderTable();
   showToast(`Renamed → ${newName}`);
 }
 
-// Drag-drop reorder (rows)
+// Drag-drop reorder among siblings only.
 let dragState = null;
 $('statsTbody').addEventListener('mousedown', (e) => {
   if (!editing) return;
   if (!e.target.matches('.drag-handle')) return;
-  const dragKind = e.target.getAttribute('data-drag');
   const tr = e.target.closest('tr');
-  dragState = { tr, kind: dragKind };
+  dragState = { tr, path: pathFromAttr(tr.getAttribute('data-path')) };
   tr.style.opacity = 0.5;
   e.preventDefault();
 });
 document.addEventListener('mousemove', (e) => {
   if (!dragState) return;
   const tbody = $('statsTbody');
-  const rows = Array.from(tbody.querySelectorAll(dragState.kind === 'primary' ? 'tr.row-primary' : `tr.row-sub[data-sub-of="${esc(dragState.tr.getAttribute('data-sub-of'))}"]`));
-  const target = rows.find(r => {
+  // Find sibling rows that share the same parent path (i.e. same length and same prefix)
+  const sourcePath = dragState.path;
+  const parentPrefix = sourcePath.slice(0, -1).join('.');
+  const siblingRows = Array.from(tbody.querySelectorAll('tr[data-path]')).filter(r => {
+    const p = pathFromAttr(r.getAttribute('data-path'));
+    return p.length === sourcePath.length && p.slice(0, -1).join('.') === parentPrefix;
+  });
+  const target = siblingRows.find(r => {
     const rect = r.getBoundingClientRect();
     return e.clientY >= rect.top && e.clientY <= rect.bottom;
   });
   if (target && target !== dragState.tr) {
-    // For primary drag, also need to move all child sub rows + add-sub row
-    if (dragState.kind === 'primary') {
-      // Just reorder primary rows in tree, then re-render
-      const sourceName = dragState.tr.getAttribute('data-primary');
-      const targetName = target.getAttribute('data-primary');
-      const order = Object.keys(tree);
-      const sourceIdx = order.indexOf(sourceName);
-      const targetIdx = order.indexOf(targetName);
-      if (sourceIdx >= 0 && targetIdx >= 0 && sourceIdx !== targetIdx) {
-        order.splice(sourceIdx, 1);
-        order.splice(targetIdx, 0, sourceName);
-        const reordered = {}; for (const k of order) reordered[k] = tree[k];
-        tree = reordered;
-        renderTable();
-        // Re-find the dragged row after re-render
-        const newTr = document.querySelector(`tr[data-primary="${esc(sourceName)}"]`);
-        if (newTr) { newTr.style.opacity = 0.5; dragState.tr = newTr; }
-      }
-    } else {
-      const primary = dragState.tr.getAttribute('data-sub-of');
-      const sourceName = dragState.tr.getAttribute('data-sub');
-      const targetName = target.getAttribute('data-sub');
-      const subs = tree[primary].subcategories.slice();
-      const sourceIdx = subs.indexOf(sourceName);
-      const targetIdx = subs.indexOf(targetName);
-      if (sourceIdx >= 0 && targetIdx >= 0 && sourceIdx !== targetIdx) {
-        subs.splice(sourceIdx, 1);
-        subs.splice(targetIdx, 0, sourceName);
-        tree[primary].subcategories = subs;
-        renderTable();
-        const newTr = document.querySelector(`tr[data-sub-of="${esc(primary)}"][data-sub="${esc(sourceName)}"]`);
-        if (newTr) { newTr.style.opacity = 0.5; dragState.tr = newTr; }
-      }
+    const targetPath = pathFromAttr(target.getAttribute('data-path'));
+    const siblings = getParentChildren(sourcePath) ?? tree;
+    const sourceIdx = sourcePath[sourcePath.length - 1];
+    const targetIdx = targetPath[targetPath.length - 1];
+    if (sourceIdx !== targetIdx) {
+      const [moved] = siblings.splice(sourceIdx, 1);
+      siblings.splice(targetIdx, 0, moved);
+      renderTable();
+      // Update dragState path to reflect new index
+      const newPath = [...sourcePath.slice(0, -1), targetIdx];
+      dragState.path = newPath;
+      const newTr = document.querySelector(`tr[data-path="${pathStr(newPath)}"]`);
+      if (newTr) { newTr.style.opacity = 0.5; dragState.tr = newTr; }
     }
   }
 });
