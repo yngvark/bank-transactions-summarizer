@@ -15,16 +15,12 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 **Key features:** Excel drag-and-drop upload, auto-categorization, red/green heatmap statistics table, text search + date range filtering, sample data generator (500 transactions), adjustable display settings (text size, cell spacing), mobile responsive, sticky headers/columns.
 
-## Running tests
+## Development loop
 
-Run all tests (unit + E2E) via the Makefile:
+Verify changes locally with `make ci` (runs unit + E2E tests). Do NOT run `npx playwright` or `pnpm run test:e2e` directly.
 
-```bash
-make ci
-```
+GitHub CI is slow. Use `make ci` as the main verification method. Only check GitHub CI once all local work is complete — this keeps the feedback loop fast.
 
-Do NOT run `npx playwright` or `pnpm run test:e2e` directly.
+## Pull requests
 
-## Developing rules
-
-- ✅ ALWAYS include screenshots in PR descriptions. Put them in folder "screenshots" at repository root.
+- ✅ ALWAYS include screenshots in PR descriptions. Put them in `screenshots/` at repository root.
