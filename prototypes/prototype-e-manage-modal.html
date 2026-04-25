@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype E: Manage Categories — Modal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] {
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --surface-2: #25253a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); color: var(--text-primary); line-height: 1.5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+.theme-toggle {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: white; padding: 0.4rem 0.8rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+}
+
+.app-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2rem; }
+.card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+}
+.prototype-badge {
+  display: inline-flex; align-items: center;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.35rem 0.9rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 1rem;
+}
+.description h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.description p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.25rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+
+/* Toolbar (mock of ConfigToolbar) */
+.toolbar {
+  display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;
+}
+.tb-btn {
+  background: var(--surface); border: 1px solid var(--border-color);
+  color: var(--text-primary); font-weight: 500; font-size: 0.85rem;
+  padding: 0.5rem 0.9rem; border-radius: var(--radius); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  transition: background var(--transition), border-color var(--transition);
+}
+.tb-btn:hover { background: var(--primary-light); border-color: var(--accent-color); }
+.tb-btn.tb-primary {
+  background: var(--accent-color); color: white; border-color: var(--accent-color);
+}
+.tb-btn.tb-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* Mock stats table */
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.stats-table th, .stats-table td { padding: 0.5rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+.stats-table th { background: var(--surface-2); color: var(--text-secondary); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.stats-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-table .row-primary { font-weight: 600; }
+.stats-table .row-sub { color: var(--text-secondary); }
+.stats-table .row-sub td:first-child { padding-left: 2rem; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15,15,25,0.55); backdrop-filter: blur(2px);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg); width: min(900px, 95vw); height: min(640px, 90vh);
+  box-shadow: var(--shadow-xl); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.modal-header h2 { font-size: 1.1rem; font-weight: 600; }
+.modal-close { background: transparent; border: 0; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+.modal-close:hover { color: var(--danger); }
+
+.modal-body { display: grid; grid-template-columns: 320px 1fr; min-height: 0; }
+.pane {
+  display: flex; flex-direction: column; min-height: 0;
+}
+.pane-left { border-right: 1px solid var(--border-color); background: var(--surface-2); }
+.pane-header {
+  padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-secondary); border-bottom: 1px solid var(--border-color);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pane-list { overflow-y: auto; flex: 1; padding: 0.5rem; }
+.pane-empty { padding: 1.5rem; color: var(--text-secondary); font-size: 0.85rem; text-align: center; }
+
+.cat-row {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem;
+  border-radius: var(--radius); cursor: pointer; user-select: none;
+  border: 1px solid transparent; transition: background var(--transition);
+}
+.cat-row:hover { background: var(--primary-light); }
+.cat-row.selected { background: var(--primary-light); border-color: var(--accent-color); }
+.cat-row .drag { color: var(--text-secondary); font-size: 1rem; cursor: grab; opacity: 0.5; }
+.cat-row:hover .drag { opacity: 1; }
+.cat-row .emoji-btn {
+  background: var(--surface); border: 1px solid var(--border-color); border-radius: 8px;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; cursor: pointer;
+}
+.cat-row .emoji-btn:hover { border-color: var(--accent-color); }
+.cat-row .name { flex: 1; font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cat-row .name-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--accent-color);
+  border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.9rem; color: var(--text-primary);
+  font-family: inherit; outline: none;
+}
+.cat-row .count {
+  font-size: 0.7rem; color: var(--text-secondary); background: var(--surface);
+  padding: 0.1rem 0.45rem; border-radius: 999px; border: 1px solid var(--border-color);
+}
+.cat-row .actions { display: flex; gap: 0.2rem; opacity: 0; transition: opacity var(--transition); }
+.cat-row:hover .actions, .cat-row.selected .actions { opacity: 1; }
+.icon-btn {
+  background: transparent; border: 0; color: var(--text-secondary); cursor: pointer;
+  width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.icon-btn:hover { background: var(--surface); color: var(--text-primary); }
+.icon-btn.danger:hover { color: var(--danger); }
+
+.pane-right { background: var(--surface); }
+.pane-right-header {
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.pane-right-header .pr-emoji { font-size: 1.4rem; }
+.pane-right-header .pr-title { font-size: 1rem; font-weight: 600; }
+.pane-right-header .pr-meta { color: var(--text-secondary); font-size: 0.78rem; }
+
+.pane-add {
+  padding: 0.6rem; border-top: 1px solid var(--border-color); background: var(--surface-2);
+}
+.add-btn {
+  width: 100%; background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary);
+  padding: 0.55rem; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-family: inherit;
+}
+.add-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+
+/* Modal footer */
+.modal-footer {
+  display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color); gap: 0.5rem;
+}
+.dirty-indicator { color: var(--text-secondary); font-size: 0.82rem; }
+.dirty-indicator.dirty { color: var(--warning); }
+.modal-footer .actions-right { display: flex; gap: 0.5rem; }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);
+  padding: 0.5rem 1rem; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-family: inherit;
+}
+.btn-ghost:hover { background: var(--primary-light); }
+.btn-primary {
+  background: var(--accent-color); border: 1px solid var(--accent-color); color: white;
+  padding: 0.5rem 1rem; border-radius: var(--radius); cursor: pointer; font-size: 0.85rem; font-weight: 500; font-family: inherit;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Emoji picker popover */
+.emoji-picker {
+  position: fixed; background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 0.5rem; box-shadow: var(--shadow-lg);
+  display: none; grid-template-columns: repeat(8, 32px); gap: 0.2rem; z-index: 1100;
+}
+.emoji-picker.open { display: grid; }
+.emoji-picker button {
+  width: 32px; height: 32px; background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; font-size: 1.1rem;
+}
+.emoji-picker button:hover { background: var(--primary-light); border-color: var(--border-color); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--text-primary); color: var(--surface); padding: 0.6rem 1.1rem;
+  border-radius: var(--radius); font-size: 0.85rem; box-shadow: var(--shadow-lg);
+  opacity: 0; pointer-events: none; transition: opacity var(--transition);
+  z-index: 1200;
+}
+.toast.show { opacity: 1; }
+
+/* Confirm-delete inline banner */
+.confirm-banner {
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3);
+  padding: 0.6rem 0.9rem; border-radius: var(--radius); font-size: 0.82rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  margin: 0.5rem;
+}
+.confirm-banner .msg { flex: 1; }
+.confirm-banner .danger-btn { background: var(--danger); color: white; border: 0; padding: 0.35rem 0.7rem; border-radius: 6px; cursor: pointer; font-size: 0.78rem; font-family: inherit; }
+.confirm-banner .ghost { background: transparent; border: 0; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; padding: 0.35rem 0.5rem; }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>Bank Transactions</h1>
+    <div class="app-subtitle">Prototype E — Modal "Manage categories"</div>
+  </div>
+  <button class="theme-toggle" id="themeToggle">🌙 Dark</button>
+</header>
+
+<main class="app-content">
+  <section class="card description">
+    <span class="prototype-badge">PROTOTYPE E</span>
+    <h3>Manage Categories — Modal Dialog</h3>
+    <p>Opens a focused two-pane modal from a button in the existing config toolbar. Categories on the left, subcategories of the selected primary on the right. Edits are staged and committed atomically with <strong>Save</strong>, or discarded with <strong>Cancel</strong>.</p>
+    <ul>
+      <li>Click <strong>Manage categories</strong> in the toolbar to open the modal.</li>
+      <li>Click a primary on the left to view/edit its subcategories on the right.</li>
+      <li>Click the emoji to open the picker. Double-click a name to rename inline.</li>
+      <li>Drag the <span style="font-family:monospace;">≡</span> handle to reorder. Hover a row for the delete (×) button.</li>
+      <li>Add via the dashed button at the bottom of each pane.</li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Familiar admin pattern; high focus.</li>
+          <li>Atomic save = easy undo via Cancel.</li>
+          <li>Two-pane scales to many subs without scroll-jumping.</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Weaknesses</h4>
+        <ul>
+          <li>Hides the underlying transactions table while open.</li>
+          <li>Extra click to enter "edit mode".</li>
+          <li>Save/Cancel adds friction for tiny edits.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Mock app surface</h3>
+    <div class="toolbar">
+      <button class="tb-btn">📂 Load file</button>
+      <button class="tb-btn">💾 Save file</button>
+      <button class="tb-btn tb-primary" id="openManager">🗂️ Manage categories</button>
+      <button class="tb-btn">⚙️ Settings</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Spending by category (mock)</h3>
+    <table class="stats-table" id="statsTable"></table>
+  </section>
+</main>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h2 id="modalTitle">🗂️ Manage categories</h2>
+      <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body">
+      <aside class="pane pane-left">
+        <div class="pane-header">
+          <span>Primary categories</span>
+          <span id="primaryCount" class="count">0</span>
+        </div>
+        <div class="pane-list" id="primaryList"></div>
+        <div class="pane-add">
+          <button class="add-btn" id="addPrimary">+ Add primary category</button>
+        </div>
+      </aside>
+      <section class="pane pane-right">
+        <div class="pane-right-header" id="paneRightHeader">
+          <span class="pr-emoji" id="prEmoji">—</span>
+          <div>
+            <div class="pr-title" id="prTitle">Select a primary</div>
+            <div class="pr-meta" id="prMeta">Pick a category on the left to manage its subcategories</div>
+          </div>
+        </div>
+        <div class="pane-list" id="subList"></div>
+        <div class="pane-add">
+          <button class="add-btn" id="addSub" disabled>+ Add subcategory</button>
+        </div>
+      </section>
+    </div>
+    <div class="modal-footer">
+      <span class="dirty-indicator" id="dirtyIndicator">No changes</span>
+      <div class="actions-right">
+        <button class="btn-ghost" id="btnCancel">Cancel</button>
+        <button class="btn-primary" id="btnSave">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="emoji-picker" id="emojiPicker"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
+
+const initialTree = {
+  "Mat og drikke": { emoji: "🍔", subcategories: ["Dagligvarer", "Restauranter og barer"] },
+  "Reise": { emoji: "✈️", subcategories: ["Flyselskap", "Hotel og opphold", "Reisearrangør", "Kjøretøy & Leiebil", "Reise og transport", "Taxfree"] },
+  "Personlig forbruk": { emoji: "🛍️", subcategories: ["PC og elektroutstyr", "Sport og fritid", "Klær og sko", "Hobby og Fritid"] },
+  "Hus og innbo": { emoji: "🏠", subcategories: ["Interiør og varehus"] },
+  "Kontanter og pengeoverføring": { emoji: "💵", subcategories: ["Kontaktuttak", "Pengeoverføring"] },
+  "Øvrig bruk": { emoji: "📦", subcategories: ["Øvrig bruk"] }
+};
+
+let workingTree = clone(initialTree);
+let savedTree = clone(initialTree);
+let selectedPrimary = null;
+
+// ---- DOM helpers
+const $ = (id) => document.getElementById(id);
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ---- Theme toggle
+$('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? null : 'dark';
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  $('themeToggle').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+});
+
+// ---- Mock stats table
+function renderStats() {
+  const rows = [];
+  rows.push(`<thead><tr><th>Category</th><th class="amount">Jan</th><th class="amount">Feb</th><th class="amount">Mar</th><th class="amount">Sum</th></tr></thead>`);
+  rows.push('<tbody>');
+  for (const [name, info] of Object.entries(savedTree)) {
+    const total = (info.subcategories.length * 1234) + 2000;
+    rows.push(`<tr class="row-primary"><td>${info.emoji ?? ''} ${name}</td><td class="amount">${total.toLocaleString('nb-NO')}</td><td class="amount">${(total*0.9).toLocaleString('nb-NO')}</td><td class="amount">${(total*1.1).toLocaleString('nb-NO')}</td><td class="amount">${(total*3).toLocaleString('nb-NO')}</td></tr>`);
+    for (const sub of info.subcategories) {
+      const stotal = 800 + sub.length * 30;
+      rows.push(`<tr class="row-sub"><td>${sub}</td><td class="amount">${stotal.toLocaleString('nb-NO')}</td><td class="amount">${(stotal*1.1|0).toLocaleString('nb-NO')}</td><td class="amount">${(stotal*0.95|0).toLocaleString('nb-NO')}</td><td class="amount">${(stotal*3).toLocaleString('nb-NO')}</td></tr>`);
+    }
+  }
+  rows.push('</tbody>');
+  $('statsTable').innerHTML = rows.join('');
+}
+
+// ---- Modal open/close
+$('openManager').addEventListener('click', () => {
+  workingTree = clone(savedTree);
+  selectedPrimary = Object.keys(workingTree)[0] ?? null;
+  renderModal();
+  $('modalBackdrop').classList.add('open');
+});
+function closeModal(force = false) {
+  if (!force && isDirty()) {
+    if (!confirm('Discard unsaved changes?')) return;
+  }
+  $('modalBackdrop').classList.remove('open');
+  hideEmojiPicker();
+}
+$('modalClose').addEventListener('click', () => closeModal());
+$('btnCancel').addEventListener('click', () => closeModal());
+$('modalBackdrop').addEventListener('click', (e) => { if (e.target === $('modalBackdrop')) closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('modalBackdrop').classList.contains('open')) closeModal();
+});
+
+// ---- Dirty tracking
+function isDirty() {
+  return JSON.stringify(workingTree) !== JSON.stringify(savedTree);
+}
+function refreshDirty() {
+  const d = isDirty();
+  const ind = $('dirtyIndicator');
+  ind.classList.toggle('dirty', d);
+  ind.textContent = d ? '● Unsaved changes' : 'No changes';
+  $('btnSave').disabled = !d;
+}
+
+// ---- Render modal
+function renderModal() {
+  // Primary list
+  const list = $('primaryList');
+  const primaries = Object.keys(workingTree);
+  $('primaryCount').textContent = primaries.length;
+  if (primaries.length === 0) {
+    list.innerHTML = '<div class="pane-empty">No primary categories yet.</div>';
+  } else {
+    list.innerHTML = primaries.map((p) => {
+      const info = workingTree[p];
+      const sel = p === selectedPrimary ? 'selected' : '';
+      return `<div class="cat-row ${sel}" data-primary="${escAttr(p)}">
+        <span class="drag" title="Drag to reorder">⋮⋮</span>
+        <button class="emoji-btn" data-emoji-for="${escAttr(p)}" title="Change emoji">${info.emoji ?? '·'}</button>
+        <span class="name" data-rename="${escAttr(p)}" title="Double-click to rename">${esc(p)}</span>
+        <span class="count">${info.subcategories.length}</span>
+        <span class="actions"><button class="icon-btn danger" data-delete="${escAttr(p)}" title="Delete">✕</button></span>
+      </div>`;
+    }).join('');
+  }
+
+  // Right pane header
+  if (selectedPrimary && workingTree[selectedPrimary]) {
+    const info = workingTree[selectedPrimary];
+    $('prEmoji').textContent = info.emoji ?? '·';
+    $('prTitle').textContent = selectedPrimary;
+    $('prMeta').textContent = `${info.subcategories.length} subcategor${info.subcategories.length === 1 ? 'y' : 'ies'}`;
+    $('addSub').disabled = false;
+    const subList = $('subList');
+    if (info.subcategories.length === 0) {
+      subList.innerHTML = '<div class="pane-empty">No subcategories. Add one below.</div>';
+    } else {
+      subList.innerHTML = info.subcategories.map((s) => `
+        <div class="cat-row" data-sub="${escAttr(s)}">
+          <span class="drag" title="Drag to reorder">⋮⋮</span>
+          <span class="name" data-rename-sub="${escAttr(s)}" title="Double-click to rename">${esc(s)}</span>
+          <span class="actions"><button class="icon-btn danger" data-delete-sub="${escAttr(s)}" title="Delete">✕</button></span>
+        </div>`).join('');
+    }
+  } else {
+    $('prEmoji').textContent = '—';
+    $('prTitle').textContent = 'Select a primary';
+    $('prMeta').textContent = 'Pick a category on the left to manage its subcategories';
+    $('subList').innerHTML = '';
+    $('addSub').disabled = true;
+  }
+  refreshDirty();
+}
+
+// ---- Encoding helpers
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function escAttr(s) { return esc(s); }
+
+// ---- Interactions: click-select, rename, emoji, delete
+$('primaryList').addEventListener('click', (e) => {
+  const row = e.target.closest('[data-primary]');
+  if (!row) return;
+  const name = row.getAttribute('data-primary');
+  if (e.target.matches('[data-delete]')) {
+    deletePrimary(name);
+    return;
+  }
+  if (e.target.matches('[data-emoji-for]')) {
+    showEmojiPicker(e.target.getBoundingClientRect(), (em) => {
+      workingTree[name].emoji = em;
+      renderModal();
+    });
+    return;
+  }
+  selectedPrimary = name;
+  renderModal();
+});
+$('primaryList').addEventListener('dblclick', (e) => {
+  if (e.target.matches('[data-rename]')) {
+    const name = e.target.getAttribute('data-rename');
+    startRename(e.target, (newName) => renamePrimary(name, newName));
+  }
+});
+
+$('subList').addEventListener('click', (e) => {
+  if (e.target.matches('[data-delete-sub]')) {
+    const name = e.target.getAttribute('data-delete-sub');
+    deleteSub(name);
+  }
+});
+$('subList').addEventListener('dblclick', (e) => {
+  if (e.target.matches('[data-rename-sub]')) {
+    const name = e.target.getAttribute('data-rename-sub');
+    startRename(e.target, (newName) => renameSub(name, newName));
+  }
+});
+
+function startRename(span, onCommit) {
+  const input = document.createElement('input');
+  input.value = span.textContent;
+  input.className = 'name-input';
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let committed = false;
+  function commit() {
+    if (committed) return; committed = true;
+    onCommit(input.value.trim());
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    else if (e.key === 'Escape') { committed = true; renderModal(); }
+  });
+}
+
+// ---- Mutations
+function renamePrimary(oldName, newName) {
+  if (!newName || newName === oldName) { renderModal(); return; }
+  if (workingTree[newName]) { showToast(`A primary called "${newName}" already exists`); renderModal(); return; }
+  const reordered = {};
+  for (const k of Object.keys(workingTree)) {
+    reordered[k === oldName ? newName : k] = workingTree[k];
+  }
+  workingTree = reordered;
+  if (selectedPrimary === oldName) selectedPrimary = newName;
+  renderModal();
+}
+function renameSub(oldName, newName) {
+  if (!selectedPrimary || !newName || newName === oldName) { renderModal(); return; }
+  const subs = workingTree[selectedPrimary].subcategories;
+  if (subs.includes(newName)) { showToast(`Subcategory "${newName}" already exists`); renderModal(); return; }
+  workingTree[selectedPrimary].subcategories = subs.map(s => s === oldName ? newName : s);
+  renderModal();
+}
+function deletePrimary(name) {
+  if (!confirm(`Delete primary "${name}" and its ${workingTree[name].subcategories.length} subcategor${workingTree[name].subcategories.length === 1 ? 'y' : 'ies'}?\n\nAny rules referencing them will need to be updated.`)) return;
+  delete workingTree[name];
+  if (selectedPrimary === name) selectedPrimary = Object.keys(workingTree)[0] ?? null;
+  renderModal();
+}
+function deleteSub(name) {
+  if (!confirm(`Delete subcategory "${name}"?`)) return;
+  workingTree[selectedPrimary].subcategories = workingTree[selectedPrimary].subcategories.filter(s => s !== name);
+  renderModal();
+}
+
+$('addPrimary').addEventListener('click', () => {
+  let base = 'New category', candidate = base, n = 1;
+  while (workingTree[candidate]) { n++; candidate = `${base} ${n}`; }
+  workingTree[candidate] = { emoji: '📁', subcategories: [] };
+  selectedPrimary = candidate;
+  renderModal();
+  // Focus the new item's name for immediate rename
+  const span = $('primaryList').querySelector(`[data-rename="${escAttr(candidate)}"]`);
+  if (span) startRename(span, (newName) => renamePrimary(candidate, newName));
+});
+
+$('addSub').addEventListener('click', () => {
+  if (!selectedPrimary) return;
+  const subs = workingTree[selectedPrimary].subcategories;
+  let base = 'New subcategory', candidate = base, n = 1;
+  while (subs.includes(candidate)) { n++; candidate = `${base} ${n}`; }
+  subs.push(candidate);
+  renderModal();
+  const span = $('subList').querySelector(`[data-rename-sub="${escAttr(candidate)}"]`);
+  if (span) startRename(span, (newName) => renameSub(candidate, newName));
+});
+
+// ---- Save / Cancel
+$('btnSave').addEventListener('click', () => {
+  savedTree = clone(workingTree);
+  renderStats();
+  showToast('Categories saved');
+  closeModal(true);
+});
+
+// ---- Emoji picker
+function showEmojiPicker(rect, onPick) {
+  const p = $('emojiPicker');
+  p.innerHTML = EMOJI_SET.map(em => `<button data-em="${em}">${em}</button>`).join('');
+  p.style.top = (rect.bottom + 4) + 'px';
+  p.style.left = rect.left + 'px';
+  p.classList.add('open');
+  function handler(e) {
+    if (e.target.matches('[data-em]')) {
+      onPick(e.target.getAttribute('data-em'));
+      hideEmojiPicker();
+    } else if (!p.contains(e.target)) {
+      hideEmojiPicker();
+    }
+  }
+  setTimeout(() => document.addEventListener('mousedown', handler, { once: true }), 0);
+  p._handler = handler;
+}
+function hideEmojiPicker() {
+  $('emojiPicker').classList.remove('open');
+}
+
+// ---- Drag-drop reorder
+let dragState = null;
+function attachDragHandlers(listEl, source) {
+  // source: 'primary' or 'sub'
+  let dragRow = null;
+  listEl.addEventListener('mousedown', (e) => {
+    if (!e.target.classList.contains('drag')) return;
+    dragRow = e.target.closest('.cat-row');
+    dragRow.style.opacity = 0.5;
+    e.preventDefault();
+  });
+  listEl.addEventListener('mousemove', (e) => {
+    if (!dragRow) return;
+    const rows = Array.from(listEl.querySelectorAll('.cat-row'));
+    const target = rows.find(r => {
+      const rect = r.getBoundingClientRect();
+      return e.clientY >= rect.top && e.clientY <= rect.bottom;
+    });
+    if (target && target !== dragRow) {
+      const rect = target.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      target.parentNode.insertBefore(dragRow, after ? target.nextSibling : target);
+    }
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragRow) return;
+    dragRow.style.opacity = '';
+    // Persist order
+    const rows = Array.from(listEl.querySelectorAll('.cat-row'));
+    if (source === 'primary') {
+      const order = rows.map(r => r.getAttribute('data-primary'));
+      const reordered = {};
+      for (const k of order) reordered[k] = workingTree[k];
+      workingTree = reordered;
+    } else {
+      const order = rows.map(r => r.getAttribute('data-sub'));
+      workingTree[selectedPrimary].subcategories = order;
+    }
+    dragRow = null;
+    refreshDirty();
+  });
+}
+attachDragHandlers($('primaryList'), 'primary');
+attachDragHandlers($('subList'), 'sub');
+
+// ---- Initial render
+renderStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype F: Categories Side Drawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] {
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --surface-2: #25253a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); color: var(--text-primary); line-height: 1.5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+.theme-toggle {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: white; padding: 0.4rem 0.8rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+}
+
+.app-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2rem; }
+.card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+}
+.prototype-badge {
+  display: inline-flex; align-items: center;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.35rem 0.9rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 1rem;
+}
+.description h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.description p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.25rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+
+.toolbar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.tb-btn {
+  background: var(--surface); border: 1px solid var(--border-color);
+  color: var(--text-primary); font-weight: 500; font-size: 0.85rem;
+  padding: 0.5rem 0.9rem; border-radius: var(--radius); cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.tb-btn:hover { background: var(--primary-light); border-color: var(--accent-color); }
+.tb-btn.tb-primary { background: var(--accent-color); color: white; border-color: var(--accent-color); }
+.tb-btn.tb-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.stats-table th, .stats-table td { padding: 0.5rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+.stats-table th { background: var(--surface-2); color: var(--text-secondary); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.stats-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-table .row-primary { font-weight: 600; }
+.stats-table .row-sub { color: var(--text-secondary); }
+.stats-table .row-sub td:first-child { padding-left: 2rem; }
+
+/* Drawer */
+.drawer-backdrop {
+  position: fixed; inset: 0; background: rgba(15,15,25,0.18);
+  display: none; z-index: 900;
+}
+.drawer-backdrop.open { display: block; }
+.drawer {
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 95vw);
+  background: var(--surface); border-left: 1px solid var(--border-color);
+  box-shadow: -8px 0 30px -8px rgba(0,0,0,0.18);
+  display: grid; grid-template-rows: auto auto 1fr auto; transform: translateX(100%);
+  transition: transform var(--transition); z-index: 1000;
+}
+.drawer.open { transform: translateX(0); }
+.drawer-header {
+  padding: 1.1rem 1.4rem; border-bottom: 1px solid var(--border-color);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.drawer-header .left { display: flex; align-items: center; gap: 0.6rem; }
+.drawer-header h2 { font-size: 1.05rem; font-weight: 600; }
+.drawer-header .live-badge {
+  background: rgba(34,197,94,0.12); color: var(--success); font-size: 0.68rem;
+  padding: 0.15rem 0.5rem; border-radius: 999px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+}
+.drawer-header .live-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+.drawer-close { background: transparent; border: 0; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; line-height: 1; }
+.drawer-close:hover { color: var(--danger); }
+
+.drawer-toolbar {
+  padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color);
+  display: flex; gap: 0.5rem; align-items: center; background: var(--surface-2);
+}
+.search-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 0.45rem 0.7rem; font-size: 0.85rem; font-family: inherit;
+  color: var(--text-primary); outline: none;
+}
+.search-input:focus { border-color: var(--accent-color); }
+.tiny-btn {
+  background: var(--accent-color); color: white; border: 0; border-radius: var(--radius);
+  padding: 0.45rem 0.7rem; font-size: 0.82rem; font-weight: 500; cursor: pointer; font-family: inherit;
+  white-space: nowrap;
+}
+.tiny-btn:hover { background: var(--accent-hover); }
+
+.drawer-body { overflow-y: auto; padding: 0.6rem 1rem; }
+
+.primary-card {
+  background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg); margin-bottom: 0.6rem; overflow: hidden;
+}
+.primary-card.dim { opacity: 0.4; }
+.primary-head {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 0.8rem;
+  cursor: pointer; user-select: none;
+}
+.primary-head:hover { background: var(--primary-light); }
+.primary-head .drag { color: var(--text-secondary); cursor: grab; opacity: 0.5; }
+.primary-head:hover .drag { opacity: 1; }
+.primary-head .chevron { color: var(--text-secondary); font-size: 0.75rem; transition: transform var(--transition); }
+.primary-head.expanded .chevron { transform: rotate(90deg); }
+.emoji-btn {
+  background: var(--surface-2); border: 1px solid var(--border-color); border-radius: 8px;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; cursor: pointer; flex-shrink: 0;
+}
+.emoji-btn:hover { border-color: var(--accent-color); }
+.primary-head .name {
+  flex: 1; font-size: 0.95rem; font-weight: 600; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.primary-head .badge {
+  font-size: 0.72rem; color: var(--text-secondary); background: var(--surface-2);
+  padding: 0.15rem 0.5rem; border-radius: 999px; border: 1px solid var(--border-color);
+}
+.primary-head .actions { display: flex; gap: 0.15rem; opacity: 0; transition: opacity var(--transition); }
+.primary-head:hover .actions { opacity: 1; }
+.icon-btn {
+  background: transparent; border: 0; color: var(--text-secondary); cursor: pointer;
+  width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+.icon-btn.danger:hover { color: var(--danger); }
+
+.subs {
+  padding: 0.2rem 0.6rem 0.5rem 1.4rem; display: none;
+}
+.primary-card.expanded .subs { display: block; }
+.sub-row {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem;
+  border-radius: 6px; font-size: 0.85rem;
+}
+.sub-row:hover { background: var(--surface-2); }
+.sub-row .drag { color: var(--text-secondary); cursor: grab; opacity: 0.4; }
+.sub-row:hover .drag { opacity: 1; }
+.sub-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub-row .actions { display: flex; gap: 0.15rem; opacity: 0; }
+.sub-row:hover .actions { opacity: 1; }
+.add-sub {
+  display: block; width: 100%; background: transparent; border: 1px dashed var(--border-color);
+  color: var(--text-secondary); padding: 0.4rem; border-radius: 6px; cursor: pointer;
+  font-size: 0.82rem; font-family: inherit; margin-top: 0.3rem;
+}
+.add-sub:hover { border-color: var(--accent-color); color: var(--accent-color); }
+
+.name-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--accent-color);
+  border-radius: 6px; padding: 0.25rem 0.5rem; font-size: inherit; color: var(--text-primary);
+  font-family: inherit; outline: none; min-width: 0;
+}
+
+.drawer-footer {
+  padding: 0.7rem 1rem; border-top: 1px solid var(--border-color);
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface-2); font-size: 0.8rem; color: var(--text-secondary);
+}
+.drawer-footer .summary { display: flex; gap: 0.6rem; }
+
+.emoji-picker {
+  position: fixed; background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 0.5rem; box-shadow: var(--shadow-lg);
+  display: none; grid-template-columns: repeat(8, 32px); gap: 0.2rem; z-index: 1100;
+}
+.emoji-picker.open { display: grid; }
+.emoji-picker button {
+  width: 32px; height: 32px; background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; font-size: 1.1rem;
+}
+.emoji-picker button:hover { background: var(--primary-light); border-color: var(--border-color); }
+
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--text-primary); color: var(--surface); padding: 0.6rem 1.1rem;
+  border-radius: var(--radius); font-size: 0.85rem; box-shadow: var(--shadow-lg);
+  opacity: 0; pointer-events: none; transition: opacity var(--transition);
+  z-index: 1200;
+}
+.toast.show { opacity: 1; }
+
+/* When drawer is open, table area scoots a bit and dims softly */
+.app-content.drawer-open { transition: opacity var(--transition); }
+@media (min-width: 1100px) {
+  .app-content.drawer-open { opacity: 1; padding-right: calc(2rem + 480px); }
+}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>Bank Transactions</h1>
+    <div class="app-subtitle">Prototype F — Categories side drawer</div>
+  </div>
+  <button class="theme-toggle" id="themeToggle">🌙 Dark</button>
+</header>
+
+<main class="app-content" id="appContent">
+  <section class="card description">
+    <span class="prototype-badge">PROTOTYPE F</span>
+    <h3>Categories Side Drawer</h3>
+    <p>A persistent slide-in panel from the right, mirroring the existing <code>RulesPanel</code> ambient style. The transactions table stays visible while editing — the user sees how changes flow into stats in real time. Edits commit live (no save button); the same beforeunload hint guards unsaved file changes.</p>
+    <ul>
+      <li>Click <strong>🗂️ Categories</strong> in the toolbar to open / close the drawer.</li>
+      <li>Each primary is a collapsible card. Click the header to expand and edit subcategories.</li>
+      <li>Click the emoji to change it. Double-click any name to rename.</li>
+      <li>Drag handles to reorder primaries or subs within a primary.</li>
+      <li>Search box at top filters visible categories live.</li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Stays alongside the data — see edits land in stats immediately.</li>
+          <li>Live save fits the rest of the app (auto-save model).</li>
+          <li>Search makes large taxonomies tractable.</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Weaknesses</h4>
+        <ul>
+          <li>No atomic rollback — every change is final until "undo" toast.</li>
+          <li>Eats horizontal space; on narrow screens it overlays the table.</li>
+          <li>Nested expand/collapse interferes with quick scanning.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Mock app surface</h3>
+    <div class="toolbar">
+      <button class="tb-btn">📂 Load file</button>
+      <button class="tb-btn">💾 Save file</button>
+      <button class="tb-btn tb-primary" id="openDrawer">🗂️ Categories <span id="catCount" style="background: rgba(255,255,255,0.25); padding: 0 0.4rem; border-radius: 999px;">0</span></button>
+      <button class="tb-btn">⚙️ Settings</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Spending by category (mock — updates live)</h3>
+    <table class="stats-table" id="statsTable"></table>
+  </section>
+</main>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-labelledby="drawerTitle">
+  <div class="drawer-header">
+    <div class="left">
+      <h2 id="drawerTitle">🗂️ Categories</h2>
+      <span class="live-badge">Live</span>
+    </div>
+    <button class="drawer-close" id="drawerClose" aria-label="Close drawer">×</button>
+  </div>
+  <div class="drawer-toolbar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search…">
+    <button class="tiny-btn" id="addPrimary">+ Primary</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-footer">
+    <div class="summary">
+      <span id="footerSummary">— primaries · — subs</span>
+    </div>
+    <span style="color: var(--success);">All changes saved</span>
+  </div>
+</aside>
+
+<div class="emoji-picker" id="emojiPicker"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
+
+let tree = {
+  "Mat og drikke": { emoji: "🍔", subcategories: ["Dagligvarer", "Restauranter og barer"] },
+  "Reise": { emoji: "✈️", subcategories: ["Flyselskap", "Hotel og opphold", "Reisearrangør", "Kjøretøy & Leiebil", "Reise og transport", "Taxfree"] },
+  "Personlig forbruk": { emoji: "🛍️", subcategories: ["PC og elektroutstyr", "Sport og fritid", "Klær og sko", "Hobby og Fritid"] },
+  "Hus og innbo": { emoji: "🏠", subcategories: ["Interiør og varehus"] },
+  "Kontanter og pengeoverføring": { emoji: "💵", subcategories: ["Kontaktuttak", "Pengeoverføring"] },
+  "Øvrig bruk": { emoji: "📦", subcategories: ["Øvrig bruk"] }
+};
+let expanded = new Set();
+let searchQuery = '';
+let lastUndo = null;
+
+const $ = (id) => document.getElementById(id);
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function showToast(msg, undo) {
+  const t = $('toast');
+  if (undo) {
+    t.innerHTML = `${esc(msg)} <button id="undoBtn" style="margin-left:0.6rem;background:transparent;border:1px solid var(--border-color);color:inherit;padding:0.15rem 0.5rem;border-radius:6px;cursor:pointer;font-size:0.78rem;">Undo</button>`;
+    setTimeout(() => {
+      $('undoBtn')?.addEventListener('click', () => {
+        if (lastUndo) { lastUndo(); lastUndo = null; renderAll(); showToast('Restored'); }
+      });
+    }, 0);
+  } else {
+    t.textContent = msg;
+  }
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 4500);
+}
+
+$('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? null : 'dark';
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  $('themeToggle').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+});
+
+function renderStats() {
+  const rows = [];
+  rows.push(`<thead><tr><th>Category</th><th class="amount">Jan</th><th class="amount">Feb</th><th class="amount">Mar</th><th class="amount">Sum</th></tr></thead>`);
+  rows.push('<tbody>');
+  for (const [name, info] of Object.entries(tree)) {
+    const total = (info.subcategories.length * 1234) + 2000;
+    rows.push(`<tr class="row-primary"><td>${esc(info.emoji ?? '')} ${esc(name)}</td><td class="amount">${total.toLocaleString('nb-NO')}</td><td class="amount">${(total*0.9).toLocaleString('nb-NO')}</td><td class="amount">${(total*1.1).toLocaleString('nb-NO')}</td><td class="amount">${(total*3).toLocaleString('nb-NO')}</td></tr>`);
+    for (const sub of info.subcategories) {
+      const stotal = 800 + sub.length * 30;
+      rows.push(`<tr class="row-sub"><td>${esc(sub)}</td><td class="amount">${stotal.toLocaleString('nb-NO')}</td><td class="amount">${(stotal*1.1|0).toLocaleString('nb-NO')}</td><td class="amount">${(stotal*0.95|0).toLocaleString('nb-NO')}</td><td class="amount">${(stotal*3).toLocaleString('nb-NO')}</td></tr>`);
+    }
+  }
+  rows.push('</tbody>');
+  $('statsTable').innerHTML = rows.join('');
+}
+
+function renderDrawer() {
+  const body = $('drawerBody');
+  const q = searchQuery.toLowerCase().trim();
+  const html = Object.entries(tree).map(([name, info]) => {
+    const matchesPrimary = !q || name.toLowerCase().includes(q);
+    const matchingSubs = info.subcategories.filter(s => !q || s.toLowerCase().includes(q));
+    const visible = matchesPrimary || matchingSubs.length > 0;
+    if (!visible) return '';
+    const isExpanded = expanded.has(name) || (q && matchingSubs.length > 0);
+    const subsToShow = q && !matchesPrimary ? matchingSubs : info.subcategories;
+    return `
+    <article class="primary-card ${isExpanded ? 'expanded' : ''}" data-primary="${esc(name)}">
+      <div class="primary-head ${isExpanded ? 'expanded' : ''}">
+        <span class="drag" title="Drag to reorder">⋮⋮</span>
+        <span class="chevron">▶</span>
+        <button class="emoji-btn" data-emoji-for="${esc(name)}" title="Change emoji">${esc(info.emoji ?? '·')}</button>
+        <span class="name" data-rename="${esc(name)}" title="Double-click to rename">${esc(name)}</span>
+        <span class="badge">${info.subcategories.length}</span>
+        <span class="actions"><button class="icon-btn danger" data-delete="${esc(name)}" title="Delete primary">✕</button></span>
+      </div>
+      <div class="subs">
+        ${subsToShow.map(s => `
+          <div class="sub-row" data-sub-of="${esc(name)}" data-sub="${esc(s)}">
+            <span class="drag" title="Drag to reorder">⋮⋮</span>
+            <span class="name" data-rename-sub="${esc(s)}" title="Double-click to rename">${esc(s)}</span>
+            <span class="actions"><button class="icon-btn danger" data-delete-sub="${esc(s)}" title="Delete sub">✕</button></span>
+          </div>`).join('')}
+        <button class="add-sub" data-add-sub-of="${esc(name)}">+ Add subcategory</button>
+      </div>
+    </article>`;
+  }).join('');
+  body.innerHTML = html || '<div style="padding: 1.5rem; color: var(--text-secondary); text-align: center; font-size: 0.85rem;">No matches.</div>';
+  // Footer summary
+  const primCount = Object.keys(tree).length;
+  const subCount = Object.values(tree).reduce((a, b) => a + b.subcategories.length, 0);
+  $('footerSummary').textContent = `${primCount} primar${primCount === 1 ? 'y' : 'ies'} · ${subCount} sub${subCount === 1 ? '' : 's'}`;
+  $('catCount').textContent = primCount;
+}
+
+function renderAll() {
+  renderDrawer();
+  renderStats();
+}
+
+// Drawer open/close
+function openDrawer() {
+  $('drawer').classList.add('open');
+  $('drawerBackdrop').classList.add('open');
+  $('appContent').classList.add('drawer-open');
+}
+function closeDrawer() {
+  $('drawer').classList.remove('open');
+  $('drawerBackdrop').classList.remove('open');
+  $('appContent').classList.remove('drawer-open');
+  hideEmojiPicker();
+}
+$('openDrawer').addEventListener('click', openDrawer);
+$('drawerClose').addEventListener('click', closeDrawer);
+$('drawerBackdrop').addEventListener('click', closeDrawer);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('drawer').classList.contains('open')) closeDrawer(); });
+
+// Search
+$('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderDrawer();
+});
+
+// Body interactions (delegated)
+$('drawerBody').addEventListener('click', (e) => {
+  const head = e.target.closest('.primary-head');
+  const card = e.target.closest('.primary-card');
+  // Emoji picker
+  if (e.target.matches('[data-emoji-for]')) {
+    e.stopPropagation();
+    const name = e.target.getAttribute('data-emoji-for');
+    showEmojiPicker(e.target.getBoundingClientRect(), (em) => {
+      tree[name].emoji = em;
+      renderAll();
+      showToast(`Emoji updated for ${name}`);
+    });
+    return;
+  }
+  // Delete primary
+  if (e.target.matches('[data-delete]')) {
+    e.stopPropagation();
+    const name = e.target.getAttribute('data-delete');
+    if (!confirm(`Delete primary "${name}" and its ${tree[name].subcategories.length} subcategor${tree[name].subcategories.length === 1 ? 'y' : 'ies'}?`)) return;
+    const snap = JSON.parse(JSON.stringify(tree));
+    delete tree[name];
+    expanded.delete(name);
+    lastUndo = () => { tree = snap; };
+    renderAll();
+    showToast(`Deleted "${name}"`, true);
+    return;
+  }
+  // Delete sub
+  if (e.target.matches('[data-delete-sub]')) {
+    e.stopPropagation();
+    const subName = e.target.getAttribute('data-delete-sub');
+    const primary = e.target.closest('.sub-row').getAttribute('data-sub-of');
+    const snap = JSON.parse(JSON.stringify(tree));
+    tree[primary].subcategories = tree[primary].subcategories.filter(s => s !== subName);
+    lastUndo = () => { tree = snap; };
+    renderAll();
+    showToast(`Deleted "${subName}"`, true);
+    return;
+  }
+  // Add sub
+  if (e.target.matches('[data-add-sub-of]')) {
+    e.stopPropagation();
+    const primary = e.target.getAttribute('data-add-sub-of');
+    const subs = tree[primary].subcategories;
+    let cand = 'New subcategory', n = 1;
+    while (subs.includes(cand)) { n++; cand = `New subcategory ${n}`; }
+    subs.push(cand);
+    expanded.add(primary);
+    renderAll();
+    setTimeout(() => {
+      const el = document.querySelector(`[data-sub-of="${esc(primary)}"][data-sub="${esc(cand)}"] [data-rename-sub]`);
+      if (el) startRename(el, (n) => renameSub(primary, cand, n));
+    }, 0);
+    return;
+  }
+  // Toggle expand on header click (but not if we just clicked emoji or actions or drag)
+  if (head && !e.target.closest('.actions') && !e.target.matches('.drag') && !e.target.matches('[data-emoji-for]')) {
+    const name = card.getAttribute('data-primary');
+    if (expanded.has(name)) expanded.delete(name); else expanded.add(name);
+    renderDrawer();
+  }
+});
+
+$('drawerBody').addEventListener('dblclick', (e) => {
+  if (e.target.matches('[data-rename]')) {
+    const name = e.target.getAttribute('data-rename');
+    startRename(e.target, (n) => renamePrimary(name, n));
+  } else if (e.target.matches('[data-rename-sub]')) {
+    const subName = e.target.getAttribute('data-rename-sub');
+    const primary = e.target.closest('.sub-row').getAttribute('data-sub-of');
+    startRename(e.target, (n) => renameSub(primary, subName, n));
+  }
+});
+
+function startRename(span, onCommit) {
+  const input = document.createElement('input');
+  input.value = span.textContent;
+  input.className = 'name-input';
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let committed = false;
+  function commit() {
+    if (committed) return; committed = true;
+    onCommit(input.value.trim());
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commit();
+    else if (e.key === 'Escape') { committed = true; renderAll(); }
+  });
+}
+
+function renamePrimary(oldName, newName) {
+  if (!newName || newName === oldName) { renderAll(); return; }
+  if (tree[newName]) { showToast(`A primary called "${newName}" already exists`); renderAll(); return; }
+  const reordered = {};
+  for (const k of Object.keys(tree)) reordered[k === oldName ? newName : k] = tree[k];
+  tree = reordered;
+  if (expanded.has(oldName)) { expanded.delete(oldName); expanded.add(newName); }
+  renderAll();
+  showToast(`Renamed → ${newName}`);
+}
+function renameSub(primary, oldName, newName) {
+  if (!newName || newName === oldName) { renderAll(); return; }
+  const subs = tree[primary].subcategories;
+  if (subs.includes(newName)) { showToast(`Subcategory "${newName}" already exists in ${primary}`); renderAll(); return; }
+  tree[primary].subcategories = subs.map(s => s === oldName ? newName : s);
+  renderAll();
+  showToast(`Renamed → ${newName}`);
+}
+
+$('addPrimary').addEventListener('click', () => {
+  let cand = 'New category', n = 1;
+  while (tree[cand]) { n++; cand = `New category ${n}`; }
+  tree[cand] = { emoji: '📁', subcategories: [] };
+  expanded.add(cand);
+  renderAll();
+  setTimeout(() => {
+    const span = document.querySelector(`[data-rename="${esc(cand)}"]`);
+    if (span) startRename(span, (newName) => renamePrimary(cand, newName));
+  }, 0);
+});
+
+function showEmojiPicker(rect, onPick) {
+  const p = $('emojiPicker');
+  p.innerHTML = EMOJI_SET.map(em => `<button data-em="${em}">${em}</button>`).join('');
+  p.style.top = (rect.bottom + 4) + 'px';
+  p.style.left = rect.left + 'px';
+  p.classList.add('open');
+  function handler(e) {
+    if (e.target.matches('[data-em]')) {
+      onPick(e.target.getAttribute('data-em'));
+      hideEmojiPicker();
+    } else if (!p.contains(e.target)) {
+      hideEmojiPicker();
+    }
+  }
+  setTimeout(() => document.addEventListener('mousedown', handler, { once: true }), 0);
+}
+function hideEmojiPicker() {
+  $('emojiPicker').classList.remove('open');
+}
+
+renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype G: Inline Edit-Mode in Statistics Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --warning-text: #92400e;
+  --edit-bg: rgba(99,102,241,0.04);
+  --edit-border: rgba(99,102,241,0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] {
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --surface-2: #25253a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2e2e42;
+  --warning-bg: rgba(251,191,36,0.12);
+  --warning-text: #fbbf24;
+  --edit-bg: rgba(129,140,248,0.06);
+  --edit-border: rgba(129,140,248,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); color: var(--text-primary); line-height: 1.5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+.theme-toggle {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: white; padding: 0.4rem 0.8rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+}
+
+.app-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2rem; }
+.card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+}
+.prototype-badge {
+  display: inline-flex; align-items: center;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.35rem 0.9rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 1rem;
+}
+.description h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.description p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.25rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+
+/* Edit mode toggle bar */
+.stats-section-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem;
+}
+.stats-title { font-size: 1rem; font-weight: 600; }
+.edit-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--surface-2); border: 1px solid var(--border-color);
+  color: var(--text-primary); padding: 0.45rem 0.8rem; border-radius: var(--radius);
+  font-size: 0.85rem; font-weight: 500; cursor: pointer; font-family: inherit;
+}
+.edit-toggle:hover { background: var(--primary-light); border-color: var(--accent-color); }
+.edit-toggle.active {
+  background: var(--accent-color); color: white; border-color: var(--accent-color);
+}
+.edit-toggle .switch-pill {
+  width: 30px; height: 16px; background: var(--border-color); border-radius: 999px; position: relative;
+  transition: background var(--transition);
+}
+.edit-toggle .switch-pill::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  background: var(--surface); border-radius: 50%; transition: transform var(--transition);
+}
+.edit-toggle.active .switch-pill { background: rgba(255,255,255,0.4); }
+.edit-toggle.active .switch-pill::after { transform: translateX(14px); }
+
+/* Stats table */
+.stats-wrap {
+  border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+  overflow: hidden; transition: background var(--transition);
+}
+.stats-wrap.editing { background: var(--edit-bg); }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.stats-table th, .stats-table td {
+  padding: 0.55rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+.stats-table th {
+  background: var(--surface-2); color: var(--text-secondary); font-weight: 600;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.stats-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-table tr.row-primary { font-weight: 600; }
+.stats-table tr.row-primary td { background: var(--surface); }
+.stats-table tr.row-sub td { color: var(--text-secondary); background: var(--surface); }
+.stats-table tr.row-sub td:first-child { padding-left: 2.4rem; }
+
+.stats-table .name-cell {
+  display: flex; align-items: center; gap: 0.45rem;
+}
+.drag-handle {
+  color: var(--text-secondary); cursor: grab; opacity: 0;
+  width: 16px; flex-shrink: 0; user-select: none;
+}
+.editing .drag-handle { opacity: 0.5; }
+.editing tr:hover .drag-handle { opacity: 1; }
+
+.emoji-btn {
+  background: transparent; border: 1px solid transparent; border-radius: 6px;
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.05rem; cursor: default; flex-shrink: 0;
+}
+.editing .emoji-btn { cursor: pointer; border-color: var(--border-color); background: var(--surface-2); }
+.editing .emoji-btn:hover { border-color: var(--accent-color); background: var(--primary-light); }
+
+.cat-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.editing .cat-name { cursor: text; padding: 0.15rem 0.35rem; border-radius: 4px; border: 1px dashed transparent; }
+.editing .cat-name:hover { border-color: var(--edit-border); background: var(--surface-2); }
+
+.cat-name-input {
+  flex: 1; background: var(--surface); border: 1px solid var(--accent-color);
+  border-radius: 6px; padding: 0.2rem 0.45rem; font-size: inherit; font-weight: inherit;
+  color: var(--text-primary); font-family: inherit; outline: none; min-width: 0;
+}
+
+.row-actions {
+  display: inline-flex; gap: 0.15rem; margin-left: 0.4rem; opacity: 0; transition: opacity var(--transition);
+  vertical-align: middle;
+}
+.editing tr:hover .row-actions { opacity: 1; }
+.icon-btn {
+  background: transparent; border: 0; color: var(--text-secondary); cursor: pointer;
+  width: 24px; height: 24px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.85rem;
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--text-primary); }
+.icon-btn.danger:hover { color: var(--danger); }
+
+/* Add row */
+tr.add-row { display: none; }
+.editing tr.add-row { display: table-row; }
+tr.add-row td {
+  padding: 0.4rem 0.7rem;
+  background: var(--edit-bg);
+}
+.add-btn {
+  background: transparent; border: 1px dashed var(--border-color); color: var(--text-secondary);
+  padding: 0.35rem 0.7rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-family: inherit;
+}
+.add-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+.add-row.add-sub td:first-child { padding-left: 2.4rem; }
+
+/* Edit-mode hint banner */
+.edit-hint {
+  display: none; padding: 0.55rem 0.8rem;
+  background: var(--warning-bg); color: var(--warning-text);
+  font-size: 0.82rem; border-bottom: 1px solid var(--border-color);
+}
+.editing .edit-hint { display: block; }
+.edit-hint kbd {
+  background: var(--surface); border: 1px solid var(--border-color); border-radius: 4px;
+  padding: 0.05rem 0.35rem; font-size: 0.78rem; font-family: monospace;
+}
+
+/* Emoji picker */
+.emoji-picker {
+  position: fixed; background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: var(--radius); padding: 0.5rem; box-shadow: var(--shadow-lg);
+  display: none; grid-template-columns: repeat(8, 32px); gap: 0.2rem; z-index: 1100;
+}
+.emoji-picker.open { display: grid; }
+.emoji-picker button {
+  width: 32px; height: 32px; background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; font-size: 1.1rem;
+}
+.emoji-picker button:hover { background: var(--primary-light); border-color: var(--border-color); }
+
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--text-primary); color: var(--surface); padding: 0.6rem 1.1rem;
+  border-radius: var(--radius); font-size: 0.85rem; box-shadow: var(--shadow-lg);
+  opacity: 0; pointer-events: none; transition: opacity var(--transition);
+  z-index: 1200;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>Bank Transactions</h1>
+    <div class="app-subtitle">Prototype G — Inline edit-mode in statistics table</div>
+  </div>
+  <button class="theme-toggle" id="themeToggle">🌙 Dark</button>
+</header>
+
+<main class="app-content">
+  <section class="card description">
+    <span class="prototype-badge">PROTOTYPE G</span>
+    <h3>Inline Edit-Mode in the Statistics Table</h3>
+    <p>An <strong>Edit categories</strong> toggle pinned above the existing statistics table. While on, every category row becomes inline-editable: emoji picker, rename in place, drag handles to reorder, "+" rows at each level to add. The user edits categories <em>where they're displayed</em>, with no separate UI surface.</p>
+    <ul>
+      <li>Toggle <strong>✏️ Edit categories</strong> top-right of the statistics section.</li>
+      <li>While ON: drag handles, "+" rows, hover actions, and clickable emoji slots appear.</li>
+      <li>Click a category name to rename. Press <kbd>Enter</kbd> to commit, <kbd>Esc</kbd> to cancel.</li>
+      <li>Click the emoji to pick a new one (primaries only).</li>
+      <li>Hover a row to reveal the <strong>×</strong> delete button.</li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Direct manipulation — edit the thing you see.</li>
+          <li>No new UI surface or navigation; matches mental model.</li>
+          <li>Categories with no transactions still render in edit-mode (otherwise hidden).</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Weaknesses</h4>
+        <ul>
+          <li>Editing chrome competes with data display — risk of clutter.</li>
+          <li>Mobile viability is poor (small targets, narrow rows).</li>
+          <li>No quick "discard all" — every edit is committed.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Mock app surface</h3>
+    <p style="font-size: 0.85rem; color: var(--text-secondary);">No "Manage categories" button needed — editing lives directly on the table below.</p>
+  </section>
+
+  <section class="card">
+    <div class="stats-section-header">
+      <span class="stats-title">📊 Spending by category</span>
+      <button class="edit-toggle" id="editToggle" aria-pressed="false">
+        <span class="switch-pill"></span>
+        <span>✏️ Edit categories</span>
+      </button>
+    </div>
+    <div class="stats-wrap" id="statsWrap">
+      <div class="edit-hint">
+        Edit mode active. Click a name to rename · Click an emoji to change · Drag <span style="font-family:monospace;">⋮⋮</span> to reorder · Hover a row for delete · Press <kbd>Esc</kbd> to exit
+      </div>
+      <table class="stats-table"><tbody id="statsTbody"></tbody></table>
+    </div>
+  </section>
+</main>
+
+<div class="emoji-picker" id="emojiPicker"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
+
+let tree = {
+  "Mat og drikke": { emoji: "🍔", subcategories: ["Dagligvarer", "Restauranter og barer"] },
+  "Reise": { emoji: "✈️", subcategories: ["Flyselskap", "Hotel og opphold", "Reisearrangør", "Kjøretøy & Leiebil", "Reise og transport", "Taxfree"] },
+  "Personlig forbruk": { emoji: "🛍️", subcategories: ["PC og elektroutstyr", "Sport og fritid", "Klær og sko", "Hobby og Fritid"] },
+  "Hus og innbo": { emoji: "🏠", subcategories: ["Interiør og varehus"] },
+  "Kontanter og pengeoverføring": { emoji: "💵", subcategories: ["Kontaktuttak", "Pengeoverføring"] },
+  "Øvrig bruk": { emoji: "📦", subcategories: ["Øvrig bruk"] }
+};
+let editing = false;
+
+const $ = (id) => document.getElementById(id);
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+$('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? null : 'dark';
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  $('themeToggle').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+});
+
+function fmt(n) { return Math.round(n).toLocaleString('nb-NO'); }
+
+function renderTable() {
+  const rows = [];
+  rows.push(`<tr>
+    <th style="width:55%;">Category</th>
+    <th class="amount">Jan</th>
+    <th class="amount">Feb</th>
+    <th class="amount">Mar</th>
+    <th class="amount">Sum</th>
+  </tr>`);
+  for (const [name, info] of Object.entries(tree)) {
+    const total = (info.subcategories.length * 1234) + 2000;
+    rows.push(`
+      <tr class="row-primary" data-primary="${esc(name)}">
+        <td>
+          <div class="name-cell">
+            <span class="drag-handle" data-drag="primary" title="Drag to reorder">⋮⋮</span>
+            <button class="emoji-btn" data-emoji-for="${esc(name)}" title="${editing ? 'Click to change emoji' : ''}">${esc(info.emoji ?? '·')}</button>
+            <span class="cat-name" data-rename-primary="${esc(name)}">${esc(name)}</span>
+            <span class="row-actions"><button class="icon-btn danger" data-delete-primary="${esc(name)}" title="Delete primary">✕</button></span>
+          </div>
+        </td>
+        <td class="amount">${fmt(total)}</td>
+        <td class="amount">${fmt(total*0.9)}</td>
+        <td class="amount">${fmt(total*1.1)}</td>
+        <td class="amount">${fmt(total*3)}</td>
+      </tr>
+    `);
+    for (const sub of info.subcategories) {
+      const stotal = 800 + sub.length * 30;
+      rows.push(`
+        <tr class="row-sub" data-sub-of="${esc(name)}" data-sub="${esc(sub)}">
+          <td>
+            <div class="name-cell">
+              <span class="drag-handle" data-drag="sub" title="Drag to reorder">⋮⋮</span>
+              <span style="width: 28px; flex-shrink: 0;"></span>
+              <span class="cat-name" data-rename-sub="${esc(sub)}">${esc(sub)}</span>
+              <span class="row-actions"><button class="icon-btn danger" data-delete-sub="${esc(sub)}" title="Delete sub">✕</button></span>
+            </div>
+          </td>
+          <td class="amount">${fmt(stotal)}</td>
+          <td class="amount">${fmt(stotal*1.1)}</td>
+          <td class="amount">${fmt(stotal*0.95)}</td>
+          <td class="amount">${fmt(stotal*3)}</td>
+        </tr>
+      `);
+    }
+    // Add-sub row
+    rows.push(`
+      <tr class="add-row add-sub" data-primary-add-sub="${esc(name)}">
+        <td colspan="5"><button class="add-btn" data-add-sub="${esc(name)}">+ Add subcategory under ${esc(name)}</button></td>
+      </tr>
+    `);
+  }
+  rows.push(`
+    <tr class="add-row">
+      <td colspan="5"><button class="add-btn" id="addPrimary">+ Add primary category</button></td>
+    </tr>
+  `);
+  $('statsTbody').innerHTML = rows.join('');
+}
+
+function setEditing(on) {
+  editing = !!on;
+  $('statsWrap').classList.toggle('editing', editing);
+  $('editToggle').classList.toggle('active', editing);
+  $('editToggle').setAttribute('aria-pressed', String(editing));
+  if (editing) showToast('Edit mode on');
+  else showToast('Edit mode off');
+  renderTable();
+}
+
+$('editToggle').addEventListener('click', () => setEditing(!editing));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && editing && !document.querySelector('.cat-name-input')) {
+    setEditing(false);
+  }
+});
+
+// Click delegation
+$('statsTbody').addEventListener('click', (e) => {
+  if (!editing) return;
+  if (e.target.matches('[data-emoji-for]')) {
+    const name = e.target.getAttribute('data-emoji-for');
+    showEmojiPicker(e.target.getBoundingClientRect(), (em) => {
+      tree[name].emoji = em; renderTable();
+      showToast(`Emoji updated for ${name}`);
+    });
+  } else if (e.target.matches('[data-delete-primary]')) {
+    const name = e.target.getAttribute('data-delete-primary');
+    if (!confirm(`Delete "${name}" and its ${tree[name].subcategories.length} subcategor${tree[name].subcategories.length === 1 ? 'y' : 'ies'}?`)) return;
+    delete tree[name];
+    renderTable();
+    showToast(`Deleted "${name}"`);
+  } else if (e.target.matches('[data-delete-sub]')) {
+    const subName = e.target.getAttribute('data-delete-sub');
+    const primary = e.target.closest('[data-sub-of]').getAttribute('data-sub-of');
+    tree[primary].subcategories = tree[primary].subcategories.filter(s => s !== subName);
+    renderTable();
+    showToast(`Deleted "${subName}"`);
+  } else if (e.target.matches('[data-add-sub]')) {
+    const primary = e.target.getAttribute('data-add-sub');
+    const subs = tree[primary].subcategories;
+    let cand = 'New subcategory', n = 1;
+    while (subs.includes(cand)) { n++; cand = `New subcategory ${n}`; }
+    subs.push(cand);
+    renderTable();
+    setTimeout(() => {
+      const span = document.querySelector(`[data-sub-of="${esc(primary)}"][data-sub="${esc(cand)}"] [data-rename-sub]`);
+      if (span) startRename(span, (newName) => renameSub(primary, cand, newName));
+    }, 0);
+  } else if (e.target.id === 'addPrimary') {
+    let cand = 'New category', n = 1;
+    while (tree[cand]) { n++; cand = `New category ${n}`; }
+    tree[cand] = { emoji: '📁', subcategories: [] };
+    renderTable();
+    setTimeout(() => {
+      const span = document.querySelector(`[data-rename-primary="${esc(cand)}"]`);
+      if (span) startRename(span, (newName) => renamePrimary(cand, newName));
+    }, 0);
+  } else if (e.target.matches('[data-rename-primary]')) {
+    const name = e.target.getAttribute('data-rename-primary');
+    startRename(e.target, (newName) => renamePrimary(name, newName));
+  } else if (e.target.matches('[data-rename-sub]')) {
+    const subName = e.target.getAttribute('data-rename-sub');
+    const primary = e.target.closest('[data-sub-of]').getAttribute('data-sub-of');
+    startRename(e.target, (newName) => renameSub(primary, subName, newName));
+  }
+});
+
+function startRename(span, onCommit) {
+  const input = document.createElement('input');
+  input.value = span.textContent;
+  input.className = 'cat-name-input';
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+  let committed = false;
+  function commit() {
+    if (committed) return; committed = true;
+    onCommit(input.value.trim());
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(); }
+    else if (e.key === 'Escape') { e.preventDefault(); committed = true; renderTable(); }
+  });
+}
+
+function renamePrimary(oldName, newName) {
+  if (!newName || newName === oldName) { renderTable(); return; }
+  if (tree[newName]) { showToast(`A primary called "${newName}" already exists`); renderTable(); return; }
+  const reordered = {};
+  for (const k of Object.keys(tree)) reordered[k === oldName ? newName : k] = tree[k];
+  tree = reordered;
+  renderTable();
+  showToast(`Renamed → ${newName}`);
+}
+function renameSub(primary, oldName, newName) {
+  if (!newName || newName === oldName) { renderTable(); return; }
+  const subs = tree[primary].subcategories;
+  if (subs.includes(newName)) { showToast(`Subcategory "${newName}" already exists in ${primary}`); renderTable(); return; }
+  tree[primary].subcategories = subs.map(s => s === oldName ? newName : s);
+  renderTable();
+  showToast(`Renamed → ${newName}`);
+}
+
+// Drag-drop reorder (rows)
+let dragState = null;
+$('statsTbody').addEventListener('mousedown', (e) => {
+  if (!editing) return;
+  if (!e.target.matches('.drag-handle')) return;
+  const dragKind = e.target.getAttribute('data-drag');
+  const tr = e.target.closest('tr');
+  dragState = { tr, kind: dragKind };
+  tr.style.opacity = 0.5;
+  e.preventDefault();
+});
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  const tbody = $('statsTbody');
+  const rows = Array.from(tbody.querySelectorAll(dragState.kind === 'primary' ? 'tr.row-primary' : `tr.row-sub[data-sub-of="${esc(dragState.tr.getAttribute('data-sub-of'))}"]`));
+  const target = rows.find(r => {
+    const rect = r.getBoundingClientRect();
+    return e.clientY >= rect.top && e.clientY <= rect.bottom;
+  });
+  if (target && target !== dragState.tr) {
+    // For primary drag, also need to move all child sub rows + add-sub row
+    if (dragState.kind === 'primary') {
+      // Just reorder primary rows in tree, then re-render
+      const sourceName = dragState.tr.getAttribute('data-primary');
+      const targetName = target.getAttribute('data-primary');
+      const order = Object.keys(tree);
+      const sourceIdx = order.indexOf(sourceName);
+      const targetIdx = order.indexOf(targetName);
+      if (sourceIdx >= 0 && targetIdx >= 0 && sourceIdx !== targetIdx) {
+        order.splice(sourceIdx, 1);
+        order.splice(targetIdx, 0, sourceName);
+        const reordered = {}; for (const k of order) reordered[k] = tree[k];
+        tree = reordered;
+        renderTable();
+        // Re-find the dragged row after re-render
+        const newTr = document.querySelector(`tr[data-primary="${esc(sourceName)}"]`);
+        if (newTr) { newTr.style.opacity = 0.5; dragState.tr = newTr; }
+      }
+    } else {
+      const primary = dragState.tr.getAttribute('data-sub-of');
+      const sourceName = dragState.tr.getAttribute('data-sub');
+      const targetName = target.getAttribute('data-sub');
+      const subs = tree[primary].subcategories.slice();
+      const sourceIdx = subs.indexOf(sourceName);
+      const targetIdx = subs.indexOf(targetName);
+      if (sourceIdx >= 0 && targetIdx >= 0 && sourceIdx !== targetIdx) {
+        subs.splice(sourceIdx, 1);
+        subs.splice(targetIdx, 0, sourceName);
+        tree[primary].subcategories = subs;
+        renderTable();
+        const newTr = document.querySelector(`tr[data-sub-of="${esc(primary)}"][data-sub="${esc(sourceName)}"]`);
+        if (newTr) { newTr.style.opacity = 0.5; dragState.tr = newTr; }
+      }
+    }
+  }
+});
+document.addEventListener('mouseup', () => {
+  if (!dragState) return;
+  if (dragState.tr) dragState.tr.style.opacity = '';
+  dragState = null;
+});
+
+function showEmojiPicker(rect, onPick) {
+  const p = $('emojiPicker');
+  p.innerHTML = EMOJI_SET.map(em => `<button data-em="${em}">${em}</button>`).join('');
+  p.style.top = (rect.bottom + 4) + 'px';
+  p.style.left = rect.left + 'px';
+  p.classList.add('open');
+  function handler(e) {
+    if (e.target.matches('[data-em]')) {
+      onPick(e.target.getAttribute('data-em'));
+      hideEmojiPicker();
+    } else if (!p.contains(e.target)) {
+      hideEmojiPicker();
+    }
+  }
+  setTimeout(() => document.addEventListener('mousedown', handler, { once: true }), 0);
+}
+function hideEmojiPicker() {
+  $('emojiPicker').classList.remove('open');
+}
+
+renderTable();
+</script>
+</body>
+</html>
