@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { useConfig } from '../context/ConfigContext';
+import { useRef, useState } from 'react';
+import { useConfig } from '../context/useConfig';
 
 interface ConfigToolbarProps {
   onError: (message: string) => void;
@@ -8,6 +8,7 @@ interface ConfigToolbarProps {
 function ConfigToolbar({ onError }: ConfigToolbarProps) {
   const { isDirty, saveToFile, loadFromFile } = useConfig();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLoadClick = () => {
     fileInputRef.current?.click();
@@ -17,10 +18,21 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    if (
+      isDirty &&
+      !window.confirm(
+        'You have unsaved changes. Loading a file will replace the current configuration. Continue?'
+      )
+    ) {
+      return;
+    }
+    setIsLoading(true);
     try {
       await loadFromFile(file);
     } catch (err) {
       onError((err as Error).message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,9 +42,11 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
         type="button"
         className="config-toolbar-button"
         onClick={handleLoadClick}
+        disabled={isLoading}
         data-testid="config-load"
+        aria-label={isLoading ? 'Loading configuration file' : 'Load configuration file'}
       >
-        Load
+        {isLoading ? 'Loading…' : 'Load'}
       </button>
       <button
         type="button"

@@ -1,10 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  loadFromLocalStorage,
-  saveToLocalStorage,
-  fingerprint,
-  importFromFile,
-} from './persistence';
+import { saveToLocalStorage, fingerprint, importFromFile } from './persistence';
 import { SAVEFILE_STORAGE_KEY } from './migration';
 import type { SaveFile } from '../../../shared/types';
 
@@ -33,34 +28,22 @@ function validSaveFile(): SaveFile {
   };
 }
 
-describe('localStorage round-trip', () => {
-  beforeEach(() => {
-    stubLocalStorage();
-  });
-
-  it('returns null when key is absent', () => {
-    expect(loadFromLocalStorage()).toBeNull();
-  });
-
-  it('round-trips a valid SaveFile', () => {
+describe('saveToLocalStorage', () => {
+  it('writes the SaveFile JSON under the canonical key', () => {
+    const store = stubLocalStorage();
     const sf = validSaveFile();
     saveToLocalStorage(sf);
-    const loaded = loadFromLocalStorage();
-    expect(loaded).toEqual(sf);
-  });
-
-  it('returns null when stored value is not valid JSON', () => {
-    localStorage.setItem(SAVEFILE_STORAGE_KEY, '{not-json');
-    expect(loadFromLocalStorage()).toBeNull();
-  });
-
-  it('returns null when stored value fails schema validation', () => {
-    localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify({ version: 99 }));
-    expect(loadFromLocalStorage()).toBeNull();
+    const raw = store.get(SAVEFILE_STORAGE_KEY);
+    expect(raw).toBeDefined();
+    expect(JSON.parse(raw!)).toEqual(sf);
   });
 });
 
 describe('fingerprint', () => {
+  beforeEach(() => {
+    stubLocalStorage();
+  });
+
   it('changes when content changes', () => {
     const a = validSaveFile();
     const b = validSaveFile();
@@ -70,6 +53,23 @@ describe('fingerprint', () => {
 
   it('is stable for equal content', () => {
     expect(fingerprint(validSaveFile())).toBe(fingerprint(validSaveFile()));
+  });
+
+  it('is stable across object key reordering', () => {
+    const a: SaveFile = {
+      version: 1,
+      categories: { Food: { subcategories: ['Groceries'] } },
+      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    // Same SaveFile, settings keys defined in opposite order.
+    const b: SaveFile = {
+      version: 1,
+      rules: { textPatternRules: [], merchantCodeMappings: {} },
+      settings: { density: 'normal', theme: 'light' },
+      categories: { Food: { subcategories: ['Groceries'] } },
+    };
+    expect(fingerprint(a)).toBe(fingerprint(b));
   });
 });
 
@@ -88,6 +88,13 @@ describe('importFromFile', () => {
 
   it('rejects schema-invalid content with descriptive error', async () => {
     const file = new File([JSON.stringify({ version: 2 })], 'cfg.json');
+    await expect(importFromFile(file)).rejects.toThrow(/Invalid save file/);
+  });
+
+  it('rejects unknown extra keys (strict schema)', async () => {
+    const sf = validSaveFile() as SaveFile & { extra?: string };
+    sf.extra = 'should not be allowed';
+    const file = new File([JSON.stringify(sf)], 'cfg.json');
     await expect(importFromFile(file)).rejects.toThrow(/Invalid save file/);
   });
 });

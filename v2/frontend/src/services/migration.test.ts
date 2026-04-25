@@ -3,6 +3,7 @@ import {
   runMigration,
   deriveCategoryTree,
   SAVEFILE_STORAGE_KEY,
+  SAVEFILE_BACKUP_KEY,
   LEGACY_RULES_KEY,
   LEGACY_THEME_KEY,
 } from './migration';
@@ -113,16 +114,27 @@ describe('runMigration', () => {
   });
 
   it('rebuilds when stored SaveFile is corrupt JSON', () => {
-    store.set(SAVEFILE_STORAGE_KEY, '{not-json');
+    const corrupt = '{not-json';
+    store.set(SAVEFILE_STORAGE_KEY, corrupt);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sf = runMigration();
     expect(sf.version).toBe(1);
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(1);
+    // Original blob preserved at backup key, with a warning logged.
+    expect(store.get(SAVEFILE_BACKUP_KEY)).toBe(corrupt);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('rebuilds when stored SaveFile fails schema validation', () => {
-    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify({ version: 99 }));
+    const invalid = JSON.stringify({ version: 99 });
+    store.set(SAVEFILE_STORAGE_KEY, invalid);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sf = runMigration();
     expect(sf.version).toBe(1);
+    expect(store.get(SAVEFILE_BACKUP_KEY)).toBe(invalid);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 
   it('ignores legacy rules when stored value is not an array', () => {

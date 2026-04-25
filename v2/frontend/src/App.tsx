@@ -24,7 +24,7 @@ import {
   getMatchingTransactions,
 } from './services/rules';
 import { generateRandomTransactions } from './utils/randomize';
-import { useConfig } from './context/ConfigContext';
+import { useConfig } from './context/useConfig';
 
 type DropdownState = { anchor: DOMRect; tx: Transaction } | null;
 

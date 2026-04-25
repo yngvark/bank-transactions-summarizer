@@ -82,15 +82,21 @@ crash mid-update across multiple keys.
 
 - `v2/frontend/src/schemas/savefile.ts` — zod schema + `validateSaveFile`.
 - `v2/frontend/src/services/migration.ts` — `runMigration()` reads or
-  builds the SaveFile, removes legacy keys after a successful build.
-- `v2/frontend/src/services/persistence.ts` — `loadFromLocalStorage`,
-  `saveToLocalStorage`, `exportToFile` (`<a download>`), `importFromFile`,
-  `fingerprint`.
-- `v2/frontend/src/context/ConfigContext.tsx` — `<ConfigProvider>` and
-  `useConfig()`. Owns `lastSavedFingerprint` and the `beforeunload`
-  listener.
+  builds the SaveFile, copies a corrupt stored blob to
+  `bts-savefile-v1.bak` before rebuilding, removes legacy keys after a
+  successful build.
+- `v2/frontend/src/services/persistence.ts` — `saveToLocalStorage`,
+  `exportToFile` (`<a download>`), `importFromFile`, `fingerprint` (with
+  sorted-key replacer).
+- `v2/frontend/src/context/ConfigContext.tsx` — `<ConfigProvider>` only.
+  Owns `lastSavedFingerprint` and the `beforeunload` listener; auto-save
+  effect skips the first render.
+- `v2/frontend/src/context/useConfig.ts` — `ConfigContext`,
+  `ConfigContextValue`, and the `useConfig()` hook.
 - `v2/frontend/src/components/ConfigToolbar.tsx` — Save / Load buttons +
-  hidden file input for Load. Renders the dirty indicator.
+  hidden file input for Load. Renders the dirty indicator. Confirms
+  before overwriting unsaved state. Disables Load while a load is in
+  flight.
 
 ### Modified
 
@@ -113,8 +119,11 @@ crash mid-update across multiple keys.
 
 ```
 runMigration():
-  if localStorage[bts-savefile-v1] exists and validates: return it
-  else build a fresh SaveFile from:
+  if localStorage[bts-savefile-v1] exists:
+    if it parses and validates: return it
+    else: copy raw blob to bts-savefile-v1.bak,
+          console.warn, and fall through to rebuild
+  build a fresh SaveFile from:
     - bts-rules-v1 → rules.textPatternRules (drop if not an array)
     - theme       → settings.theme (default 'light' if absent or unknown)
     - categories.json → rules.merchantCodeMappings
@@ -128,8 +137,24 @@ runMigration():
 
 The migration is idempotent: a second call with a valid stored SaveFile
 returns it unchanged (no clobber). A stored SaveFile that fails schema
-validation is rebuilt — this loses the user's *malformed* state, but
-preserves whatever legacy keys still exist.
+validation or JSON parsing is rebuilt — but the corrupt blob is first
+copied to `bts-savefile-v1.bak` and a warning is logged, so a user
+reporting "lost rules" can recover them from DevTools.
+
+## Other safety nets
+
+- **Schema is `.strict()`** — unknown keys in a loaded JSON file are
+  rejected rather than silently stripped, so future schema changes don't
+  silently drop fields on round-trip.
+- **Stable fingerprint** — the dirty-tracking fingerprint uses
+  `JSON.stringify` with a key-sorting replacer. SaveFiles that differ only
+  by object key order produce the same fingerprint.
+- **Confirm on Load when dirty** — clicking Load while `isDirty === true`
+  triggers a `window.confirm` before replacing the in-memory config.
+  Cancelling preserves the user's unsaved edits.
+- **Auto-save effect skips first render** — `runMigration()` already wrote
+  `bts-savefile-v1` during state init; the effect only persists subsequent
+  changes.
 
 ## Tests
 

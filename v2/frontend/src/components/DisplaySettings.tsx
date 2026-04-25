@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useConfig } from '../context/ConfigContext';
+import { useConfig } from '../context/useConfig';
 
 const DENSITIES = [
   { value: 'compact', label: 'Compact', fontSize: '0.65rem', headerSize: '0.55rem', padding: '0.2rem 0.3rem' },

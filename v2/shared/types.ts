@@ -21,8 +21,9 @@ export interface Transaction extends RawTransaction {
   Category: string;
 }
 
-// Category mapping from merchant category to hierarchical category path
-export type CategoryMapping = Record<string, string[]>;
+// Category mapping from merchant category to a [primary, sub] hierarchical
+// category path. Same shape as SaveFile.rules.merchantCodeMappings.
+export type CategoryMapping = Record<string, [string, string]>;
 
 // User-defined text-pattern rule that overrides merchant-code categorization.
 // Rules are evaluated in array order; the first match wins.

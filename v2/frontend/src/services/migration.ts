@@ -1,12 +1,16 @@
-import type { SaveFile, CategoryTree, TextPatternRule } from '../../../shared/types';
+import type {
+  SaveFile,
+  CategoryTree,
+  CategoryMapping,
+  TextPatternRule,
+} from '../../../shared/types';
 import { validateSaveFile } from '../schemas/savefile';
 import categoriesJson from '../data/categories.json';
 
 export const SAVEFILE_STORAGE_KEY = 'bts-savefile-v1';
+export const SAVEFILE_BACKUP_KEY = 'bts-savefile-v1.bak';
 export const LEGACY_RULES_KEY = 'bts-rules-v1';
 export const LEGACY_THEME_KEY = 'theme';
-
-type MerchantCodeMappings = Record<string, [string, string]>;
 
 function readLegacyRules(): TextPatternRule[] {
   try {
@@ -25,8 +29,8 @@ function readLegacyTheme(): 'light' | 'dark' {
   return raw === 'dark' ? 'dark' : 'light';
 }
 
-function importMerchantMappings(): MerchantCodeMappings {
-  const out: MerchantCodeMappings = {};
+function importMerchantMappings(): CategoryMapping {
+  const out: CategoryMapping = {};
   const source = categoriesJson as Record<string, string[]>;
   for (const [code, pair] of Object.entries(source)) {
     if (Array.isArray(pair) && pair.length === 2 && typeof pair[0] === 'string' && typeof pair[1] === 'string') {
@@ -36,7 +40,7 @@ function importMerchantMappings(): MerchantCodeMappings {
   return out;
 }
 
-export function deriveCategoryTree(mappings: MerchantCodeMappings): CategoryTree {
+export function deriveCategoryTree(mappings: CategoryMapping): CategoryTree {
   const tree: CategoryTree = {};
   for (const [primary, sub] of Object.values(mappings)) {
     if (!tree[primary]) tree[primary] = { subcategories: [] };
@@ -78,8 +82,20 @@ export function runMigration(): SaveFile {
       const parsed = JSON.parse(raw);
       const result = validateSaveFile(parsed);
       if (result.ok) return result.data;
+      // Stored SaveFile fails schema validation — preserve the raw blob so
+      // it can be recovered from DevTools, then rebuild.
+      localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
+      console.warn(
+        `[bts] Stored SaveFile failed validation (${result.error}). ` +
+          `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
+      );
     } catch {
-      // fall through to fresh build
+      // Stored SaveFile is unparseable JSON — same recovery path.
+      localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
+      console.warn(
+        `[bts] Stored SaveFile is not valid JSON. ` +
+          `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
+      );
     }
   }
 

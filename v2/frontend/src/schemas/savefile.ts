@@ -1,29 +1,28 @@
 import { z } from 'zod';
 import type { SaveFile } from '../../../shared/types';
 
-const TextPatternRuleSchema = z.object({
+const TextPatternRuleSchema = z.strictObject({
   id: z.string(),
   type: z.enum(['substring', 'regex']),
   pattern: z.string(),
   category: z.tuple([z.string(), z.string()]),
 });
 
-const CategoryTreeSchema = z.record(
-  z.string(),
-  z.object({
-    emoji: z.string().optional(),
-    subcategories: z.array(z.string()),
-  })
-);
+const CategoryTreeNodeSchema = z.strictObject({
+  emoji: z.string().optional(),
+  subcategories: z.array(z.string()),
+});
 
-export const SaveFileSchema = z.object({
+const CategoryTreeSchema = z.record(z.string(), CategoryTreeNodeSchema);
+
+export const SaveFileSchema = z.strictObject({
   version: z.literal(1),
   categories: CategoryTreeSchema,
-  rules: z.object({
+  rules: z.strictObject({
     merchantCodeMappings: z.record(z.string(), z.tuple([z.string(), z.string()])),
     textPatternRules: z.array(TextPatternRuleSchema),
   }),
-  settings: z.object({
+  settings: z.strictObject({
     theme: z.enum(['light', 'dark']),
     density: z.string(),
   }),

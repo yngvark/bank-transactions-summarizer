@@ -2,24 +2,27 @@ import type { SaveFile } from '../../../shared/types';
 import { validateSaveFile } from '../schemas/savefile';
 import { SAVEFILE_STORAGE_KEY } from './migration';
 
-export function loadFromLocalStorage(): SaveFile | null {
-  const raw = localStorage.getItem(SAVEFILE_STORAGE_KEY);
-  if (raw == null) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    const result = validateSaveFile(parsed);
-    return result.ok ? result.data : null;
-  } catch {
-    return null;
-  }
-}
-
 export function saveToLocalStorage(sf: SaveFile): void {
   localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(sf));
 }
 
+function sortedKeysReplacer(_key: string, value: unknown): unknown {
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>;
+    return Object.keys(obj)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, k) => {
+        acc[k] = obj[k];
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
+// Stable JSON: sorts object keys so reordered-but-equivalent SaveFiles
+// produce the same fingerprint.
 export function fingerprint(sf: SaveFile): string {
-  return JSON.stringify(sf);
+  return JSON.stringify(sf, sortedKeysReplacer);
 }
 
 function timestampedFilename(now: Date = new Date()): string {

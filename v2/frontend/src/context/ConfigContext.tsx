@@ -1,9 +1,8 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   ReactNode,
 } from 'react';
@@ -15,22 +14,10 @@ import {
   importFromFile,
   saveToLocalStorage,
 } from '../services/persistence';
+import { ConfigContext, ConfigContextValue } from './useConfig';
 
 type MerchantCodeMappings = SaveFile['rules']['merchantCodeMappings'];
 type Settings = SaveFile['settings'];
-
-interface ConfigContextValue {
-  config: SaveFile;
-  updateRules: (next: TextPatternRule[]) => void;
-  updateCategories: (next: CategoryTree) => void;
-  updateMerchantMappings: (next: MerchantCodeMappings) => void;
-  updateSettings: (patch: Partial<Settings>) => void;
-  isDirty: boolean;
-  saveToFile: () => void;
-  loadFromFile: (file: File) => Promise<void>;
-}
-
-const ConfigContext = createContext<ConfigContextValue | null>(null);
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<SaveFile>(() => runMigration());
@@ -40,8 +27,15 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   const currentFingerprint = useMemo(() => fingerprint(config), [config]);
   const isDirty = currentFingerprint !== lastSavedFingerprint;
 
-  // Auto-save to localStorage whenever config changes.
+  // Skip the redundant write on first render: runMigration already wrote
+  // localStorage when it built (or accepted) the SaveFile. The auto-save
+  // effect only needs to run on subsequent state changes.
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     saveToLocalStorage(config);
   }, [config]);
 
@@ -108,12 +102,4 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
   );
 
   return <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>;
-}
-
-export function useConfig(): ConfigContextValue {
-  const ctx = useContext(ConfigContext);
-  if (ctx == null) {
-    throw new Error('useConfig must be used within a ConfigProvider');
-  }
-  return ctx;
 }
