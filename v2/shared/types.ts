@@ -21,8 +21,9 @@ export interface Transaction extends RawTransaction {
   Category: string;
 }
 
-// Category mapping from merchant category to hierarchical category path
-export type CategoryMapping = Record<string, string[]>;
+// Category mapping from merchant category to a [primary, sub] hierarchical
+// category path. Same shape as SaveFile.rules.merchantCodeMappings.
+export type CategoryMapping = Record<string, [string, string]>;
 
 // User-defined text-pattern rule that overrides merchant-code categorization.
 // Rules are evaluated in array order; the first match wins.
@@ -33,6 +34,29 @@ export interface TextPatternRule {
   type: RuleType;
   pattern: string;
   category: [string, string]; // [primary, sub]
+}
+
+// Hierarchical category structure: primary category -> { emoji?, subcategories[] }.
+// Acts as the source of truth for which categories exist in the UI.
+export interface CategoryTree {
+  [primaryName: string]: {
+    emoji?: string;
+    subcategories: string[];
+  };
+}
+
+// Unified user state persisted to localStorage and exportable as a JSON file.
+export interface SaveFile {
+  version: 1;
+  categories: CategoryTree;
+  rules: {
+    merchantCodeMappings: Record<string, [string, string]>;
+    textPatternRules: TextPatternRule[];
+  };
+  settings: {
+    theme: 'light' | 'dark';
+    density: string;
+  };
 }
 
 // Raw row data for statistics

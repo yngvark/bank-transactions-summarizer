@@ -1,7 +1,5 @@
 import { RuleType, TextPatternRule, Transaction } from '../../../shared/types';
 
-export const RULES_STORAGE_KEY = 'bts-rules-v1';
-
 export function isValidRegex(pattern: string): boolean {
   if (!pattern) return false;
   try {
@@ -59,18 +57,3 @@ export function getMatchingTransactions(
   return transactions.filter((tx) => matchesPattern(tx.Text, pseudoRule));
 }
 
-export function loadRules(): TextPatternRule[] {
-  try {
-    const raw = localStorage.getItem(RULES_STORAGE_KEY);
-    if (raw == null) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch {
-    return [];
-  }
-}
-
-export function saveRules(rules: TextPatternRule[]): void {
-  localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(rules));
-}

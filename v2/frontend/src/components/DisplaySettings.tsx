@@ -1,9 +1,5 @@
-import { useEffect, useState } from 'react';
-
-interface DisplaySettingsProps {
-  density: string;
-  onDensityChange: (density: string) => void;
-}
+import { useEffect } from 'react';
+import { useConfig } from '../context/useConfig';
 
 const DENSITIES = [
   { value: 'compact', label: 'Compact', fontSize: '0.65rem', headerSize: '0.55rem', padding: '0.2rem 0.3rem' },
@@ -22,15 +18,13 @@ export function applyDisplaySettings(density: string) {
   root.style.setProperty('--table-cell-padding', config.padding);
 }
 
-function DisplaySettings({ density, onDensityChange }: DisplaySettingsProps) {
-  const [isDark, setIsDark] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark';
-  });
+function DisplaySettings() {
+  const { config, updateSettings } = useConfig();
+  const { density, theme } = config.settings;
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
   return (
@@ -43,7 +37,7 @@ function DisplaySettings({ density, onDensityChange }: DisplaySettingsProps) {
               key={d.value}
               type="button"
               className={`segmented-control-button ${density === d.value ? 'active' : ''}`}
-              onClick={() => onDensityChange(d.value)}
+              onClick={() => updateSettings({ density: d.value })}
             >
               {d.label}
             </button>
@@ -56,10 +50,10 @@ function DisplaySettings({ density, onDensityChange }: DisplaySettingsProps) {
         <button
           type="button"
           className="theme-toggle-button"
-          onClick={() => setIsDark(!isDark)}
+          onClick={() => updateSettings({ theme: isDark ? 'light' : 'dark' })}
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+          {isDark ? '☀️' : '🌙'}
         </button>
       </div>
     </div>

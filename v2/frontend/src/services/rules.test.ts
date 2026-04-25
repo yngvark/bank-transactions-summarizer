@@ -1,13 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   matchesPattern,
   applyRules,
   findRuleForTransaction,
   getMatchingTransactions,
   isValidRegex,
-  loadRules,
-  saveRules,
-  RULES_STORAGE_KEY,
 } from './rules';
 import { Transaction, TextPatternRule } from '../../../shared/types';
 
@@ -195,47 +192,3 @@ describe('isValidRegex', () => {
   });
 });
 
-describe('loadRules / saveRules (localStorage)', () => {
-  beforeEach(() => {
-    const store = new Map<string, string>();
-    vi.stubGlobal('localStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => void store.set(k, v),
-      removeItem: (k: string) => void store.delete(k),
-      clear: () => store.clear(),
-      key: (i: number) => Array.from(store.keys())[i] ?? null,
-      length: 0,
-    });
-  });
-
-  it('returns empty array when storage key is not set', () => {
-    expect(loadRules()).toEqual([]);
-  });
-
-  it('returns empty array when stored value is invalid JSON', () => {
-    localStorage.setItem(RULES_STORAGE_KEY, 'not-json{');
-    expect(loadRules()).toEqual([]);
-  });
-
-  it('returns empty array when stored value is not an array', () => {
-    localStorage.setItem(RULES_STORAGE_KEY, '{"not": "an array"}');
-    expect(loadRules()).toEqual([]);
-  });
-
-  it('round-trips rules through save + load', () => {
-    const rules: TextPatternRule[] = [
-      makeRule({ id: 'a', pattern: 'SPOTIFY' }),
-      makeRule({ id: 'b', type: 'regex', pattern: 'kiwi|meny' }),
-    ];
-    saveRules(rules);
-    expect(loadRules()).toEqual(rules);
-  });
-
-  it('overwrites previous rules on save', () => {
-    saveRules([makeRule({ id: 'a' })]);
-    saveRules([makeRule({ id: 'b' })]);
-    const result = loadRules();
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe('b');
-  });
-});

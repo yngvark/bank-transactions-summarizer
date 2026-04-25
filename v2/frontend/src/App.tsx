@@ -3,7 +3,6 @@ import {
   RawTransaction,
   Transaction,
   GroupedStatistics,
-  CategoryMapping,
   TextPatternRule,
   RuleType,
 } from '../../shared/types';
@@ -16,19 +15,16 @@ import CategoryDropdown from './components/CategoryDropdown';
 import RuleDialog from './components/RuleDialog';
 import RulesPanel from './components/RulesPanel';
 import Toast from './components/Toast';
+import ConfigToolbar from './components/ConfigToolbar';
 import { parseTransactions } from './services/parser';
 import { calculateStatistics } from './services/statistics';
 import {
   applyRules,
   findRuleForTransaction,
   getMatchingTransactions,
-  loadRules,
-  saveRules,
 } from './services/rules';
 import { generateRandomTransactions } from './utils/randomize';
-import categoriesJson from './data/categories.json';
-
-const categoryMapping = categoriesJson as unknown as CategoryMapping;
+import { useConfig } from './context/useConfig';
 
 type DropdownState = { anchor: DOMRect; tx: Transaction } | null;
 
@@ -43,6 +39,11 @@ type DialogState =
     };
 
 function App() {
+  const { config, updateRules } = useConfig();
+  const rules = config.rules.textPatternRules;
+  const categoryMapping = config.rules.merchantCodeMappings;
+  const density = config.settings.density;
+
   const [allTransactions, setAllTransactions] = useState<RawTransaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [statistics, setStatistics] = useState<GroupedStatistics | null>(null);
@@ -50,9 +51,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFrom, setPeriodFrom] = useState('');
   const [periodTo, setPeriodTo] = useState('');
-  const [density, setDensity] = useState('normal');
 
-  const [rules, setRules] = useState<TextPatternRule[]>(() => loadRules());
   const [toast, setToast] = useState<string | null>(null);
   const [dropdown, setDropdown] = useState<DropdownState>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -86,7 +85,7 @@ function App() {
 
     setFilteredTransactions(withRules);
     setStatistics(stats);
-  }, [allTransactions, searchTerm, periodFrom, periodTo, rules]);
+  }, [allTransactions, searchTerm, periodFrom, periodTo, rules, categoryMapping]);
 
   useEffect(() => {
     processTransactions();
@@ -125,11 +124,6 @@ function App() {
     setCurrentFileName('random-data.xlsx');
   };
 
-  const persistRules = useCallback((next: TextPatternRule[]) => {
-    setRules(next);
-    saveRules(next);
-  }, []);
-
   const showToast = useCallback((msg: string) => setToast(msg), []);
 
   const rulesRef = useMemo(() => rules, [rules]);
@@ -137,25 +131,25 @@ function App() {
   const handleAddRule = useCallback(
     (rule: TextPatternRule) => {
       const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.type).length;
-      persistRules([...rulesRef, rule]);
+      updateRules([...rulesRef, rule]);
       setDialog(null);
       showToast(
         `Rule created — ${count} transaction${count === 1 ? '' : 's'} updated`
       );
     },
-    [filteredTransactions, persistRules, rulesRef, showToast]
+    [filteredTransactions, updateRules, rulesRef, showToast]
   );
 
   const handleUpdateRule = useCallback(
     (rule: TextPatternRule) => {
       const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.type).length;
-      persistRules(rulesRef.map((r) => (r.id === rule.id ? rule : r)));
+      updateRules(rulesRef.map((r) => (r.id === rule.id ? rule : r)));
       setDialog(null);
       showToast(
         `Rule updated — ${count} transaction${count === 1 ? '' : 's'} affected`
       );
     },
-    [filteredTransactions, persistRules, rulesRef, showToast]
+    [filteredTransactions, updateRules, rulesRef, showToast]
   );
 
   const handleDeleteRule = useCallback(
@@ -164,11 +158,11 @@ function App() {
       const count = removed
         ? getMatchingTransactions(filteredTransactions, removed.pattern, removed.type).length
         : 0;
-      persistRules(rulesRef.filter((r) => r.id !== id));
+      updateRules(rulesRef.filter((r) => r.id !== id));
       setDialog(null);
       showToast(`Rule deleted — ${count} transaction${count === 1 ? '' : 's'} reverted`);
     },
-    [filteredTransactions, persistRules, rulesRef, showToast]
+    [filteredTransactions, updateRules, rulesRef, showToast]
   );
 
   const handleReorderRule = useCallback(
@@ -179,9 +173,9 @@ function App() {
       if (newIdx < 0 || newIdx >= rulesRef.length) return;
       const next = [...rulesRef];
       [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
-      persistRules(next);
+      updateRules(next);
     },
-    [persistRules, rulesRef]
+    [updateRules, rulesRef]
   );
 
   const handleCategoryClick = useCallback(
@@ -258,8 +252,11 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Bank Transactions</h1>
-        <p className="app-subtitle">Analyze and categorize your spending</p>
+        <div className="app-header-text">
+          <h1>Bank Transactions</h1>
+          <p className="app-subtitle">Analyze and categorize your spending</p>
+        </div>
+        <ConfigToolbar onError={showToast} />
       </header>
 
       <main className="app-content">
@@ -281,7 +278,7 @@ function App() {
           <section className="statistics-section">
             <h2>Spending by Category</h2>
             <StatisticsTable statistics={statistics} />
-            <DisplaySettings density={density} onDensityChange={setDensity} />
+            <DisplaySettings />
           </section>
         )}
 
