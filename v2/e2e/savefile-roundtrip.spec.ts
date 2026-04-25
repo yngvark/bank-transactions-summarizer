@@ -120,6 +120,10 @@ test.describe('SaveFile persistence', () => {
     // Confirm rule removed (rules panel disappears when count goes to 0)
     await expect(page.locator('[data-testid="rules-list"]')).toHaveCount(0);
 
+    // We are now dirty, so the next Load will prompt for confirmation —
+    // accept it.
+    page.once('dialog', (dialog) => dialog.accept());
+
     // Now load the saved file back via the Load button
     const fileInput = page.locator('[data-testid="config-file-input"]');
     await fileInput.setInputFiles(savedPath!);
