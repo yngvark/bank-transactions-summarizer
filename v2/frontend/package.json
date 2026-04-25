@@ -14,7 +14,8 @@
     "@protobi/exceljs": "github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212",
     "d3": "^7.9.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react-dom": "^19.2.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

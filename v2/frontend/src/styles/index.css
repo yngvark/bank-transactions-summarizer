@@ -71,8 +71,52 @@ body {
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
   color: white;
   padding: 1.25rem 1.5rem;
-  text-align: center;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-header-text {
+  text-align: left;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.config-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.config-toolbar-button {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.config-toolbar-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.config-toolbar-button:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+.config-dirty-dot {
+  color: #fde68a;
+  font-size: 0.85em;
+  margin-right: 0.1rem;
 }
 
 .app-header::after {
@@ -698,6 +742,7 @@ td.cat-cell-parent:hover {
 @media (max-width: 768px) {
   .app-header {
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
   }
 
   .app-header h1 {
@@ -705,6 +750,11 @@ td.cat-cell-parent:hover {
   }
 
   .app-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  .config-toolbar-button {
+    padding: 0.4rem 0.7rem;
     font-size: 0.8125rem;
   }
 

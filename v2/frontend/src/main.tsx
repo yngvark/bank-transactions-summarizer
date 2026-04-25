@@ -11,10 +11,13 @@ import '@fontsource/inter/latin-ext-500.css';
 import '@fontsource/inter/latin-ext-600.css';
 import '@fontsource/inter/latin-ext-700.css';
 import App from './App.tsx';
+import { ConfigProvider } from './context/ConfigContext';
 import './styles/index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ConfigProvider>
+      <App />
+    </ConfigProvider>
   </React.StrictMode>
 );

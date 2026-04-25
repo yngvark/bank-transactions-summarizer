@@ -35,6 +35,29 @@ export interface TextPatternRule {
   category: [string, string]; // [primary, sub]
 }
 
+// Hierarchical category structure: primary category -> { emoji?, subcategories[] }.
+// Acts as the source of truth for which categories exist in the UI.
+export interface CategoryTree {
+  [primaryName: string]: {
+    emoji?: string;
+    subcategories: string[];
+  };
+}
+
+// Unified user state persisted to localStorage and exportable as a JSON file.
+export interface SaveFile {
+  version: 1;
+  categories: CategoryTree;
+  rules: {
+    merchantCodeMappings: Record<string, [string, string]>;
+    textPatternRules: TextPatternRule[];
+  };
+  settings: {
+    theme: 'light' | 'dark';
+    density: string;
+  };
+}
+
 // Raw row data for statistics
 export interface RawRowData {
   category: string;
