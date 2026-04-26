@@ -2,9 +2,34 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../shared/types';
 import { useConfig } from '../context/useConfig';
 import type { CategoryTree, CategoryNode } from '../../../shared/types';
+import {
+  renameAt,
+  addChildAt,
+  addRoot,
+  deleteAt,
+  getNodeAt,
+  countDescendants,
+  namePathOf,
+  rewriteRulesForRename,
+  rewriteMappingsForRename,
+  collectAffectedRules,
+  collectAffectedMappings,
+  deleteFromMappings,
+} from '../services/categoryEdit';
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
+  onToast?: (msg: string) => void;
+}
+
+function findEmojiForRoot(tree: CategoryTree, idx: number): string | undefined {
+  return tree[idx]?.emoji;
+}
+
+function countNodeDescendants(node: CategoryTreeNode): number {
+  let n = 0;
+  for (const c of node.children) n += 1 + countNodeDescendants(c);
+  return n;
 }
 
 const LIGHT_COLOR_CONFIG: ColorConfig = {
@@ -102,7 +127,8 @@ function collectVisibleRows(
 
 function buildEditTreeNodes(
   configTree: CategoryTree,
-  amountsByPath: Map<string, { periodTotals: number[]; sum: number; average: number }>
+  amountsByPath: Map<string, { periodTotals: number[]; sum: number; average: number }>,
+  periodCount: number
 ): CategoryTreeNode[] {
   function walk(nodes: CategoryNode[], parentPath: string[]): CategoryTreeNode[] {
     return nodes.map((n) => {
@@ -116,10 +142,10 @@ function buildEditTreeNodes(
           ? children[0].periodTotals.map((_, i) =>
               children.reduce((s, c) => s + c.periodTotals[i], 0)
             )
-          : [];
+          : new Array(periodCount).fill(0);
       const sum = amounts ? amounts.sum : periodTotals.reduce((a, b) => a + b, 0);
-      const periodCount = periodTotals.length;
-      const average = amounts ? amounts.average : periodCount > 0 ? sum / periodCount : 0;
+      const count = periodTotals.length;
+      const average = amounts ? amounts.average : count > 0 ? sum / count : 0;
       return {
         name: n.name,
         path,
@@ -146,18 +172,23 @@ function flattenAmountsByJoinedName(stats: GroupedStatistics): Map<string, { per
   return map;
 }
 
-function StatisticsTable({ statistics }: StatisticsTableProps) {
+function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const [expandState, setExpandState] = useState<Record<string, boolean>>({});
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
-  const { config } = useConfig();
+  const { config, updateCategories, updateRules, updateMerchantMappings } = useConfig();
   const [editing, setEditing] = useState(false);
   const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{ path: number[]; initial: string } | null>(null);
+
+  const emitToast = useCallback((msg: string) => {
+    onToast?.(msg);
+  }, [onToast]);
 
   const editTree = useMemo(() => {
     const amounts = flattenAmountsByJoinedName(statistics);
-    return buildEditTreeNodes(config.categories, amounts);
+    return buildEditTreeNodes(config.categories, amounts, statistics.yearMonths.length);
   }, [statistics, config.categories]);
 
   const treeForRender = editing ? editTree : categoryTree;
@@ -299,6 +330,96 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
     return () => document.removeEventListener('keydown', handler);
   }, [editing]);
 
+  const startRename = useCallback((path: number[], initial: string) => {
+    setRenameTarget({ path, initial });
+  }, []);
+
+  const commitRename = useCallback((newName: string) => {
+    if (!renameTarget) return;
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === renameTarget.initial) {
+      setRenameTarget(null);
+      return;
+    }
+    try {
+      const oldNamePath = namePathOf(config.categories, renameTarget.path);
+      const newTree = renameAt(config.categories, renameTarget.path, trimmed);
+      const newRules = rewriteRulesForRename(config.rules.textPatternRules, oldNamePath, trimmed);
+      const newMappings = rewriteMappingsForRename(config.rules.merchantCodeMappings, oldNamePath, trimmed);
+      updateCategories(newTree);
+      if (newRules !== config.rules.textPatternRules) updateRules(newRules);
+      if (newMappings !== config.rules.merchantCodeMappings) updateMerchantMappings(newMappings);
+      emitToast(`Renamed → ${trimmed}`);
+    } catch (err) {
+      emitToast((err as Error).message);
+    }
+    setRenameTarget(null);
+  }, [
+    renameTarget,
+    config.categories,
+    config.rules.textPatternRules,
+    config.rules.merchantCodeMappings,
+    updateCategories,
+    updateRules,
+    updateMerchantMappings,
+    emitToast,
+  ]);
+
+  const onAddChild = useCallback((parentPath: number[]) => {
+    let cand = 'New category';
+    let n = 1;
+    const parent = getNodeAt(config.categories, parentPath);
+    while (parent.children.some((c) => c.name === cand)) {
+      n++;
+      cand = `New category ${n}`;
+    }
+    try {
+      const { tree, path } = addChildAt(config.categories, parentPath, cand, { withPath: true });
+      updateCategories(tree);
+      setTimeout(() => setRenameTarget({ path, initial: cand }), 0);
+    } catch (err) {
+      emitToast((err as Error).message);
+    }
+  }, [config.categories, updateCategories, emitToast]);
+
+  const onDelete = useCallback((path: number[], name: string) => {
+    const node = getNodeAt(config.categories, path);
+    const desc = countDescendants(node);
+    const affectedRules = collectAffectedRules(
+      config.rules.textPatternRules,
+      config.categories,
+      path
+    );
+    const affectedMappingKeys = collectAffectedMappings(
+      config.rules.merchantCodeMappings,
+      config.categories,
+      path
+    );
+    const detail: string[] = [];
+    if (desc > 0) detail.push(`${desc} descendant${desc === 1 ? '' : 's'}`);
+    if (affectedRules.length > 0) detail.push(`${affectedRules.length} rule${affectedRules.length === 1 ? '' : 's'}`);
+    if (affectedMappingKeys.length > 0) detail.push(`${affectedMappingKeys.length} merchant mapping${affectedMappingKeys.length === 1 ? '' : 's'}`);
+    const detailStr = detail.length > 0 ? ` (along with ${detail.join(', ')})` : '';
+    if (!confirm(`Delete "${name}"${detailStr}?`)) return;
+
+    const newTree = deleteAt(config.categories, path);
+    const newRules = config.rules.textPatternRules.filter((r) => !affectedRules.includes(r));
+    const newMappings = deleteFromMappings(config.rules.merchantCodeMappings, affectedMappingKeys);
+
+    updateCategories(newTree);
+    if (newRules !== config.rules.textPatternRules) updateRules(newRules);
+    if (newMappings !== config.rules.merchantCodeMappings) updateMerchantMappings(newMappings);
+    emitToast(`Deleted "${name}"`);
+  }, [
+    config.categories,
+    config.rules.textPatternRules,
+    config.rules.merchantCodeMappings,
+    updateCategories,
+    updateRules,
+    updateMerchantMappings,
+    emitToast,
+  ]);
+
   return (
     <>
       <div className="statistics-controls-bar">
@@ -348,17 +469,84 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
             {visibleRows.map(({ node, depth, hasChildren, isExpanded, indexPath }) => (
               <tr key={node.path} className={`depth-${Math.min(depth, 3)}`} data-path={indexPath.join('.')}>
                 <td
-                  className={hasChildren ? 'cat-cell-parent' : undefined}
-                  onClick={hasChildren ? () => toggleNode(node.path) : undefined}
+                  className={!editing && hasChildren ? 'cat-cell-parent' : undefined}
+                  onClick={!editing && hasChildren ? () => toggleNode(node.path) : undefined}
                 >
                   <div className="cat-content">
                     <span className="indent" style={{ width: depth * 16 }} />
+                    {editing && (
+                      <span className="drag-handle" data-drag-handle title="Drag to reorder">{'⋮⋮'}</span>
+                    )}
                     {hasChildren ? (
                       <span className={`chevron${isExpanded ? ' open' : ''}`}>{'\u25B6'}</span>
                     ) : (
                       <span className="no-chevron" />
                     )}
-                    <span>{node.name}</span>
+                    {depth === 0 && (
+                      <span
+                        className="cat-emoji"
+                        data-emoji-path={indexPath.join('.')}
+                      >
+                        {findEmojiForRoot(config.categories, indexPath[0]) ?? ''}
+                      </span>
+                    )}
+                    {renameTarget?.path.join('.') === indexPath.join('.') ? (
+                      <input
+                        autoFocus
+                        defaultValue={renameTarget.initial}
+                        className="cat-name-input"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            commitRename((e.target as HTMLInputElement).value);
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setRenameTarget(null);
+                          }
+                        }}
+                        onBlur={(e) => commitRename(e.target.value)}
+                      />
+                    ) : editing ? (
+                      <span
+                        className="cat-name editable"
+                        data-rename-path={indexPath.join('.')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startRename(indexPath, node.name);
+                        }}
+                      >
+                        {node.name}
+                      </span>
+                    ) : (
+                      <span>{node.name}</span>
+                    )}
+                    {editing && renameTarget?.path.join('.') !== indexPath.join('.') && (
+                      <span className="row-actions">
+                        <button
+                          type="button"
+                          className="icon-btn add"
+                          title={`Add child under ${node.name}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddChild(indexPath);
+                          }}
+                          data-testid={`cat-add-${indexPath.join('-')}`}
+                        >+</button>
+                        <button
+                          type="button"
+                          className="icon-btn danger"
+                          title={`Delete ${node.name}${
+                            countNodeDescendants(node) > 0 ? ` (with ${countNodeDescendants(node)} descendants)` : ''
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(indexPath, node.name);
+                          }}
+                          data-testid={`cat-delete-${indexPath.join('-')}`}
+                        >{'×'}</button>
+                      </span>
+                    )}
                   </div>
                 </td>
                 {node.periodTotals.map((val, i) => (
@@ -378,6 +566,34 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
                 <td className="num-cell">{formatNum(node.average)}</td>
               </tr>
             ))}
+            {editing && (
+              <tr className="add-primary-row">
+                <td colSpan={2 + yearMonths.length}>
+                  <button
+                    type="button"
+                    className="add-primary-btn"
+                    data-testid="cat-add-primary"
+                    onClick={() => {
+                      let cand = 'New category';
+                      let n = 1;
+                      while (config.categories.some((c) => c.name === cand)) {
+                        n++;
+                        cand = `New category ${n}`;
+                      }
+                      try {
+                        const { tree, path } = addRoot(config.categories, cand, '📁');
+                        updateCategories(tree);
+                        setTimeout(() => setRenameTarget({ path, initial: cand }), 0);
+                      } catch (err) {
+                        emitToast((err as Error).message);
+                      }
+                    }}
+                  >
+                    + Add primary category
+                  </button>
+                </td>
+              </tr>
+            )}
             <tr className="sum">
               {footer.map((cell, i) => (
                 <td key={i}>{cell}</td>

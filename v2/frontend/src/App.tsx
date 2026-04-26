@@ -277,7 +277,7 @@ function App() {
         {statistics && (
           <section className="statistics-section">
             <h2>Spending by Category</h2>
-            <StatisticsTable statistics={statistics} />
+            <StatisticsTable statistics={statistics} onToast={showToast} />
             <DisplaySettings />
           </section>
         )}
