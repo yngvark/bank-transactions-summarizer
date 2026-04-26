@@ -44,7 +44,7 @@ test.describe('SaveFile persistence', () => {
     );
     expect(stored).not.toBeNull();
     const parsed = JSON.parse(stored!);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.settings.density).toBe('normal');
     expect(Object.keys(parsed.rules.merchantCodeMappings).length).toBeGreaterThan(0);
   });
