@@ -86,6 +86,31 @@ test.describe('Category tree editing (prototype G)', () => {
     await expect(page.locator('.statistics-section table')).not.toContainText('Reise');
   });
 
+  test('chevron toggles collapse/expand in edit mode', async ({ page }) => {
+    await loadFixture(page);
+    await page.locator('[data-testid="cat-edit-toggle"]').click();
+
+    const matRow = page.locator('tr[data-path]').filter({ hasText: 'Mat og drikke' }).first();
+    const chevron = matRow.locator('.chevron');
+    await expect(chevron).toBeVisible();
+
+    const initiallyOpen = (await chevron.getAttribute('class') ?? '').includes('open');
+
+    await chevron.click();
+    if (initiallyOpen) {
+      await expect(chevron).not.toHaveClass(/open/);
+    } else {
+      await expect(chevron).toHaveClass(/open/);
+    }
+
+    await chevron.click();
+    if (initiallyOpen) {
+      await expect(chevron).toHaveClass(/open/);
+    } else {
+      await expect(chevron).not.toHaveClass(/open/);
+    }
+  });
+
   test('add primary appends a new top-level row', async ({ page }) => {
     await loadFixture(page);
     await page.locator('[data-testid="cat-edit-toggle"]').click();

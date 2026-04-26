@@ -553,7 +553,11 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
                       <span className="drag-handle" data-drag-handle title="Drag to reorder">{'⋮⋮'}</span>
                     )}
                     {hasChildren ? (
-                      <span className={`chevron${isExpanded ? ' open' : ''}`}>{'\u25B6'}</span>
+                      <span className={`chevron${isExpanded ? ' open' : ''}${editing ? ' clickable' : ''}`}
+                        onClick={editing ? (e) => {
+                          e.stopPropagation();
+                          toggleNode(node.path);
+                        } : undefined}>{'\u25B6'}</span>
                     ) : (
                       <span className="no-chevron" />
                     )}

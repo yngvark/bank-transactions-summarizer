@@ -736,6 +736,8 @@ td.cat-cell-parent:hover {
   flex-shrink: 0;
 }
 .chevron.open { transform: rotate(90deg); }
+.chevron.clickable { cursor: pointer; padding: 2px; }
+.chevron.clickable:hover { color: #475569; }
 .no-chevron { display: inline-block; width: 14px; flex-shrink: 0; }
 
 /* Responsive */
