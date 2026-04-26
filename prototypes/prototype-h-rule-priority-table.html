@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prototype H: Rule Priority Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary-color: #3b4a6b;
+  --primary-light: #f0f2f8;
+  --accent-color: #6366f1;
+  --accent-hover: #4f46e5;
+  --background: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #fafafa;
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border-color: #e5e7eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+  --warning-text: #92400e;
+  --regex-bg: rgba(99,102,241,0.08);
+  --regex-fg: #4338ca;
+  --text-bg: rgba(34,197,94,0.08);
+  --text-fg: #15803d;
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+[data-theme="dark"] {
+  --primary-light: rgba(99,102,241,0.08);
+  --accent-color: #818cf8;
+  --accent-hover: #6366f1;
+  --background: #13131f;
+  --surface: #1e1e2e;
+  --surface-2: #25253a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --border-color: #2e2e42;
+  --warning-bg: rgba(251,191,36,0.12);
+  --warning-text: #fbbf24;
+  --regex-bg: rgba(129,140,248,0.15);
+  --regex-fg: #a5b4fc;
+  --text-bg: rgba(74,222,128,0.12);
+  --text-fg: #86efac;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); color: var(--text-primary); line-height: 1.5;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%);
+  color: white; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between;
+}
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
+.app-subtitle { opacity: 0.8; font-size: 0.875rem; font-weight: 300; }
+.theme-toggle {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: white; padding: 0.4rem 0.8rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.app-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+section { margin-bottom: 2rem; }
+.card {
+  background: var(--surface); border-radius: var(--radius-lg); padding: 1.5rem;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-color);
+}
+.prototype-badge {
+  display: inline-flex; align-items: center;
+  background: linear-gradient(135deg, var(--accent-color), #a78bfa);
+  color: white; padding: 0.35rem 0.9rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 1rem;
+}
+.description h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.description p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+.description ul { padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+.description li { margin-bottom: 0.25rem; }
+.description .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
+.description .pros-cons h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.description .pros-cons .pros h4 { color: #059669; }
+.description .pros-cons .cons h4 { color: #dc2626; }
+
+.section-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.9rem;
+  gap: 0.75rem; flex-wrap: wrap;
+}
+.section-title { font-size: 1rem; font-weight: 600; }
+.section-hint { color: var(--text-secondary); font-size: 0.82rem; font-weight: 400; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: var(--accent-color); color: white; border: 1px solid var(--accent-color);
+  padding: 0.45rem 0.85rem; border-radius: var(--radius); font-size: 0.85rem;
+  font-weight: 500; cursor: pointer; font-family: inherit;
+  transition: background var(--transition), transform 80ms ease;
+}
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(0.97); }
+.btn.ghost {
+  background: transparent; color: var(--text-primary); border-color: var(--border-color);
+}
+.btn.ghost:hover { background: var(--surface-2); border-color: var(--accent-color); color: var(--accent-color); }
+
+/* ---------- Rules table ---------- */
+.rules-wrap {
+  border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden;
+}
+.rules-table {
+  width: 100%; border-collapse: collapse; font-size: 0.88rem;
+}
+.rules-table thead th {
+  background: var(--surface-2); color: var(--text-secondary); font-weight: 600;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 0.6rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border-color);
+}
+.rules-table tbody tr {
+  background: var(--surface); border-bottom: 1px solid var(--border-color);
+  transition: background var(--transition);
+}
+.rules-table tbody tr:last-child { border-bottom: 0; }
+.rules-table tbody tr:hover { background: var(--surface-2); }
+.rules-table tbody tr.dragging { opacity: 0.45; background: var(--regex-bg); }
+.rules-table tbody tr.drop-above { box-shadow: inset 0 2px 0 var(--accent-color); }
+.rules-table tbody tr.drop-below { box-shadow: inset 0 -2px 0 var(--accent-color); }
+.rules-table td {
+  padding: 0.55rem 0.7rem; vertical-align: middle;
+}
+
+.priority-cell {
+  width: 28px; padding-right: 0 !important; padding-left: 0.7rem !important;
+  color: var(--text-tertiary); cursor: grab; user-select: none;
+  text-align: center;
+}
+.priority-cell:active { cursor: grabbing; }
+.priority-cell .grip {
+  display: inline-flex; flex-direction: column; gap: 1px; color: var(--text-tertiary);
+  font-size: 0.5rem; line-height: 0.4rem;
+}
+
+.type-toggle {
+  display: inline-flex; padding: 2px;
+  background: var(--surface-2); border: 1px solid var(--border-color);
+  border-radius: 7px;
+}
+.type-toggle button {
+  background: transparent; border: 0; color: var(--text-secondary);
+  padding: 0.25rem 0.5rem; border-radius: 5px; font-size: 0.74rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; min-width: 28px;
+  transition: background var(--transition), color var(--transition);
+}
+.type-toggle button.active.text { background: var(--text-bg); color: var(--text-fg); }
+.type-toggle button.active.regex {
+  background: var(--regex-bg); color: var(--regex-fg);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+.type-toggle button:not(.active):hover { color: var(--text-primary); }
+
+.pattern-input {
+  flex: 1; min-width: 0;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 0.32rem 0.5rem; font-size: 0.88rem;
+  color: var(--text-primary); font-family: inherit; outline: none;
+}
+.pattern-input.regex { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.84rem; }
+.pattern-input:hover { border-color: var(--border-color); background: var(--surface-2); }
+.pattern-input:focus { border-color: var(--accent-color); background: var(--surface); }
+.pattern-input.invalid { border-color: var(--danger); background: rgba(239,68,68,0.04); }
+
+.pattern-cell { width: 38%; }
+.pattern-row { display: flex; align-items: center; gap: 0.5rem; }
+.pattern-row .regex-prefix, .pattern-row .regex-suffix {
+  color: var(--text-tertiary); font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.8rem; user-select: none;
+}
+.match-count {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  background: var(--surface-2); color: var(--text-secondary);
+  padding: 0.1rem 0.45rem; border-radius: 999px;
+  font-size: 0.72rem; font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.match-count.zero { opacity: 0.5; }
+.match-count.warn { background: var(--warning-bg); color: var(--warning-text); }
+
+.arrow-cell { width: 24px; color: var(--text-tertiary); text-align: center; padding: 0 !important; }
+
+.cat-cell { width: 36%; }
+.cat-select {
+  width: 100%;
+  background: var(--surface); border: 1px solid var(--border-color);
+  border-radius: 6px; padding: 0.32rem 0.5rem; font-size: 0.85rem;
+  color: var(--text-primary); font-family: inherit; outline: none; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' d='M3 5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 0.5rem center;
+  padding-right: 1.6rem;
+}
+.cat-select:focus { border-color: var(--accent-color); }
+
+.actions-cell { width: 32px; text-align: right; padding-right: 0.6rem !important; }
+.icon-btn {
+  background: transparent; border: 0; color: var(--text-tertiary); cursor: pointer;
+  width: 26px; height: 26px; border-radius: 5px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 0.95rem;
+  transition: background var(--transition), color var(--transition);
+}
+.icon-btn:hover { background: var(--surface-2); color: var(--danger); }
+
+.rules-empty {
+  padding: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.88rem;
+}
+.rules-footer {
+  padding: 0.6rem 0.7rem; background: var(--surface-2); border-top: 1px solid var(--border-color);
+  display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+}
+.rules-footer .stats {
+  font-size: 0.78rem; color: var(--text-secondary);
+  display: inline-flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+}
+.rules-footer .stats strong { color: var(--text-primary); font-weight: 600; }
+
+.add-rule-btn {
+  background: transparent; border: 1px dashed var(--border-color);
+  color: var(--text-secondary); padding: 0.4rem 0.85rem; border-radius: 6px;
+  cursor: pointer; font-size: 0.82rem; font-family: inherit;
+  transition: all var(--transition);
+}
+.add-rule-btn:hover { border-color: var(--accent-color); color: var(--accent-color); border-style: solid; }
+
+/* ---------- Heatmap stats table ---------- */
+.stats-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.stats-table th, .stats-table td {
+  padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+.stats-table th {
+  background: var(--surface-2); color: var(--text-secondary); font-weight: 600;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: left;
+}
+.stats-table td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.stats-table td.heat { color: var(--text-primary); font-weight: 500; }
+.stats-table td.heat[data-empty="1"] { color: var(--text-tertiary); font-weight: 400; }
+.stats-table .name-cell {
+  display: flex; align-items: center; gap: 0.45rem; min-width: 200px;
+}
+.stats-table .emoji { width: 22px; flex-shrink: 0; text-align: center; }
+.stats-table tr.depth-0 { font-weight: 600; }
+.stats-table tr.depth-1 td { color: var(--text-secondary); }
+.stats-table tr.depth-1 .name-cell { padding-left: 1.4rem; }
+.stats-table tr.uncategorized { font-style: italic; color: var(--text-secondary); }
+
+.stats-wrap { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; }
+
+/* ---------- Matched transactions list ---------- */
+.tx-list { display: flex; flex-direction: column; }
+.tx-row {
+  display: grid; grid-template-columns: 70px 1fr 90px 1.5fr;
+  gap: 0.6rem; align-items: center; padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--border-color); font-size: 0.86rem;
+  transition: background var(--transition);
+}
+.tx-row:last-child { border-bottom: 0; }
+.tx-row:hover { background: var(--surface-2); }
+.tx-row.uncat { opacity: 0.7; }
+.tx-row .tx-date { color: var(--text-tertiary); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.tx-row .tx-text {
+  font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.82rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tx-row .tx-amount { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.tx-row .tx-attribution {
+  display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem;
+  color: var(--text-secondary); min-width: 0;
+}
+.tx-row .tx-cat-pill {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  background: var(--primary-light); color: var(--accent-color);
+  padding: 0.15rem 0.55rem; border-radius: 999px; font-weight: 500;
+  white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+.tx-row .tx-cat-pill.uncat-pill { background: var(--surface-2); color: var(--text-tertiary); }
+.tx-row .rule-tag {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem; color: var(--text-tertiary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tx-row .rule-tag .tag-prefix { color: var(--text-tertiary); }
+.tx-row .rule-tag.regex-tag { color: var(--regex-fg); }
+.tx-row .rule-tag.text-tag { color: var(--text-fg); }
+
+/* Highlighted row when corresponding rule is hovered */
+.tx-row.flash { background: var(--regex-bg); }
+
+.toast {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+  background: var(--text-primary); color: var(--surface); padding: 0.6rem 1.1rem;
+  border-radius: var(--radius); font-size: 0.85rem; box-shadow: var(--shadow-lg);
+  opacity: 0; pointer-events: none; transition: opacity var(--transition);
+  z-index: 1200;
+}
+.toast.show { opacity: 1; }
+[data-theme="dark"] .toast { background: var(--surface); color: var(--text-primary); border: 1px solid var(--border-color); }
+
+@media (max-width: 720px) {
+  .pattern-cell { width: auto; }
+  .cat-cell { width: auto; }
+  .tx-row { grid-template-columns: 60px 1fr; row-gap: 0.2rem; }
+  .tx-row .tx-amount, .tx-row .tx-attribution { grid-column: 2; text-align: left; }
+}
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div>
+    <h1>Bank Transactions</h1>
+    <div class="app-subtitle">Prototype H — Rule priority table</div>
+  </div>
+  <button class="theme-toggle" id="themeToggle">🌙 Dark</button>
+</header>
+
+<main class="app-content">
+  <section class="card description">
+    <span class="prototype-badge">PROTOTYPE H · v2</span>
+    <h3>Rule Priority Table — categorization rules above the spending stats</h3>
+    <p>A dedicated <strong>Categorization rules</strong> table sits directly above the existing spending stats. Each rule has a <strong>pattern</strong> (text or regex), a <strong>target category</strong>, and a <strong>priority</strong> represented by visual order alone — no priority numbers are exposed. Drag rows up or down to change priority; the engine evaluates rules top-down and the first match wins.</p>
+    <ul>
+      <li>Drag the <span style="font-family:monospace;">⋮⋮</span> handle on the left of any row to reorder.</li>
+      <li>Toggle <strong>Aa</strong> / <strong>.*</strong> on each row to switch between substring and regex matching.</li>
+      <li>The transactions list at the bottom shows which rule (if any) matched each transaction. Reorder rules to see attributions change.</li>
+      <li>The middle stats table reflects the resulting categorization in real time.</li>
+    </ul>
+    <div class="pros-cons">
+      <div class="pros">
+        <h4>Strengths</h4>
+        <ul>
+          <li>Priority is implicit in row order — no numeric ranks to hand-edit.</li>
+          <li>Rules, stats, and transaction attribution are all visible together — drag a rule and see the impact instantly.</li>
+          <li>Per-row Aa/.* toggle keeps text and regex rules in one uniform list.</li>
+        </ul>
+      </div>
+      <div class="cons">
+        <h4>Weaknesses</h4>
+        <ul>
+          <li>With many rules the table can grow long — no built-in grouping or filtering.</li>
+          <li>Priority via order isn't searchable ("show me priority 12") and is harder to bulk-reorder than numeric ranks.</li>
+          <li>Match count badge can feel noisy; mobile view collapses the per-row layout.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-header">
+      <div>
+        <span class="section-title">🎯 Categorization rules</span>
+        <div class="section-hint">Top row wins. Drag <span style="font-family:monospace;">⋮⋮</span> to reorder.</div>
+      </div>
+      <button class="btn" id="addRuleBtn">+ Add rule</button>
+    </div>
+    <div class="rules-wrap">
+      <table class="rules-table">
+        <thead>
+          <tr>
+            <th style="width: 28px;"></th>
+            <th>Pattern</th>
+            <th></th>
+            <th>Target category</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="rulesTbody"></tbody>
+      </table>
+      <div class="rules-footer">
+        <span class="stats" id="rulesStats">—</span>
+        <button class="add-rule-btn" id="addRuleBtnInline">+ Add rule at bottom</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-header">
+      <div>
+        <span class="section-title">📊 Spending by category</span>
+        <div class="section-hint">Mock months — recomputed from the rules above.</div>
+      </div>
+    </div>
+    <div class="stats-wrap">
+      <table class="stats-table"><tbody id="statsTbody"></tbody></table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-header">
+      <div>
+        <span class="section-title">🧾 Matched transactions</span>
+        <div class="section-hint">Each row shows the rule that matched — hover a rule above to highlight the rows it owns.</div>
+      </div>
+    </div>
+    <div class="rules-wrap">
+      <div class="tx-list" id="txList"></div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Category tree (primary -> { emoji, subs[] }) ----------
+const categories = {
+  "Mat og drikke":        { emoji: "🍔", subs: ["Dagligvarer", "Restauranter og barer", "Take-away"] },
+  "Reise":                { emoji: "✈️", subs: ["Flyselskap", "Reise og transport", "Drivstoff", "Hotel og opphold"] },
+  "Personlig forbruk":    { emoji: "🛍️", subs: ["Klær og sko", "Hobby og fritid", "PC og elektroutstyr"] },
+  "Hus og innbo":         { emoji: "🏠", subs: ["Interiør og varehus", "Vedlikehold"] },
+  "Underholdning":        { emoji: "🎬", subs: ["Streaming", "Kino og konsert"] },
+  "Øvrig bruk":           { emoji: "📦", subs: ["Diverse"] }
+};
+
+function categoryOptionsHTML(selectedPrimary, selectedSub) {
+  const opts = [];
+  for (const [primary, def] of Object.entries(categories)) {
+    for (const sub of def.subs) {
+      const value = `${primary}|${sub}`;
+      const sel = (selectedPrimary === primary && selectedSub === sub) ? ' selected' : '';
+      opts.push(`<option value="${esc(value)}"${sel}>${def.emoji} ${esc(primary)} / ${esc(sub)}</option>`);
+    }
+  }
+  return opts.join('');
+}
+
+// ---------- Mock transactions (date, text, amount) ----------
+// Spread across 3 months (Jan / Feb / Mar 2026) so we can produce a heatmap.
+const transactions = [
+  { id: "t1",  date: "2026-01-04", text: "REMA 1000 OSLO ST",          amount: 384 },
+  { id: "t2",  date: "2026-01-09", text: "KIWI MAJORSTUEN",            amount: 276 },
+  { id: "t3",  date: "2026-01-15", text: "PEPPES PIZZA SENTRUM",       amount: 349 },
+  { id: "t4",  date: "2026-01-22", text: "DOMINOS PIZZA STORO",        amount: 218 },
+  { id: "t5",  date: "2026-01-26", text: "SAS *FLIGHT BGO-OSL",        amount: 1842 },
+  { id: "t6",  date: "2026-02-03", text: "RUTER MOBILBILLETT",         amount: 45 },
+  { id: "t7",  date: "2026-02-08", text: "VY TOG OSLO-BERG",           amount: 1149 },
+  { id: "t8",  date: "2026-02-12", text: "H&M GRUNERLOKKA",            amount: 599 },
+  { id: "t9",  date: "2026-02-17", text: "ZARA STOREGATA",             amount: 1295 },
+  { id: "t10", date: "2026-02-21", text: "SHELL HALDEN E6",            amount: 752 },
+  { id: "t11", date: "2026-02-28", text: "REMA 1000 GRONLAND",         amount: 511 },
+  { id: "t12", date: "2026-03-02", text: "NETFLIX MEMBERSHIP",         amount: 199 },
+  { id: "t13", date: "2026-03-06", text: "SPOTIFY PREMIUM FAMILY",     amount: 169 },
+  { id: "t14", date: "2026-03-11", text: "PEPPES PIZZA STORO",         amount: 412 },
+  { id: "t15", date: "2026-03-15", text: "SUSHI YAMA GRONLAND",        amount: 540 },
+  { id: "t16", date: "2026-03-19", text: "KIWI BISLETT",               amount: 318 },
+  { id: "t17", date: "2026-03-23", text: "NARVESEN STORTORV",          amount: 89 },
+  { id: "t18", date: "2026-03-28", text: "ELKJOP LORENSKOG",           amount: 4290 }
+];
+
+// ---------- Default rules ----------
+// Note: the order between the "PIZZA" and "PEPPES" rules deliberately changes
+// behaviour. With "PEPPES" first, PEPPES PIZZA rows go to Take-away;
+// with "PIZZA" first, they go to Restauranter. This is the demo of priority.
+let rules = [
+  { id: "r1", type: "text",  pattern: "REMA",     primary: "Mat og drikke",     sub: "Dagligvarer" },
+  { id: "r2", type: "text",  pattern: "KIWI",     primary: "Mat og drikke",     sub: "Dagligvarer" },
+  { id: "r3", type: "text",  pattern: "PEPPES",   primary: "Mat og drikke",     sub: "Take-away" },
+  { id: "r4", type: "text",  pattern: "PIZZA",    primary: "Mat og drikke",     sub: "Restauranter og barer" },
+  { id: "r5", type: "text",  pattern: "SUSHI",    primary: "Mat og drikke",     sub: "Take-away" },
+  { id: "r6", type: "regex", pattern: "^SAS\\b",  primary: "Reise",             sub: "Flyselskap" },
+  { id: "r7", type: "regex", pattern: "RUTER|VY\\b", primary: "Reise",          sub: "Reise og transport" },
+  { id: "r8", type: "text",  pattern: "SHELL",    primary: "Reise",             sub: "Drivstoff" },
+  { id: "r9", type: "regex", pattern: "H&M|ZARA", primary: "Personlig forbruk", sub: "Klær og sko" },
+  { id: "r10", type: "regex", pattern: "NETFLIX|SPOTIFY", primary: "Underholdning", sub: "Streaming" }
+];
+
+const $ = (id) => document.getElementById(id);
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showToast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._timer); t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ---------- Theme toggle ----------
+$('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? null : 'dark';
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  $('themeToggle').textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
+});
+
+// ---------- Engine: apply rules to transactions ----------
+// Returns { tx: [{...tx, ruleId|null, primary|null, sub|null}], counts: { ruleId: count }, invalid: { ruleId: error } }
+function applyRules() {
+  const counts = Object.fromEntries(rules.map(r => [r.id, 0]));
+  const invalid = {};
+  // Pre-compile regexes once
+  const compiled = {};
+  for (const r of rules) {
+    if (r.type === 'regex') {
+      try { compiled[r.id] = new RegExp(r.pattern, 'i'); }
+      catch (e) { invalid[r.id] = e.message; }
+    } else {
+      compiled[r.id] = null; // marker for substring
+    }
+  }
+  const result = transactions.map(tx => {
+    const upper = tx.text.toUpperCase();
+    for (const r of rules) {
+      if (invalid[r.id]) continue;
+      if (!r.pattern) continue;
+      let hit = false;
+      if (r.type === 'regex') {
+        hit = compiled[r.id].test(tx.text);
+      } else {
+        hit = upper.includes(r.pattern.toUpperCase());
+      }
+      if (hit) {
+        counts[r.id]++;
+        return { ...tx, ruleId: r.id, primary: r.primary, sub: r.sub };
+      }
+    }
+    return { ...tx, ruleId: null, primary: null, sub: null };
+  });
+  return { tx: result, counts, invalid };
+}
+
+// ---------- Render: rules table ----------
+function renderRules() {
+  const { counts, invalid } = applyRules();
+  const tbody = $('rulesTbody');
+  if (rules.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="rules-empty">No rules yet — click <strong>+ Add rule</strong> to create one. Without rules, all transactions go to <em>Uncategorized</em>.</td></tr>`;
+  } else {
+    tbody.innerHTML = rules.map(r => {
+      const matchCount = counts[r.id] || 0;
+      const isInvalid = !!invalid[r.id];
+      const matchPill = isInvalid
+        ? `<span class="match-count warn" title="${esc(invalid[r.id])}">⚠ regex error</span>`
+        : matchCount === 0
+          ? `<span class="match-count zero" title="No matching transactions">${matchCount} matches</span>`
+          : `<span class="match-count" title="${matchCount} matching transaction${matchCount === 1 ? '' : 's'}">${matchCount} ${matchCount === 1 ? 'match' : 'matches'}</span>`;
+      return `
+        <tr data-rule-id="${r.id}" draggable="true">
+          <td class="priority-cell" title="Drag to reorder priority">
+            <span class="grip">⋮⋮</span>
+          </td>
+          <td class="pattern-cell">
+            <div class="pattern-row">
+              <div class="type-toggle" role="group" aria-label="Pattern type">
+                <button type="button" class="text${r.type === 'text' ? ' active' : ''}" data-set-type="text" data-rule-id="${r.id}" title="Substring match (case-insensitive)">Aa</button>
+                <button type="button" class="regex${r.type === 'regex' ? ' active' : ''}" data-set-type="regex" data-rule-id="${r.id}" title="Regular expression (case-insensitive)">.*</button>
+              </div>
+              ${r.type === 'regex' ? '<span class="regex-prefix">/</span>' : ''}
+              <input class="pattern-input ${r.type === 'regex' ? 'regex' : ''} ${isInvalid ? 'invalid' : ''}"
+                     data-rule-id="${r.id}" data-field="pattern"
+                     value="${esc(r.pattern)}"
+                     placeholder="${r.type === 'regex' ? 'pattern' : 'substring to match'}"
+                     spellcheck="false" autocomplete="off">
+              ${r.type === 'regex' ? '<span class="regex-suffix">/i</span>' : ''}
+              ${matchPill}
+            </div>
+          </td>
+          <td class="arrow-cell">→</td>
+          <td class="cat-cell">
+            <select class="cat-select" data-rule-id="${r.id}" data-field="category">
+              ${categoryOptionsHTML(r.primary, r.sub)}
+            </select>
+          </td>
+          <td class="actions-cell">
+            <button class="icon-btn" data-delete-rule="${r.id}" title="Delete rule">✕</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Footer stats
+  const totalRules = rules.length;
+  const matched = Object.values(counts).reduce((a,b) => a+b, 0);
+  const total = transactions.length;
+  const pct = total === 0 ? 0 : Math.round((matched/total) * 100);
+  $('rulesStats').innerHTML =
+    `<strong>${totalRules}</strong> rule${totalRules === 1 ? '' : 's'} · ` +
+    `<strong>${matched}</strong>/<strong>${total}</strong> transactions matched (${pct}%) · ` +
+    `<strong>${total - matched}</strong> uncategorized`;
+}
+
+// ---------- Render: stats heatmap ----------
+function renderStats() {
+  const { tx } = applyRules();
+  // Aggregate by primary -> sub -> month
+  const months = ["2026-01", "2026-02", "2026-03"];
+  const monthLabels = ["Jan", "Feb", "Mar"];
+  const tree = {}; // primary -> { sub -> [m0,m1,m2] }
+  let uncatTotals = [0, 0, 0];
+  for (const t of tx) {
+    const mIdx = months.indexOf(t.date.slice(0, 7));
+    if (mIdx < 0) continue;
+    if (!t.primary) {
+      uncatTotals[mIdx] += t.amount;
+    } else {
+      tree[t.primary] = tree[t.primary] || {};
+      tree[t.primary][t.sub] = tree[t.primary][t.sub] || [0, 0, 0];
+      tree[t.primary][t.sub][mIdx] += t.amount;
+    }
+  }
+
+  // Find max single cell value across the whole table (for heat scaling)
+  let maxCell = 1;
+  for (const subs of Object.values(tree)) {
+    for (const arr of Object.values(subs)) {
+      for (const v of arr) if (v > maxCell) maxCell = v;
+    }
+  }
+  for (const v of uncatTotals) if (v > maxCell) maxCell = v;
+
+  function heatColor(v) {
+    if (!v) return '';
+    const ratio = Math.min(1, v / maxCell);
+    // light: pale yellow → red. dark: muted amber → red.
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const alpha = 0.10 + ratio * 0.55;
+    return isDark
+      ? `background: rgba(248, 113, 113, ${alpha.toFixed(3)});`
+      : `background: rgba(239, 68, 68, ${alpha.toFixed(3)});`;
+  }
+
+  const rows = [];
+  rows.push(`<tr>
+    <th style="width: 38%;">Category</th>
+    <th class="amount" style="width: 14%;">Jan</th>
+    <th class="amount" style="width: 14%;">Feb</th>
+    <th class="amount" style="width: 14%;">Mar</th>
+    <th class="amount" style="width: 20%;">Sum</th>
+  </tr>`);
+
+  // Iterate categories in the order they appear in the categories object
+  for (const [primary, def] of Object.entries(categories)) {
+    if (!tree[primary]) continue;
+    const primaryTotals = [0, 0, 0];
+    for (const arr of Object.values(tree[primary])) {
+      for (let i = 0; i < 3; i++) primaryTotals[i] += arr[i];
+    }
+    const psum = primaryTotals.reduce((a,b) => a+b, 0);
+    rows.push(`
+      <tr class="depth-0">
+        <td><div class="name-cell"><span class="emoji">${def.emoji}</span><span>${esc(primary)}</span></div></td>
+        <td class="amount heat" data-empty="${primaryTotals[0] === 0 ? 1 : 0}" style="${heatColor(primaryTotals[0])}">${fmt(primaryTotals[0])}</td>
+        <td class="amount heat" data-empty="${primaryTotals[1] === 0 ? 1 : 0}" style="${heatColor(primaryTotals[1])}">${fmt(primaryTotals[1])}</td>
+        <td class="amount heat" data-empty="${primaryTotals[2] === 0 ? 1 : 0}" style="${heatColor(primaryTotals[2])}">${fmt(primaryTotals[2])}</td>
+        <td class="amount"><strong>${fmt(psum)}</strong></td>
+      </tr>
+    `);
+    for (const sub of def.subs) {
+      const arr = tree[primary][sub];
+      if (!arr) continue;
+      const ssum = arr.reduce((a,b) => a+b, 0);
+      rows.push(`
+        <tr class="depth-1">
+          <td><div class="name-cell"><span>${esc(sub)}</span></div></td>
+          <td class="amount heat" data-empty="${arr[0] === 0 ? 1 : 0}" style="${heatColor(arr[0])}">${fmt(arr[0])}</td>
+          <td class="amount heat" data-empty="${arr[1] === 0 ? 1 : 0}" style="${heatColor(arr[1])}">${fmt(arr[1])}</td>
+          <td class="amount heat" data-empty="${arr[2] === 0 ? 1 : 0}" style="${heatColor(arr[2])}">${fmt(arr[2])}</td>
+          <td class="amount">${fmt(ssum)}</td>
+        </tr>
+      `);
+    }
+  }
+
+  // Uncategorized
+  const uncatSum = uncatTotals.reduce((a,b) => a+b, 0);
+  if (uncatSum > 0) {
+    rows.push(`
+      <tr class="uncategorized">
+        <td><div class="name-cell"><span class="emoji">❓</span><span>Uncategorized</span></div></td>
+        <td class="amount heat" data-empty="${uncatTotals[0] === 0 ? 1 : 0}" style="${heatColor(uncatTotals[0])}">${fmt(uncatTotals[0])}</td>
+        <td class="amount heat" data-empty="${uncatTotals[1] === 0 ? 1 : 0}" style="${heatColor(uncatTotals[1])}">${fmt(uncatTotals[1])}</td>
+        <td class="amount heat" data-empty="${uncatTotals[2] === 0 ? 1 : 0}" style="${heatColor(uncatTotals[2])}">${fmt(uncatTotals[2])}</td>
+        <td class="amount"><strong>${fmt(uncatSum)}</strong></td>
+      </tr>
+    `);
+  }
+
+  $('statsTbody').innerHTML = rows.join('');
+}
+
+function fmt(n) { return n === 0 ? '–' : Math.round(n).toLocaleString('nb-NO') + ' kr'; }
+
+// ---------- Render: matched transactions list ----------
+function renderTxList() {
+  const { tx } = applyRules();
+  const rulesById = Object.fromEntries(rules.map(r => [r.id, r]));
+  $('txList').innerHTML = tx.map(t => {
+    const r = t.ruleId ? rulesById[t.ruleId] : null;
+    const ruleTagClass = r ? (r.type === 'regex' ? 'regex-tag' : 'text-tag') : '';
+    const ruleTagText = r
+      ? `<span class="tag-prefix">${r.type === 'regex' ? '.*' : 'Aa'}</span> ${esc(r.pattern)}`
+      : `<span class="tag-prefix">—</span>`;
+    const def = t.primary ? categories[t.primary] : null;
+    const catPill = t.primary
+      ? `<span class="tx-cat-pill">${def?.emoji ?? ''} ${esc(t.sub)}</span>`
+      : `<span class="tx-cat-pill uncat-pill">Uncategorized</span>`;
+    const dateLabel = t.date.slice(5).replace('-', '/'); // MM/DD
+    return `
+      <div class="tx-row${t.primary ? '' : ' uncat'}" data-rule-id="${t.ruleId || ''}">
+        <div class="tx-date">${esc(dateLabel)}</div>
+        <div class="tx-text" title="${esc(t.text)}">${esc(t.text)}</div>
+        <div class="tx-amount">${Math.round(t.amount).toLocaleString('nb-NO')} kr</div>
+        <div class="tx-attribution">
+          ${catPill}
+          <span class="rule-tag ${ruleTagClass}" title="${r ? `Rule: ${r.type === 'regex' ? '/' + r.pattern + '/i' : r.pattern}` : 'No rule matched'}">${ruleTagText}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAll() { renderRules(); renderStats(); renderTxList(); }
+
+// ---------- Event handlers ----------
+$('rulesTbody').addEventListener('input', (e) => {
+  const t = e.target;
+  const id = t.getAttribute('data-rule-id');
+  const field = t.getAttribute('data-field');
+  if (!id || !field) return;
+  const rule = rules.find(r => r.id === id);
+  if (!rule) return;
+  if (field === 'pattern') {
+    rule.pattern = t.value;
+    // Live re-render — but skip the rules table itself to keep input focus.
+    // Update only the match-count pill, the validation state, the stats,
+    // and the tx list.
+    renderInline(rule);
+    renderStats();
+    renderTxList();
+  }
+});
+
+function renderInline(rule) {
+  const { counts, invalid } = applyRules();
+  const tr = document.querySelector(`tr[data-rule-id="${rule.id}"]`);
+  if (!tr) return;
+  const input = tr.querySelector('.pattern-input');
+  const pill = tr.querySelector('.match-count');
+  const isInvalid = !!invalid[rule.id];
+  input.classList.toggle('invalid', isInvalid);
+  if (pill) {
+    if (isInvalid) {
+      pill.className = 'match-count warn';
+      pill.title = invalid[rule.id];
+      pill.textContent = '⚠ regex error';
+    } else {
+      const c = counts[rule.id] || 0;
+      pill.className = 'match-count' + (c === 0 ? ' zero' : '');
+      pill.title = `${c} matching transaction${c === 1 ? '' : 's'}`;
+      pill.textContent = `${c} ${c === 1 ? 'match' : 'matches'}`;
+    }
+  }
+  // Update footer stats
+  const matched = Object.values(counts).reduce((a,b) => a+b, 0);
+  const total = transactions.length;
+  const pct = total === 0 ? 0 : Math.round((matched/total) * 100);
+  $('rulesStats').innerHTML =
+    `<strong>${rules.length}</strong> rule${rules.length === 1 ? '' : 's'} · ` +
+    `<strong>${matched}</strong>/<strong>${total}</strong> transactions matched (${pct}%) · ` +
+    `<strong>${total - matched}</strong> uncategorized`;
+}
+
+$('rulesTbody').addEventListener('change', (e) => {
+  const t = e.target;
+  const id = t.getAttribute('data-rule-id');
+  const field = t.getAttribute('data-field');
+  if (field === 'category') {
+    const rule = rules.find(r => r.id === id);
+    if (!rule) return;
+    const [primary, sub] = t.value.split('|');
+    rule.primary = primary; rule.sub = sub;
+    renderAll();
+  }
+});
+
+$('rulesTbody').addEventListener('click', (e) => {
+  const setTypeBtn = e.target.closest('[data-set-type]');
+  if (setTypeBtn) {
+    const id = setTypeBtn.getAttribute('data-rule-id');
+    const newType = setTypeBtn.getAttribute('data-set-type');
+    const rule = rules.find(r => r.id === id);
+    if (rule && rule.type !== newType) {
+      rule.type = newType;
+      renderAll();
+    }
+    return;
+  }
+  const delBtn = e.target.closest('[data-delete-rule]');
+  if (delBtn) {
+    const id = delBtn.getAttribute('data-delete-rule');
+    const idx = rules.findIndex(r => r.id === id);
+    if (idx >= 0) {
+      const removed = rules.splice(idx, 1)[0];
+      renderAll();
+      showToast(`Deleted rule "${removed.pattern}"`);
+    }
+  }
+});
+
+function newRuleId() { return 'r' + (Date.now() % 100000); }
+function addRule() {
+  const r = { id: newRuleId(), type: 'text', pattern: '', primary: 'Øvrig bruk', sub: 'Diverse' };
+  rules.push(r);
+  renderAll();
+  // Focus the new pattern input
+  setTimeout(() => {
+    const input = document.querySelector(`tr[data-rule-id="${r.id}"] .pattern-input`);
+    if (input) input.focus();
+  }, 0);
+  showToast('New rule added — fill in pattern and category');
+}
+$('addRuleBtn').addEventListener('click', addRule);
+$('addRuleBtnInline').addEventListener('click', addRule);
+
+// ---------- Drag & drop reorder ----------
+let dragSrcId = null;
+
+$('rulesTbody').addEventListener('dragstart', (e) => {
+  const tr = e.target.closest('tr[data-rule-id]');
+  if (!tr) return;
+  // Only initiate drag from priority cell or row chrome — but allow whole row
+  // because draggable=true is on the row. Disregard drags that originate
+  // from interactive controls so users can still select text in the input.
+  if (e.target.closest('input, select, button')) {
+    e.preventDefault();
+    return;
+  }
+  dragSrcId = tr.getAttribute('data-rule-id');
+  tr.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  // Required for Firefox to actually start the drag
+  e.dataTransfer.setData('text/plain', dragSrcId);
+});
+
+$('rulesTbody').addEventListener('dragend', (e) => {
+  document.querySelectorAll('.rules-table tr.dragging, .rules-table tr.drop-above, .rules-table tr.drop-below')
+    .forEach(t => t.classList.remove('dragging', 'drop-above', 'drop-below'));
+  dragSrcId = null;
+});
+
+$('rulesTbody').addEventListener('dragover', (e) => {
+  if (!dragSrcId) return;
+  const tr = e.target.closest('tr[data-rule-id]');
+  if (!tr) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.rules-table tr.drop-above, .rules-table tr.drop-below')
+    .forEach(t => t.classList.remove('drop-above', 'drop-below'));
+  if (tr.getAttribute('data-rule-id') === dragSrcId) return;
+  const rect = tr.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < (rect.height / 2);
+  tr.classList.add(before ? 'drop-above' : 'drop-below');
+});
+
+$('rulesTbody').addEventListener('drop', (e) => {
+  if (!dragSrcId) return;
+  const tr = e.target.closest('tr[data-rule-id]');
+  if (!tr) return;
+  e.preventDefault();
+  const targetId = tr.getAttribute('data-rule-id');
+  if (targetId === dragSrcId) return;
+  const rect = tr.getBoundingClientRect();
+  const before = (e.clientY - rect.top) < (rect.height / 2);
+  const srcIdx = rules.findIndex(r => r.id === dragSrcId);
+  const tgtIdx = rules.findIndex(r => r.id === targetId);
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  const [moved] = rules.splice(srcIdx, 1);
+  // Recompute target index since the splice can shift it.
+  let newIdx = rules.findIndex(r => r.id === targetId);
+  if (!before) newIdx += 1;
+  rules.splice(newIdx, 0, moved);
+  renderAll();
+  showToast(`Moved "${moved.pattern || '(empty)'}" — priority updated`);
+});
+
+// Hover a rule row -> highlight matching tx rows
+$('rulesTbody').addEventListener('mouseover', (e) => {
+  const tr = e.target.closest('tr[data-rule-id]');
+  if (!tr) return;
+  const id = tr.getAttribute('data-rule-id');
+  document.querySelectorAll(`.tx-row[data-rule-id="${id}"]`).forEach(r => r.classList.add('flash'));
+});
+$('rulesTbody').addEventListener('mouseout', (e) => {
+  document.querySelectorAll('.tx-row.flash').forEach(r => r.classList.remove('flash'));
+});
+
+// ---------- Initial render ----------
+renderAll();
+</script>
+</body>
+</html>
