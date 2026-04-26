@@ -1,6 +1,7 @@
 import type {
   SaveFile,
   CategoryTree,
+  CategoryNode,
   CategoryMapping,
   TextPatternRule,
 } from '../../../shared/types';
@@ -11,6 +12,8 @@ export const SAVEFILE_STORAGE_KEY = 'bts-savefile-v1';
 export const SAVEFILE_BACKUP_KEY = 'bts-savefile-v1.bak';
 export const LEGACY_RULES_KEY = 'bts-rules-v1';
 export const LEGACY_THEME_KEY = 'theme';
+
+type V1CategoryTree = Record<string, { emoji?: string; subcategories: string[] }>;
 
 function readLegacyRules(): TextPatternRule[] {
   try {
@@ -41,23 +44,40 @@ function importMerchantMappings(): CategoryMapping {
 }
 
 export function deriveCategoryTree(mappings: CategoryMapping): CategoryTree {
-  const tree: CategoryTree = {};
+  const byPrimary = new Map<string, Set<string>>();
   for (const [primary, sub] of Object.values(mappings)) {
-    if (!tree[primary]) tree[primary] = { subcategories: [] };
-    if (!tree[primary].subcategories.includes(sub)) {
-      tree[primary].subcategories.push(sub);
-    }
+    if (!byPrimary.has(primary)) byPrimary.set(primary, new Set());
+    byPrimary.get(primary)!.add(sub);
   }
-  for (const node of Object.values(tree)) {
-    node.subcategories.sort((a, b) => a.localeCompare(b));
-  }
-  return tree;
+  const primaries = Array.from(byPrimary.keys()).sort((a, b) => a.localeCompare(b, 'nb'));
+  return primaries.map((name) => ({
+    name,
+    children: Array.from(byPrimary.get(name)!)
+      .sort((a, b) => a.localeCompare(b, 'nb'))
+      .map((sub) => ({
+        name: sub,
+        children: [],
+      })),
+  }));
+}
+
+function migrateV1Categories(v1: V1CategoryTree): CategoryTree {
+  const primaries = Object.keys(v1).sort((a, b) => a.localeCompare(b, 'nb'));
+  return primaries.map((name) => {
+    const node = v1[name];
+    const out: CategoryNode = {
+      name,
+      children: node.subcategories.map((sub) => ({ name: sub, children: [] })),
+    };
+    if (node.emoji) out.emoji = node.emoji;
+    return out;
+  });
 }
 
 function buildFreshSaveFile(): SaveFile {
   const merchantCodeMappings = importMerchantMappings();
   return {
-    version: 1,
+    version: 2,
     categories: deriveCategoryTree(merchantCodeMappings),
     rules: {
       merchantCodeMappings,
@@ -72,31 +92,70 @@ function buildFreshSaveFile(): SaveFile {
 
 /**
  * Run migration once on app start. If a valid SaveFile already exists in
- * localStorage, returns it unchanged. Otherwise builds one from legacy keys
- * and the static categories.json, persists it, and removes the legacy keys.
+ * localStorage, returns it unchanged. If a v1 SaveFile is present, upgrades
+ * it in place to v2. Otherwise builds one from legacy keys and the static
+ * categories.json, persists it, and removes the legacy keys.
  */
 export function runMigration(): SaveFile {
   const raw = localStorage.getItem(SAVEFILE_STORAGE_KEY);
   if (raw != null) {
+    let parsed: unknown = null;
     try {
-      const parsed = JSON.parse(raw);
-      const result = validateSaveFile(parsed);
-      if (result.ok) return result.data;
-      // Stored SaveFile fails schema validation — preserve the raw blob so
-      // it can be recovered from DevTools, then rebuild.
-      localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
-      console.warn(
-        `[bts] Stored SaveFile failed validation (${result.error}). ` +
-          `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
-      );
+      parsed = JSON.parse(raw);
     } catch {
-      // Stored SaveFile is unparseable JSON — same recovery path.
       localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
       console.warn(
-        `[bts] Stored SaveFile is not valid JSON. ` +
-          `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
+        `[bts] Stored SaveFile is not valid JSON. Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
       );
+      const fresh = buildFreshSaveFile();
+      localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(fresh));
+      localStorage.removeItem(LEGACY_RULES_KEY);
+      localStorage.removeItem(LEGACY_THEME_KEY);
+      return fresh;
     }
+
+    // v2 path
+    const result = validateSaveFile(parsed);
+    if (result.ok) return result.data;
+
+    // v1 → v2 path
+    if (
+      parsed != null &&
+      typeof parsed === 'object' &&
+      (parsed as { version?: unknown }).version === 1 &&
+      (parsed as { categories?: unknown }).categories &&
+      typeof (parsed as { categories: unknown }).categories === 'object' &&
+      !Array.isArray((parsed as { categories: unknown }).categories)
+    ) {
+      try {
+        const p = parsed as {
+          version: 1;
+          categories: V1CategoryTree;
+          rules: SaveFile['rules'];
+          settings: SaveFile['settings'];
+        };
+        const upgraded: SaveFile = {
+          version: 2,
+          categories: migrateV1Categories(p.categories),
+          rules: p.rules,
+          settings: p.settings,
+        };
+        const ok = validateSaveFile(upgraded);
+        if (ok.ok) {
+          localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(ok.data));
+          return ok.data;
+        }
+      } catch {
+        // fall through to rebuild below
+      }
+    }
+
+    // Fallback: backup + rebuild
+    localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
+    console.warn(
+      `[bts] Stored SaveFile failed validation (${result.error}). ` +
+        `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
+    );
   }
 
   const fresh = buildFreshSaveFile();

@@ -23,26 +23,30 @@ function stubLocalStorage(): Map<string, string> {
 }
 
 describe('deriveCategoryTree', () => {
-  it('groups subcategories under primary categories', () => {
+  it('groups sub-nodes under primary nodes (recursive)', () => {
     const tree = deriveCategoryTree({
       A: ['Food', 'Groceries'],
       B: ['Food', 'Restaurants'],
       C: ['Travel', 'Flights'],
     });
-    expect(tree['Food'].subcategories).toEqual(['Groceries', 'Restaurants']);
-    expect(tree['Travel'].subcategories).toEqual(['Flights']);
+    const food = tree.find((n) => n.name === 'Food');
+    const travel = tree.find((n) => n.name === 'Travel');
+    expect(food?.children.map((c) => c.name)).toEqual(['Groceries', 'Restaurants']);
+    expect(travel?.children.map((c) => c.name)).toEqual(['Flights']);
+    expect(food?.children.every((c) => c.children.length === 0)).toBe(true);
   });
 
-  it('deduplicates subcategories', () => {
+  it('deduplicates sub-nodes', () => {
     const tree = deriveCategoryTree({
       A: ['Food', 'Groceries'],
       B: ['Food', 'Groceries'],
     });
-    expect(tree['Food'].subcategories).toEqual(['Groceries']);
+    const food = tree.find((n) => n.name === 'Food')!;
+    expect(food.children.map((c) => c.name)).toEqual(['Groceries']);
   });
 
-  it('returns empty object for empty mappings', () => {
-    expect(deriveCategoryTree({})).toEqual({});
+  it('returns empty array for empty mappings', () => {
+    expect(deriveCategoryTree({})).toEqual([]);
   });
 });
 
@@ -54,12 +58,12 @@ describe('runMigration', () => {
 
   it('builds fresh SaveFile on first run with no legacy keys', () => {
     const sf = runMigration();
-    expect(sf.version).toBe(1);
+    expect(sf.version).toBe(2);
     expect(sf.rules.textPatternRules).toEqual([]);
     expect(sf.settings.theme).toBe('light');
     expect(sf.settings.density).toBe('normal');
     expect(Object.keys(sf.rules.merchantCodeMappings).length).toBeGreaterThan(0);
-    expect(Object.keys(sf.categories).length).toBeGreaterThan(0);
+    expect(sf.categories.length).toBeGreaterThan(0);
   });
 
   it('persists the SaveFile to localStorage', () => {
@@ -67,7 +71,7 @@ describe('runMigration', () => {
     const raw = store.get(SAVEFILE_STORAGE_KEY);
     expect(raw).toBeDefined();
     const parsed = JSON.parse(raw!);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
   });
 
   it('carries over legacy rules', () => {
@@ -118,8 +122,8 @@ describe('runMigration', () => {
     store.set(SAVEFILE_STORAGE_KEY, corrupt);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sf = runMigration();
-    expect(sf.version).toBe(1);
-    expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(1);
+    expect(sf.version).toBe(2);
+    expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
     // Original blob preserved at backup key, with a warning logged.
     expect(store.get(SAVEFILE_BACKUP_KEY)).toBe(corrupt);
     expect(warn).toHaveBeenCalled();
@@ -131,7 +135,7 @@ describe('runMigration', () => {
     store.set(SAVEFILE_STORAGE_KEY, invalid);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const sf = runMigration();
-    expect(sf.version).toBe(1);
+    expect(sf.version).toBe(2);
     expect(store.get(SAVEFILE_BACKUP_KEY)).toBe(invalid);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
@@ -154,5 +158,28 @@ describe('runMigration', () => {
     const sf = runMigration();
     const result = validateSaveFile(sf);
     expect(result.ok).toBe(true);
+  });
+
+  it('upgrades a v1 SaveFile to v2 in place', () => {
+    const v1 = {
+      version: 1,
+      categories: {
+        'Mat og drikke': { emoji: '🍔', subcategories: ['Dagligvarer', 'Restauranter'] },
+        Reise: { emoji: '✈️', subcategories: ['Tog'] },
+      },
+      rules: {
+        merchantCodeMappings: { '5411': ['Mat og drikke', 'Dagligvarer'] },
+        textPatternRules: [],
+      },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(v1));
+    const sf = runMigration();
+    expect(sf.version).toBe(2);
+    expect(Array.isArray(sf.categories)).toBe(true);
+    const mat = sf.categories.find((n) => n.name === 'Mat og drikke');
+    expect(mat?.emoji).toBe('🍔');
+    expect(mat?.children.map((c) => c.name)).toEqual(['Dagligvarer', 'Restauranter']);
+    expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
   });
 });

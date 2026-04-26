@@ -36,18 +36,21 @@ export interface TextPatternRule {
   category: [string, string]; // [primary, sub]
 }
 
-// Hierarchical category structure: primary category -> { emoji?, subcategories[] }.
-// Acts as the source of truth for which categories exist in the UI.
-export interface CategoryTree {
-  [primaryName: string]: {
-    emoji?: string;
-    subcategories: string[];
-  };
+// Recursive category node. Top-level nodes typically carry an emoji;
+// deeper nodes do not. Children are ordered (rendering and persistence
+// preserve sibling order).
+export interface CategoryNode {
+  name: string;
+  emoji?: string;
+  children: CategoryNode[];
 }
+
+// Ordered list of root-level category nodes.
+export type CategoryTree = CategoryNode[];
 
 // Unified user state persisted to localStorage and exportable as a JSON file.
 export interface SaveFile {
-  version: 1;
+  version: 2;
   categories: CategoryTree;
   rules: {
     merchantCodeMappings: Record<string, [string, string]>;

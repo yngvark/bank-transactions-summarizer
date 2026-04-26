@@ -18,8 +18,10 @@ function stubLocalStorage(): Map<string, string> {
 
 function validSaveFile(): SaveFile {
   return {
-    version: 1,
-    categories: { Food: { subcategories: ['Groceries'] } },
+    version: 2,
+    categories: [
+      { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
+    ],
     rules: {
       merchantCodeMappings: { 'GROCERY': ['Food', 'Groceries'] },
       textPatternRules: [],
@@ -57,17 +59,21 @@ describe('fingerprint', () => {
 
   it('is stable across object key reordering', () => {
     const a: SaveFile = {
-      version: 1,
-      categories: { Food: { subcategories: ['Groceries'] } },
+      version: 2,
+      categories: [
+        { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
+      ],
       rules: { merchantCodeMappings: {}, textPatternRules: [] },
       settings: { theme: 'light', density: 'normal' },
     };
     // Same SaveFile, settings keys defined in opposite order.
     const b: SaveFile = {
-      version: 1,
+      version: 2,
       rules: { textPatternRules: [], merchantCodeMappings: {} },
       settings: { density: 'normal', theme: 'light' },
-      categories: { Food: { subcategories: ['Groceries'] } },
+      categories: [
+        { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
+      ],
     };
     expect(fingerprint(a)).toBe(fingerprint(b));
   });
