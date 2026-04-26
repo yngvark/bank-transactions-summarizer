@@ -12,7 +12,6 @@ import StatisticsTable from './components/StatisticsTable';
 import TransactionsTable from './components/TransactionsTable';
 import DisplaySettings, { applyDisplaySettings } from './components/DisplaySettings';
 import CategoryDropdown from './components/CategoryDropdown';
-import RuleConflictChooser from './components/RuleConflictChooser';
 import RuleDialog from './components/RuleDialog';
 import RulesPanel from './components/RulesPanel';
 import Toast from './components/Toast';
@@ -37,14 +36,7 @@ type DialogState =
       initialPattern: string;
       initialType: RuleType;
       ruleId?: string;
-      insertAboveRuleId?: string;
     };
-
-type ConflictState = {
-  tx: Transaction;
-  pickedCategory: [string, string];
-  existing: TextPatternRule;
-} | null;
 
 function App() {
   const { config, updateRules } = useConfig();
@@ -63,7 +55,6 @@ function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [dropdown, setDropdown] = useState<DropdownState>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
-  const [conflict, setConflict] = useState<ConflictState>(null);
 
   useEffect(() => {
     applyDisplaySettings(density);
@@ -138,20 +129,9 @@ function App() {
   const rulesRef = useMemo(() => rules, [rules]);
 
   const handleAddRule = useCallback(
-    (rule: TextPatternRule, insertAboveRuleId?: string) => {
+    (rule: TextPatternRule) => {
       const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.type).length;
-      let next: TextPatternRule[];
-      if (insertAboveRuleId) {
-        const idx = rulesRef.findIndex((r) => r.id === insertAboveRuleId);
-        if (idx < 0) {
-          next = [...rulesRef, rule];
-        } else {
-          next = [...rulesRef.slice(0, idx), rule, ...rulesRef.slice(idx)];
-        }
-      } else {
-        next = [...rulesRef, rule];
-      }
-      updateRules(next);
+      updateRules([...rulesRef, rule]);
       setDialog(null);
       showToast(
         `Rule created — ${count} transaction${count === 1 ? '' : 's'} updated`
@@ -212,10 +192,12 @@ function App() {
       if (!dropdown) return;
       const existing = findRuleForTransaction(dropdown.tx, rulesRef);
       if (existing) {
-        setConflict({
-          tx: dropdown.tx,
-          pickedCategory: [primary, sub],
-          existing,
+        setDialog({
+          mode: 'update',
+          category: [primary, sub],
+          initialPattern: existing.pattern,
+          initialType: existing.type,
+          ruleId: existing.id,
         });
       } else {
         setDialog({
@@ -229,30 +211,6 @@ function App() {
     },
     [dropdown, rulesRef]
   );
-
-  const handleConflictUpdateExisting = useCallback(() => {
-    if (!conflict) return;
-    setDialog({
-      mode: 'update',
-      category: conflict.pickedCategory,
-      initialPattern: conflict.existing.pattern,
-      initialType: conflict.existing.type,
-      ruleId: conflict.existing.id,
-    });
-    setConflict(null);
-  }, [conflict]);
-
-  const handleConflictCreateSpecific = useCallback(() => {
-    if (!conflict) return;
-    setDialog({
-      mode: 'create',
-      category: conflict.pickedCategory,
-      initialPattern: conflict.tx.Text,
-      initialType: 'substring',
-      insertAboveRuleId: conflict.existing.id,
-    });
-    setConflict(null);
-  }, [conflict]);
 
   const handleDropdownRemove = useCallback(() => {
     if (!dropdown) return;
@@ -356,17 +314,6 @@ function App() {
         />
       )}
 
-      {conflict && (
-        <RuleConflictChooser
-          existingRule={conflict.existing}
-          pickedCategory={conflict.pickedCategory}
-          transactionText={conflict.tx.Text}
-          onUpdateExisting={handleConflictUpdateExisting}
-          onCreateSpecific={handleConflictCreateSpecific}
-          onClose={() => setConflict(null)}
-        />
-      )}
-
       {dialog && (
         <RuleDialog
           mode={dialog.mode}
@@ -377,7 +324,7 @@ function App() {
           transactions={filteredTransactions}
           onSave={(rule) => {
             if (dialog.mode === 'create') {
-              handleAddRule(rule, dialog.insertAboveRuleId);
+              handleAddRule(rule);
             } else {
               handleUpdateRule(rule);
             }

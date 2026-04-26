@@ -1342,42 +1342,6 @@ td.cat-cell-parent:hover {
   flex: 1;
 }
 
-.rd-footer-stack {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
-}
-
-.rd-conflict-tx {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.85rem;
-  padding: 0.4rem 0.6rem;
-  background: var(--background);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  word-break: break-all;
-}
-
-.rd-conflict-pattern {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-
-.rd-conflict-pattern code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  background: var(--background);
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
-}
-
-.rd-conflict-pattern-label {
-  text-transform: uppercase;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
 .rd-button-primary,
 .rd-button-danger,
 .rd-button-ghost {
