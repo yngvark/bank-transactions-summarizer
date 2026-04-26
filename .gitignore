@@ -25,6 +25,7 @@ playwright/.cache/
 .claude/worktrees/
 .claude/settings.local.json
 .aletheia/
+.worktrees/
 
 # OS
 .DS_Store
