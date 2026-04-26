@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../shared/types';
 import { useConfig } from '../context/useConfig';
 import type { CategoryTree, CategoryNode } from '../../../shared/types';
@@ -15,7 +15,11 @@ import {
   collectAffectedRules,
   collectAffectedMappings,
   deleteFromMappings,
+  reorderSiblings,
+  setEmojiAt,
 } from '../services/categoryEdit';
+
+const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
@@ -181,6 +185,9 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const [editing, setEditing] = useState(false);
   const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ path: number[]; initial: string } | null>(null);
+  const [emojiPicker, setEmojiPicker] = useState<{ rect: DOMRect; path: number[] } | null>(null);
+  const dragRef = useRef<{ path: number[] } | null>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
 
   const emitToast = useCallback((msg: string) => {
     onToast?.(msg);
@@ -330,6 +337,74 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
     return () => document.removeEventListener('keydown', handler);
   }, [editing]);
 
+  useEffect(() => {
+    if (!editing) return;
+    const tbody = tbodyRef.current;
+    if (!tbody) return;
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.matches('[data-drag-handle]')) return;
+      const tr = target.closest('tr[data-path]') as HTMLTableRowElement | null;
+      if (!tr) return;
+      dragRef.current = { path: tr.dataset.path!.split('.').map(Number) };
+      tr.style.opacity = '0.5';
+      e.preventDefault();
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      const drag = dragRef.current;
+      if (!drag) return;
+      const sourcePath = drag.path;
+      const parentPrefix = sourcePath.slice(0, -1).join('.');
+      const siblingRows = Array.from(
+        tbody.querySelectorAll<HTMLTableRowElement>('tr[data-path]')
+      ).filter((r) => {
+        const p = r.dataset.path!.split('.').map(Number);
+        return p.length === sourcePath.length && p.slice(0, -1).join('.') === parentPrefix;
+      });
+      const target = siblingRows.find((r) => {
+        const rect = r.getBoundingClientRect();
+        return e.clientY >= rect.top && e.clientY <= rect.bottom;
+      });
+      if (!target) return;
+      const targetPath = target.dataset.path!.split('.').map(Number);
+      const sourceIdx = sourcePath[sourcePath.length - 1];
+      const targetIdx = targetPath[targetPath.length - 1];
+      if (sourceIdx === targetIdx) return;
+      const next = reorderSiblings(config.categories, sourcePath, targetIdx);
+      updateCategories(next);
+      drag.path = [...sourcePath.slice(0, -1), targetIdx];
+    };
+    const onMouseUp = () => {
+      if (!dragRef.current) return;
+      const tr = tbody.querySelector<HTMLTableRowElement>(
+        `tr[data-path="${dragRef.current.path.join('.')}"]`
+      );
+      if (tr) tr.style.opacity = '';
+      dragRef.current = null;
+    };
+    tbody.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    return () => {
+      tbody.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }, [editing, config.categories, updateCategories]);
+
+  useEffect(() => {
+    if (!emojiPicker) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.emoji-picker') && !t.closest('.emoji-btn')) setEmojiPicker(null);
+    };
+    const id = setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('mousedown', onDown);
+    };
+  }, [emojiPicker]);
+
   const startRename = useCallback((path: number[], initial: string) => {
     setRenameTarget({ path, initial });
   }, []);
@@ -465,7 +540,7 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
               <th>Average</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody ref={tbodyRef}>
             {visibleRows.map(({ node, depth, hasChildren, isExpanded, indexPath }) => (
               <tr key={node.path} className={`depth-${Math.min(depth, 3)}`} data-path={indexPath.join('.')}>
                 <td
@@ -482,14 +557,24 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
                     ) : (
                       <span className="no-chevron" />
                     )}
-                    {depth === 0 && (
-                      <span
-                        className="cat-emoji"
-                        data-emoji-path={indexPath.join('.')}
-                      >
-                        {findEmojiForRoot(config.categories, indexPath[0]) ?? ''}
-                      </span>
-                    )}
+                    {depth === 0 ? (
+                      editing ? (
+                        <button
+                          type="button"
+                          className="emoji-btn editable"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            setEmojiPicker({ rect, path: indexPath });
+                          }}
+                          data-testid={`cat-emoji-${indexPath.join('-')}`}
+                        >
+                          {findEmojiForRoot(config.categories, indexPath[0]) ?? '·'}
+                        </button>
+                      ) : (
+                        <span className="emoji-btn">{findEmojiForRoot(config.categories, indexPath[0]) ?? ''}</span>
+                      )
+                    ) : null}
                     {renameTarget?.path.join('.') === indexPath.join('.') ? (
                       <input
                         autoFocus
@@ -602,6 +687,31 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
           </tbody>
         </table>
       </div>
+      {emojiPicker && (
+        <div
+          className="emoji-picker open"
+          style={{
+            position: 'fixed',
+            top: emojiPicker.rect.bottom + 4,
+            left: emojiPicker.rect.left,
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {EMOJI_SET.map((em) => (
+            <button
+              key={em}
+              type="button"
+              onClick={() => {
+                const next = setEmojiAt(config.categories, emojiPicker.path, em);
+                updateCategories(next);
+                setEmojiPicker(null);
+              }}
+            >
+              {em}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 }
