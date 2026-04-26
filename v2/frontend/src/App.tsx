@@ -306,7 +306,7 @@ function App() {
       {dropdown && (
         <CategoryDropdown
           anchor={dropdown.anchor}
-          categoryMapping={categoryMapping}
+          categories={config.categories}
           existingRule={dropdownExistingRule}
           onPick={handleDropdownPick}
           onRemove={handleDropdownRemove}
