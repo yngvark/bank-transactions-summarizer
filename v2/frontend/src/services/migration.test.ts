@@ -180,6 +180,9 @@ describe('runMigration', () => {
     const mat = sf.categories.find((n) => n.name === 'Mat og drikke');
     expect(mat?.emoji).toBe('🍔');
     expect(mat?.children.map((c) => c.name)).toEqual(['Dagligvarer', 'Restauranter']);
+    expect(sf.rules.merchantCodeMappings['5411']).toEqual(['Mat og drikke', 'Dagligvarer']);
+    expect(sf.settings.theme).toBe('light');
+    expect(sf.settings.density).toBe('normal');
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
   });
 });

@@ -8,11 +8,7 @@ const TextPatternRuleSchema = z.strictObject({
   category: z.tuple([z.string(), z.string()]),
 });
 
-const CategoryNodeSchema: z.ZodType<{
-  name: string;
-  emoji?: string;
-  children: CategoryNode[];
-}> = z.lazy(() =>
+const CategoryNodeSchema: z.ZodType<CategoryNode> = z.lazy(() =>
   z.strictObject({
     name: z.string(),
     emoji: z.string().optional(),
@@ -34,6 +30,26 @@ export const SaveFileSchema = z.strictObject({
     density: z.string(),
   }),
 });
+
+const V1CategoryNodeSchema = z.strictObject({
+  emoji: z.string().optional(),
+  subcategories: z.array(z.string()),
+});
+
+export const V1SaveFileSchema = z.strictObject({
+  version: z.literal(1),
+  categories: z.record(z.string(), V1CategoryNodeSchema),
+  rules: z.strictObject({
+    merchantCodeMappings: z.record(z.string(), z.tuple([z.string(), z.string()])),
+    textPatternRules: z.array(TextPatternRuleSchema),
+  }),
+  settings: z.strictObject({
+    theme: z.enum(['light', 'dark']),
+    density: z.string(),
+  }),
+});
+
+export type V1SaveFile = z.infer<typeof V1SaveFileSchema>;
 
 export type ValidationResult =
   | { ok: true; data: SaveFile }

@@ -5,15 +5,18 @@ import type {
   CategoryMapping,
   TextPatternRule,
 } from '../../../shared/types';
-import { validateSaveFile } from '../schemas/savefile';
+import { validateSaveFile, V1SaveFileSchema } from '../schemas/savefile';
+import type { V1SaveFile } from '../schemas/savefile';
 import categoriesJson from '../data/categories.json';
 
+// The "-v1" suffix is the localStorage slot name, not the payload version
+// (which lives inside the payload as `version: number`).
 export const SAVEFILE_STORAGE_KEY = 'bts-savefile-v1';
 export const SAVEFILE_BACKUP_KEY = 'bts-savefile-v1.bak';
 export const LEGACY_RULES_KEY = 'bts-rules-v1';
 export const LEGACY_THEME_KEY = 'theme';
 
-type V1CategoryTree = Record<string, { emoji?: string; subcategories: string[] }>;
+type V1CategoryTree = V1SaveFile['categories'];
 
 function readLegacyRules(): TextPatternRule[] {
   try {
@@ -90,6 +93,38 @@ function buildFreshSaveFile(): SaveFile {
   };
 }
 
+function tryUpgradeV1(parsed: unknown): SaveFile | null {
+  const v1 = V1SaveFileSchema.safeParse(parsed);
+  if (!v1.success) return null;
+  const upgraded: SaveFile = {
+    version: 2,
+    categories: migrateV1Categories(v1.data.categories),
+    rules: v1.data.rules,
+    settings: v1.data.settings,
+  };
+  const ok = validateSaveFile(upgraded);
+  if (!ok.ok) return null;
+  localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(ok.data));
+  return ok.data;
+}
+
+function writeFresh(): SaveFile {
+  const fresh = buildFreshSaveFile();
+  localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(fresh));
+  localStorage.removeItem(LEGACY_RULES_KEY);
+  localStorage.removeItem(LEGACY_THEME_KEY);
+  return fresh;
+}
+
+function backupAndRebuild(rawBlob: string, reason: string): SaveFile {
+  localStorage.setItem(SAVEFILE_BACKUP_KEY, rawBlob);
+  console.warn(
+    `[bts] Stored SaveFile failed (${reason}). ` +
+      `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
+  );
+  return writeFresh();
+}
+
 /**
  * Run migration once on app start. If a valid SaveFile already exists in
  * localStorage, returns it unchanged. If a v1 SaveFile is present, upgrades
@@ -98,69 +133,20 @@ function buildFreshSaveFile(): SaveFile {
  */
 export function runMigration(): SaveFile {
   const raw = localStorage.getItem(SAVEFILE_STORAGE_KEY);
-  if (raw != null) {
-    let parsed: unknown = null;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
-      console.warn(
-        `[bts] Stored SaveFile is not valid JSON. Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
-      );
-      const fresh = buildFreshSaveFile();
-      localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(fresh));
-      localStorage.removeItem(LEGACY_RULES_KEY);
-      localStorage.removeItem(LEGACY_THEME_KEY);
-      return fresh;
-    }
+  if (raw == null) return writeFresh();
 
-    // v2 path
-    const result = validateSaveFile(parsed);
-    if (result.ok) return result.data;
-
-    // v1 → v2 path
-    if (
-      parsed != null &&
-      typeof parsed === 'object' &&
-      (parsed as { version?: unknown }).version === 1 &&
-      (parsed as { categories?: unknown }).categories &&
-      typeof (parsed as { categories: unknown }).categories === 'object' &&
-      !Array.isArray((parsed as { categories: unknown }).categories)
-    ) {
-      try {
-        const p = parsed as {
-          version: 1;
-          categories: V1CategoryTree;
-          rules: SaveFile['rules'];
-          settings: SaveFile['settings'];
-        };
-        const upgraded: SaveFile = {
-          version: 2,
-          categories: migrateV1Categories(p.categories),
-          rules: p.rules,
-          settings: p.settings,
-        };
-        const ok = validateSaveFile(upgraded);
-        if (ok.ok) {
-          localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(ok.data));
-          return ok.data;
-        }
-      } catch {
-        // fall through to rebuild below
-      }
-    }
-
-    // Fallback: backup + rebuild
-    localStorage.setItem(SAVEFILE_BACKUP_KEY, raw);
-    console.warn(
-      `[bts] Stored SaveFile failed validation (${result.error}). ` +
-        `Original copied to "${SAVEFILE_BACKUP_KEY}"; rebuilding from defaults.`
-    );
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return backupAndRebuild(raw, 'invalid JSON');
   }
 
-  const fresh = buildFreshSaveFile();
-  localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(fresh));
-  localStorage.removeItem(LEGACY_RULES_KEY);
-  localStorage.removeItem(LEGACY_THEME_KEY);
-  return fresh;
+  const v2 = validateSaveFile(parsed);
+  if (v2.ok) return v2.data;
+
+  const v1 = tryUpgradeV1(parsed);
+  if (v1) return v1;
+
+  return backupAndRebuild(raw, v2.error);
 }
