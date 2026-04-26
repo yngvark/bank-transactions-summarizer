@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../shared/types';
+import { useConfig } from '../context/useConfig';
+import type { CategoryTree, CategoryNode } from '../../../shared/types';
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
@@ -75,23 +77,73 @@ interface VisibleRow {
   depth: number;
   hasChildren: boolean;
   isExpanded: boolean;
+  indexPath: number[];
 }
 
 function collectVisibleRows(
   nodes: CategoryTreeNode[],
   depth: number,
-  expandState: Record<string, boolean>
+  expandState: Record<string, boolean>,
+  parentPath: number[] = []
 ): VisibleRow[] {
   const rows: VisibleRow[] = [];
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const indexPath = [...parentPath, i];
     const hasChildren = node.children.length > 0;
     const isExpanded = hasChildren && !!expandState[node.path];
-    rows.push({ node, depth, hasChildren, isExpanded });
+    rows.push({ node, depth, hasChildren, isExpanded, indexPath });
     if (isExpanded) {
-      rows.push(...collectVisibleRows(node.children, depth + 1, expandState));
+      rows.push(...collectVisibleRows(node.children, depth + 1, expandState, indexPath));
     }
   }
   return rows;
+}
+
+function buildEditTreeNodes(
+  configTree: CategoryTree,
+  amountsByPath: Map<string, { periodTotals: number[]; sum: number; average: number }>
+): CategoryTreeNode[] {
+  function walk(nodes: CategoryNode[], parentPath: string[]): CategoryTreeNode[] {
+    return nodes.map((n) => {
+      const segments = [...parentPath, n.name];
+      const path = segments.join('/');
+      const amounts = amountsByPath.get(segments.join(' ➡ '));
+      const children = walk(n.children, segments);
+      const periodTotals = amounts
+        ? amounts.periodTotals
+        : children.length > 0
+          ? children[0].periodTotals.map((_, i) =>
+              children.reduce((s, c) => s + c.periodTotals[i], 0)
+            )
+          : [];
+      const sum = amounts ? amounts.sum : periodTotals.reduce((a, b) => a + b, 0);
+      const periodCount = periodTotals.length;
+      const average = amounts ? amounts.average : periodCount > 0 ? sum / periodCount : 0;
+      return {
+        name: n.name,
+        path,
+        depth: parentPath.length,
+        periodTotals,
+        sum,
+        average,
+        children,
+      };
+    });
+  }
+  return walk(configTree, []);
+}
+
+function flattenAmountsByJoinedName(stats: GroupedStatistics): Map<string, { periodTotals: number[]; sum: number; average: number }> {
+  const map = new Map<string, { periodTotals: number[]; sum: number; average: number }>();
+  for (const row of stats.rawTableData) {
+    map.set(row.category, {
+      periodTotals: row.periodTotals,
+      sum: row.sum,
+      average: row.average,
+    });
+  }
+  return map;
 }
 
 function StatisticsTable({ statistics }: StatisticsTableProps) {
@@ -99,6 +151,16 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
+  const { config } = useConfig();
+  const [editing, setEditing] = useState(false);
+  const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
+
+  const editTree = useMemo(() => {
+    const amounts = flattenAmountsByJoinedName(statistics);
+    return buildEditTreeNodes(config.categories, amounts);
+  }, [statistics, config.categories]);
+
+  const treeForRender = editing ? editTree : categoryTree;
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -122,9 +184,9 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
         }
       }
     }
-    walk(categoryTree);
+    walk(treeForRender);
     setExpandState(state);
-  }, [categoryTree]);
+  }, [treeForRender]);
 
   const collapseAll = useCallback(() => {
     setExpandState({});
@@ -145,7 +207,7 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
           }
         }
       }
-      findMin(categoryTree, 0);
+      findMin(treeForRender, 0);
       if (minDepth === Infinity) return prev;
 
       function expandAtDepth(nodes: CategoryTreeNode[], depth: number) {
@@ -159,10 +221,10 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
           }
         }
       }
-      expandAtDepth(categoryTree, 0);
+      expandAtDepth(treeForRender, 0);
       return next;
     });
-  }, [categoryTree]);
+  }, [treeForRender]);
 
   const collapseOneLevel = useCallback(() => {
     setExpandState(prev => {
@@ -180,7 +242,7 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
           }
         }
       }
-      findMax(categoryTree, 0);
+      findMax(treeForRender, 0);
       if (maxDepth === -1) return prev;
 
       function collapseAtDepth(nodes: CategoryTreeNode[], depth: number) {
@@ -194,15 +256,48 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
           }
         }
       }
-      collapseAtDepth(categoryTree, 0);
+      collapseAtDepth(treeForRender, 0);
       return next;
     });
-  }, [categoryTree]);
+  }, [treeForRender]);
 
   const visibleRows = useMemo(
-    () => collectVisibleRows(categoryTree, 0, expandState),
-    [categoryTree, expandState]
+    () => collectVisibleRows(treeForRender, 0, expandState),
+    [treeForRender, expandState]
   );
+
+  useEffect(() => {
+    if (editing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSavedExpand(expandState);
+      const all: Record<string, boolean> = {};
+      function walk(nodes: CategoryTreeNode[]) {
+        for (const n of nodes) {
+          if (n.children.length > 0) {
+            all[n.path] = true;
+            walk(n.children);
+          }
+        }
+      }
+      walk(treeForRender);
+      setExpandState(all);
+    } else if (savedExpand != null) {
+      setExpandState(savedExpand);
+      setSavedExpand(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing]);
+
+  useEffect(() => {
+    if (!editing) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.querySelector('.cat-name-input')) {
+        setEditing(false);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [editing]);
 
   return (
     <>
@@ -221,8 +316,23 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
         >
           Heatmap
         </button>
+        <button
+          type="button"
+          className={`edit-toggle${editing ? ' active' : ''}`}
+          onClick={() => setEditing((v) => !v)}
+          aria-pressed={editing}
+          data-testid="cat-edit-toggle"
+        >
+          <span className="switch-pill" />
+          <span>{editing ? '✏️ Editing' : '✏️ Edit categories'}</span>
+        </button>
       </div>
-      <div className="table-wrapper">
+      {editing && (
+        <div className="cat-edit-hint" role="status">
+          Edit mode active. Click a name to rename · Hover a row for <strong>+</strong> (add child) and <strong>×</strong> (delete) · Drag <span className="drag-glyph">⋮⋮</span> to reorder within siblings · <kbd>Esc</kbd> exits
+        </div>
+      )}
+      <div className={`table-wrapper${editing ? ' editing' : ''}`}>
         <table>
           <thead>
             <tr>
@@ -235,8 +345,8 @@ function StatisticsTable({ statistics }: StatisticsTableProps) {
             </tr>
           </thead>
           <tbody>
-            {visibleRows.map(({ node, depth, hasChildren, isExpanded }) => (
-              <tr key={node.path} className={`depth-${Math.min(depth, 3)}`}>
+            {visibleRows.map(({ node, depth, hasChildren, isExpanded, indexPath }) => (
+              <tr key={node.path} className={`depth-${Math.min(depth, 3)}`} data-path={indexPath.join('.')}>
                 <td
                   className={hasChildren ? 'cat-cell-parent' : undefined}
                   onClick={hasChildren ? () => toggleNode(node.path) : undefined}
