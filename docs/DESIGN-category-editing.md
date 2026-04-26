@@ -175,3 +175,23 @@ modal's "open → edit → save" loop is too heavy for incremental tweaks.
   fair comparison. The "Max tree depth" row in the trade-off table reflects
   what each prototype currently shows, not a fundamental limitation of the
   pattern.
+
+## Implementation status
+
+- 2026-04-26 — prototype G shipped to the production app.
+  `SaveFile.version` bumped 1→2 with a recursive `CategoryNode[]` shape;
+  v1→v2 migration runs in place on first load. Edit-mode toggle lives in
+  the statistics controls bar; click-to-rename, add child, delete subtree
+  (with cascade through `merchantCodeMappings` and `textPatternRules`),
+  drag-to-reorder among siblings, and emoji selection on top-level rows
+  are all wired. `CategoryDropdown` now sources primaries and subs from
+  `config.categories` so deletions and renames are reflected in the
+  picker. E2E coverage in `v2/e2e/category-tree-edit.spec.ts`.
+
+  Known limitations carried forward from the prototype's "weaknesses":
+  - Mobile edit-mode is intentionally degraded — drag handles, hover-only
+    "+/×" affordances, and narrow rows make tablet/phone editing
+    impractical. The mobile E2E project skips this spec.
+  - Renames/deletes that affect rules cascade silently; there's no preview
+    of which rules will change. Acceptable for MVP given the user can
+    reopen the rules panel afterwards to inspect.
