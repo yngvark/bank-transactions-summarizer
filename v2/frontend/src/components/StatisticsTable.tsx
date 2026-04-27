@@ -451,6 +451,8 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
     try {
       const { tree, path } = addChildAt(config.categories, parentPath, cand, { withPath: true });
       updateCategories(tree);
+      const parentKey = namePathOf(tree, parentPath).join('/');
+      setExpandState((prev) => (prev[parentKey] ? prev : { ...prev, [parentKey]: true }));
       setTimeout(() => setRenameTarget({ path, initial: cand }), 0);
     } catch (err) {
       emitToast((err as Error).message);

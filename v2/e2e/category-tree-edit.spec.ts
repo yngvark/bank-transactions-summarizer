@@ -76,6 +76,18 @@ test.describe('Category tree editing (prototype G)', () => {
     await expect(page.locator('tr[data-path]').filter({ hasText: 'Snacks' })).toBeVisible();
   });
 
+  test('add a child under a leaf sub-category reveals the new row', async ({ page }) => {
+    await loadFixture(page);
+    await page.locator('[data-testid="cat-edit-toggle"]').click();
+    const subRow = page.locator('tr[data-path]').filter({ hasText: 'Dagligvarer' }).first();
+    await subRow.locator('.icon-btn.add').click();
+    const input = page.locator('.cat-name-input');
+    await expect(input).toBeVisible();
+    await input.fill('Bakery');
+    await input.press('Enter');
+    await expect(page.locator('tr[data-path]').filter({ hasText: 'Bakery' })).toBeVisible();
+  });
+
   test('delete a primary cascades and removes the rows', async ({ page }) => {
     await loadFixture(page);
     page.on('dialog', (d) => d.accept());
