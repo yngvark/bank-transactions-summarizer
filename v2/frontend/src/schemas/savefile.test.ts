@@ -7,8 +7,7 @@ function validSaveFile(): SaveFile {
     version: 2,
     categories: [
       {
-        name: 'Mat og drikke',
-        emoji: '\u{1F354}',
+        name: '\u{1F354} Mat og drikke',
         children: [
           { name: 'Dagligvarer', children: [] },
           { name: 'Restauranter og barer', children: [] },

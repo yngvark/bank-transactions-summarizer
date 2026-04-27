@@ -11,7 +11,6 @@ const TextPatternRuleSchema = z.strictObject({
 const CategoryNodeSchema: z.ZodType<CategoryNode> = z.lazy(() =>
   z.strictObject({
     name: z.string(),
-    emoji: z.string().optional(),
     children: z.array(CategoryNodeSchema),
   })
 );

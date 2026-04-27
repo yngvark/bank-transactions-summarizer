@@ -16,18 +16,11 @@ import {
   collectAffectedMappings,
   deleteFromMappings,
   reorderSiblings,
-  setEmojiAt,
 } from '../services/categoryEdit';
-
-const EMOJI_SET = ['🍔','🍕','🥗','☕','🍷','🛒','🛍️','👕','👟','🏠','🛋️','🔧','✈️','🚆','🚗','🚕','🏨','💵','💳','🏦','📱','💻','🎬','🎮','📚','🏋️','⚽','🎨','🎵','🐾','🌿','🎁','📦','💼','🏥','💊','✏️','📝','💡','🌍'];
 
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
   onToast?: (msg: string) => void;
-}
-
-function findEmojiForRoot(tree: CategoryTree, idx: number): string | undefined {
-  return tree[idx]?.emoji;
 }
 
 function countNodeDescendants(node: CategoryTreeNode): number {
@@ -185,7 +178,6 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const [editing, setEditing] = useState(false);
   const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ path: number[]; initial: string } | null>(null);
-  const [emojiPicker, setEmojiPicker] = useState<{ rect: DOMRect; path: number[] } | null>(null);
   const dragRef = useRef<{ path: number[] } | null>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
 
@@ -392,19 +384,6 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
     };
   }, [editing, config.categories, updateCategories]);
 
-  useEffect(() => {
-    if (!emojiPicker) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest('.emoji-picker') && !t.closest('.emoji-btn')) setEmojiPicker(null);
-    };
-    const id = setTimeout(() => document.addEventListener('mousedown', onDown), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('mousedown', onDown);
-    };
-  }, [emojiPicker]);
-
   const startRename = useCallback((path: number[], initial: string) => {
     setRenameTarget({ path, initial });
   }, []);
@@ -563,24 +542,6 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
                     ) : (
                       <span className="no-chevron" />
                     )}
-                    {depth === 0 ? (
-                      editing ? (
-                        <button
-                          type="button"
-                          className="emoji-btn editable"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                            setEmojiPicker({ rect, path: indexPath });
-                          }}
-                          data-testid={`cat-emoji-${indexPath.join('-')}`}
-                        >
-                          {findEmojiForRoot(config.categories, indexPath[0]) ?? '·'}
-                        </button>
-                      ) : (
-                        <span className="emoji-btn">{findEmojiForRoot(config.categories, indexPath[0]) ?? ''}</span>
-                      )
-                    ) : null}
                     {renameTarget?.path.join('.') === indexPath.join('.') ? (
                       <input
                         autoFocus
@@ -672,7 +633,7 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
                         cand = `New category ${n}`;
                       }
                       try {
-                        const { tree, path } = addRoot(config.categories, cand, '📁');
+                        const { tree, path } = addRoot(config.categories, cand);
                         updateCategories(tree);
                         setTimeout(() => setRenameTarget({ path, initial: cand }), 0);
                       } catch (err) {
@@ -693,31 +654,6 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
           </tbody>
         </table>
       </div>
-      {emojiPicker && (
-        <div
-          className="emoji-picker open"
-          style={{
-            position: 'fixed',
-            top: emojiPicker.rect.bottom + 4,
-            left: emojiPicker.rect.left,
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          {EMOJI_SET.map((em) => (
-            <button
-              key={em}
-              type="button"
-              onClick={() => {
-                const next = setEmojiAt(config.categories, emojiPicker.path, em);
-                updateCategories(next);
-                setEmojiPicker(null);
-              }}
-            >
-              {em}
-            </button>
-          ))}
-        </div>
-      )}
     </>
   );
 }

@@ -160,7 +160,7 @@ describe('runMigration', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('upgrades a v1 SaveFile to v2 in place', () => {
+  it('upgrades a v1 SaveFile to v2 in place, merging emoji into the category name', () => {
     const v1 = {
       version: 1,
       categories: {
@@ -177,12 +177,36 @@ describe('runMigration', () => {
     const sf = runMigration();
     expect(sf.version).toBe(2);
     expect(Array.isArray(sf.categories)).toBe(true);
-    const mat = sf.categories.find((n) => n.name === 'Mat og drikke');
-    expect(mat?.emoji).toBe('🍔');
+    const mat = sf.categories.find((n) => n.name === '🍔 Mat og drikke');
+    expect(mat).toBeDefined();
     expect(mat?.children.map((c) => c.name)).toEqual(['Dagligvarer', 'Restauranter']);
     expect(sf.rules.merchantCodeMappings['5411']).toEqual(['Mat og drikke', 'Dagligvarer']);
     expect(sf.settings.theme).toBe('light');
     expect(sf.settings.density).toBe('normal');
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
+  });
+
+  it('strips legacy emoji field from a v2 SaveFile and merges it into the name', () => {
+    const oldV2 = {
+      version: 2,
+      categories: [
+        {
+          name: 'Mat og drikke',
+          emoji: '🍔',
+          children: [{ name: 'Dagligvarer', children: [] }],
+        },
+        { name: 'Reise', emoji: '✈️', children: [] },
+      ],
+      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(oldV2));
+    const sf = runMigration();
+    expect(sf.categories.map((n) => n.name)).toEqual(['🍔 Mat og drikke', '✈️ Reise']);
+    expect(sf.categories[0].children[0].name).toBe('Dagligvarer');
+    // Persisted form no longer carries the emoji field.
+    const persisted = JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!);
+    expect(persisted.categories[0].emoji).toBeUndefined();
+    expect(persisted.categories[0].name).toBe('🍔 Mat og drikke');
   });
 });

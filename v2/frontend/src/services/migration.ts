@@ -1,7 +1,6 @@
 import type {
   SaveFile,
   CategoryTree,
-  CategoryNode,
   CategoryMapping,
   TextPatternRule,
 } from '../../../shared/types';
@@ -64,17 +63,43 @@ export function deriveCategoryTree(mappings: CategoryMapping): CategoryTree {
   }));
 }
 
+function mergeEmojiIntoName(emoji: string | undefined, name: string): string {
+  return emoji ? `${emoji} ${name}` : name;
+}
+
 function migrateV1Categories(v1: V1CategoryTree): CategoryTree {
   const primaries = Object.keys(v1).sort((a, b) => a.localeCompare(b, 'nb'));
   return primaries.map((name) => {
     const node = v1[name];
-    const out: CategoryNode = {
-      name,
+    return {
+      name: mergeEmojiIntoName(node.emoji, name),
       children: node.subcategories.map((sub) => ({ name: sub, children: [] })),
     };
-    if (node.emoji) out.emoji = node.emoji;
-    return out;
   });
+}
+
+// Strip a legacy `emoji` field from any category node and merge it into the
+// node's name (e.g. `{ name: "Mat", emoji: "🍔" }` → `{ name: "🍔 Mat" }`).
+// Idempotent: nodes without `emoji` pass through unchanged.
+function stripCategoryEmoji(input: unknown): unknown {
+  if (!input || typeof input !== 'object') return input;
+  const obj = input as Record<string, unknown>;
+  if (!Array.isArray(obj.categories)) return input;
+  function walk(node: unknown): unknown {
+    if (!node || typeof node !== 'object') return node;
+    const n = node as Record<string, unknown>;
+    const { emoji, name, children, ...rest } = n;
+    const mergedName =
+      typeof emoji === 'string' && emoji.length > 0 && typeof name === 'string'
+        ? `${emoji} ${name}`
+        : name;
+    return {
+      ...rest,
+      name: mergedName,
+      children: Array.isArray(children) ? children.map(walk) : children,
+    };
+  }
+  return { ...obj, categories: obj.categories.map(walk) };
 }
 
 function buildFreshSaveFile(): SaveFile {
@@ -144,6 +169,15 @@ export function runMigration(): SaveFile {
 
   const v2 = validateSaveFile(parsed);
   if (v2.ok) return v2.data;
+
+  // Older v2 SaveFiles carried an `emoji` field on category nodes; the field
+  // has since been removed in favor of putting the emoji directly in the name.
+  // Strip it and re-validate before treating the file as broken.
+  const stripped = validateSaveFile(stripCategoryEmoji(parsed));
+  if (stripped.ok) {
+    localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(stripped.data));
+    return stripped.data;
+  }
 
   const v1 = tryUpgradeV1(parsed);
   if (v1) return v1;

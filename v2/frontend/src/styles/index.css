@@ -1723,36 +1723,3 @@ tr.add-primary-row td {
   border-color: var(--primary-color); color: var(--primary-color);
 }
 
-.cat-content .cat-emoji {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; flex-shrink: 0;
-}
-
-.cat-content .emoji-btn {
-  background: transparent; border: 1px solid transparent;
-  border-radius: 6px; width: 26px; height: 26px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 1rem; cursor: default; flex-shrink: 0;
-}
-.table-wrapper.editing .cat-content .emoji-btn.editable {
-  cursor: pointer; border-color: var(--border-color, #e5e7eb);
-  background: var(--surface, #fff);
-}
-.table-wrapper.editing .cat-content .emoji-btn.editable:hover {
-  border-color: var(--primary-color); background: var(--primary-light);
-}
-.emoji-picker {
-  background: var(--surface, #fff); border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 10px; padding: 0.4rem;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-  display: grid; grid-template-columns: repeat(8, 30px); gap: 0.15rem;
-  z-index: 1100;
-}
-.emoji-picker button {
-  width: 30px; height: 30px;
-  background: transparent; border: 1px solid transparent; border-radius: 6px;
-  cursor: pointer; font-size: 1.05rem;
-}
-.emoji-picker button:hover {
-  background: var(--primary-light); border-color: var(--border-color, #e5e7eb);
-}

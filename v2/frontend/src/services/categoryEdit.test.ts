@@ -6,7 +6,6 @@ import {
   addChildAt,
   deleteAt,
   reorderSiblings,
-  setEmojiAt,
   pathOfPrimaryByName,
   collectAffectedRules,
   rewriteRulesForRename,
@@ -15,11 +14,11 @@ import {
 import type { CategoryTree, TextPatternRule } from '../../../shared/types';
 
 const baseTree = (): CategoryTree => [
-  { name: 'Mat og drikke', emoji: '🍔', children: [
+  { name: 'Mat og drikke', children: [
     { name: 'Dagligvarer', children: [{ name: 'Rema 1000', children: [] }] },
     { name: 'Restaurant', children: [] },
   ]},
-  { name: 'Reise', emoji: '✈️', children: [
+  { name: 'Reise', children: [
     { name: 'Tog', children: [] },
   ]},
 ];
@@ -103,14 +102,6 @@ describe('reorderSiblings', () => {
     const t = baseTree();
     const next = reorderSiblings(t, [0, 0], 99);
     expect(next[0].children.map((c) => c.name)).toEqual(['Restaurant', 'Dagligvarer']);
-  });
-});
-
-describe('setEmojiAt', () => {
-  it('sets the emoji on a top-level node', () => {
-    const t = baseTree();
-    const next = setEmojiAt(t, [0], '🥘');
-    expect(next[0].emoji).toBe('🥘');
   });
 });
 

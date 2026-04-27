@@ -36,12 +36,10 @@ export interface TextPatternRule {
   category: [string, string]; // [primary, sub]
 }
 
-// Recursive category node. Top-level nodes typically carry an emoji;
-// deeper nodes do not. Children are ordered (rendering and persistence
+// Recursive category node. Children are ordered (rendering and persistence
 // preserve sibling order).
 export interface CategoryNode {
   name: string;
-  emoji?: string;
   children: CategoryNode[];
 }
 

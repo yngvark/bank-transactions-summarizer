@@ -16,9 +16,7 @@ export interface AddRootResult {
 // ---------- Cloning ----------
 
 function cloneNode(n: CategoryNode): CategoryNode {
-  const clone: CategoryNode = { name: n.name, children: n.children.map(cloneNode) };
-  if (n.emoji) clone.emoji = n.emoji;
-  return clone;
+  return { name: n.name, children: n.children.map(cloneNode) };
 }
 
 function cloneTree(tree: CategoryTree): CategoryTree {
@@ -129,14 +127,12 @@ export function addChildAt(
 }
 /* eslint-enable no-redeclare */
 
-export function addRoot(tree: CategoryTree, name: string, emoji?: string): AddRootResult {
+export function addRoot(tree: CategoryTree, name: string): AddRootResult {
   const cloned = cloneTree(tree);
   if (cloned.some((n) => n.name === name)) {
     throw new Error(`addRoot: a root named "${name}" already exists`);
   }
-  const node: CategoryNode = { name, children: [] };
-  if (emoji) node.emoji = emoji;
-  cloned.push(node);
+  cloned.push({ name, children: [] });
   return { tree: cloned, path: [cloned.length - 1] };
 }
 
@@ -160,17 +156,6 @@ export function reorderSiblings(tree: CategoryTree, path: Path, targetIndex: num
   if (clamped === index) return cloned;
   const [moved] = siblings.splice(index, 1);
   siblings.splice(clamped, 0, moved);
-  return cloned;
-}
-
-export function setEmojiAt(tree: CategoryTree, path: Path, emoji: string): CategoryTree {
-  const cloned = cloneTree(tree);
-  const node = getMutableNodeAt(cloned, path);
-  if (emoji) {
-    node.emoji = emoji;
-  } else {
-    delete node.emoji;
-  }
   return cloned;
 }
 
