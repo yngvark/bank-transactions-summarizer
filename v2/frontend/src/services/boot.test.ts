@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  runMigration,
+  loadOrInitSaveFile,
   deriveCategoryTree,
   SAVEFILE_STORAGE_KEY,
   SAVEFILE_BACKUP_KEY,
-  LEGACY_RULES_KEY,
-  LEGACY_THEME_KEY,
-} from './migration';
-import type { SaveFile, TextPatternRule } from '../../../shared/types';
+} from './boot';
 
 function stubLocalStorage(): Map<string, string> {
   const store = new Map<string, string>();
@@ -50,14 +47,14 @@ describe('deriveCategoryTree', () => {
   });
 });
 
-describe('runMigration', () => {
+describe('loadOrInitSaveFile', () => {
   let store: Map<string, string>;
   beforeEach(() => {
     store = stubLocalStorage();
   });
 
-  it('builds fresh SaveFile on first run with no legacy keys', () => {
-    const sf = runMigration();
+  it('builds fresh SaveFile on first run', () => {
+    const sf = loadOrInitSaveFile();
     expect(sf.version).toBe(2);
     expect(sf.rules.textPatternRules).toEqual([]);
     expect(sf.settings.theme).toBe('light');
@@ -67,43 +64,15 @@ describe('runMigration', () => {
   });
 
   it('persists the SaveFile to localStorage', () => {
-    runMigration();
+    loadOrInitSaveFile();
     const raw = store.get(SAVEFILE_STORAGE_KEY);
     expect(raw).toBeDefined();
     const parsed = JSON.parse(raw!);
     expect(parsed.version).toBe(2);
   });
 
-  it('carries over legacy rules', () => {
-    const legacyRules: TextPatternRule[] = [
-      {
-        id: 'r1',
-        type: 'substring',
-        pattern: 'SPOTIFY',
-        category: ['Personlig forbruk', 'Digitale tjenester'],
-      },
-    ];
-    store.set(LEGACY_RULES_KEY, JSON.stringify(legacyRules));
-    const sf = runMigration();
-    expect(sf.rules.textPatternRules).toEqual(legacyRules);
-  });
-
-  it('carries over legacy theme', () => {
-    store.set(LEGACY_THEME_KEY, 'dark');
-    const sf = runMigration();
-    expect(sf.settings.theme).toBe('dark');
-  });
-
-  it('removes legacy keys after successful migration', () => {
-    store.set(LEGACY_RULES_KEY, '[]');
-    store.set(LEGACY_THEME_KEY, 'dark');
-    runMigration();
-    expect(store.has(LEGACY_RULES_KEY)).toBe(false);
-    expect(store.has(LEGACY_THEME_KEY)).toBe(false);
-  });
-
   it('is idempotent: re-uses an existing valid SaveFile', () => {
-    const first = runMigration();
+    const first = loadOrInitSaveFile();
     first.rules.textPatternRules.push({
       id: 'manual',
       type: 'substring',
@@ -112,7 +81,7 @@ describe('runMigration', () => {
     });
     store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(first));
 
-    const second = runMigration();
+    const second = loadOrInitSaveFile();
     expect(second.rules.textPatternRules).toHaveLength(1);
     expect(second.rules.textPatternRules[0].id).toBe('manual');
   });
@@ -121,7 +90,7 @@ describe('runMigration', () => {
     const corrupt = '{not-json';
     store.set(SAVEFILE_STORAGE_KEY, corrupt);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     expect(sf.version).toBe(2);
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
     // Original blob preserved at backup key, with a warning logged.
@@ -134,56 +103,18 @@ describe('runMigration', () => {
     const invalid = JSON.stringify({ version: 99 });
     store.set(SAVEFILE_STORAGE_KEY, invalid);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     expect(sf.version).toBe(2);
     expect(store.get(SAVEFILE_BACKUP_KEY)).toBe(invalid);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
 
-  it('ignores legacy rules when stored value is not an array', () => {
-    store.set(LEGACY_RULES_KEY, '{"not":"array"}');
-    const sf: SaveFile = runMigration();
-    expect(sf.rules.textPatternRules).toEqual([]);
-  });
-
-  it('treats unknown theme value as light', () => {
-    store.set(LEGACY_THEME_KEY, 'sepia');
-    const sf = runMigration();
-    expect(sf.settings.theme).toBe('light');
-  });
-
   it('produces a SaveFile that passes its own schema', async () => {
     const { validateSaveFile } = await import('../schemas/savefile');
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     const result = validateSaveFile(sf);
     expect(result.ok).toBe(true);
-  });
-
-  it('upgrades a v1 SaveFile to v2 in place, merging emoji into the category name', () => {
-    const v1 = {
-      version: 1,
-      categories: {
-        'Mat og drikke': { emoji: '🍔', subcategories: ['Dagligvarer', 'Restauranter'] },
-        Reise: { emoji: '✈️', subcategories: ['Tog'] },
-      },
-      rules: {
-        merchantCodeMappings: { '5411': ['Mat og drikke', 'Dagligvarer'] },
-        textPatternRules: [],
-      },
-      settings: { theme: 'light', density: 'normal' },
-    };
-    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(v1));
-    const sf = runMigration();
-    expect(sf.version).toBe(2);
-    expect(Array.isArray(sf.categories)).toBe(true);
-    const mat = sf.categories.find((n) => n.name === '🍔 Mat og drikke');
-    expect(mat).toBeDefined();
-    expect(mat?.children.map((c) => c.name)).toEqual(['Dagligvarer', 'Restauranter']);
-    expect(sf.rules.merchantCodeMappings['5411']).toEqual(['Mat og drikke', 'Dagligvarer']);
-    expect(sf.settings.theme).toBe('light');
-    expect(sf.settings.density).toBe('normal');
-    expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
   });
 
   it('heals drift where merchantCodeMappings reference primaries missing from categories', () => {
@@ -205,7 +136,7 @@ describe('runMigration', () => {
       settings: { theme: 'light', density: 'normal' },
     };
     store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(drifted));
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     const names = sf.categories.map((n) => n.name);
     expect(names).toContain('Hus og innbo2');
     const renamed = sf.categories.find((n) => n.name === 'Hus og innbo2');
@@ -229,7 +160,7 @@ describe('runMigration', () => {
       settings: { theme: 'light', density: 'normal' },
     };
     store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(drifted));
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     const mat = sf.categories.find((n) => n.name === 'Mat og drikke');
     expect(mat?.children.map((c) => c.name).sort()).toEqual(['Dagligvarer', 'Restauranter']);
   });
@@ -245,33 +176,9 @@ describe('runMigration', () => {
       settings: { theme: 'light', density: 'normal' },
     };
     store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(consistent));
-    const sf = runMigration();
+    const sf = loadOrInitSaveFile();
     expect(sf).toEqual(consistent);
     // No spurious re-write either — the value in storage stays identical.
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!)).toEqual(consistent);
-  });
-
-  it('strips legacy emoji field from a v2 SaveFile and merges it into the name', () => {
-    const oldV2 = {
-      version: 2,
-      categories: [
-        {
-          name: 'Mat og drikke',
-          emoji: '🍔',
-          children: [{ name: 'Dagligvarer', children: [] }],
-        },
-        { name: 'Reise', emoji: '✈️', children: [] },
-      ],
-      rules: { merchantCodeMappings: {}, textPatternRules: [] },
-      settings: { theme: 'light', density: 'normal' },
-    };
-    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(oldV2));
-    const sf = runMigration();
-    expect(sf.categories.map((n) => n.name)).toEqual(['🍔 Mat og drikke', '✈️ Reise']);
-    expect(sf.categories[0].children[0].name).toBe('Dagligvarer');
-    // Persisted form no longer carries the emoji field.
-    const persisted = JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!);
-    expect(persisted.categories[0].emoji).toBeUndefined();
-    expect(persisted.categories[0].name).toBe('🍔 Mat og drikke');
   });
 });

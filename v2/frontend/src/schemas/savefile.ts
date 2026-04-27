@@ -30,26 +30,6 @@ export const SaveFileSchema = z.strictObject({
   }),
 });
 
-const V1CategoryNodeSchema = z.strictObject({
-  emoji: z.string().optional(),
-  subcategories: z.array(z.string()),
-});
-
-export const V1SaveFileSchema = z.strictObject({
-  version: z.literal(1),
-  categories: z.record(z.string(), V1CategoryNodeSchema),
-  rules: z.strictObject({
-    merchantCodeMappings: z.record(z.string(), z.tuple([z.string(), z.string()])),
-    textPatternRules: z.array(TextPatternRuleSchema),
-  }),
-  settings: z.strictObject({
-    theme: z.enum(['light', 'dark']),
-    density: z.string(),
-  }),
-});
-
-export type V1SaveFile = z.infer<typeof V1SaveFileSchema>;
-
 export type ValidationResult =
   | { ok: true; data: SaveFile }
   | { ok: false; error: string };

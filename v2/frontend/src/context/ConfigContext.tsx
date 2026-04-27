@@ -7,7 +7,7 @@ import {
   ReactNode,
 } from 'react';
 import type { SaveFile, TextPatternRule, CategoryTree } from '../../../shared/types';
-import { runMigration } from '../services/migration';
+import { loadOrInitSaveFile } from '../services/boot';
 import { renameCategoryCascade } from '../services/categoryEdit';
 import {
   exportToFile,
@@ -21,14 +21,14 @@ type MerchantCodeMappings = SaveFile['rules']['merchantCodeMappings'];
 type Settings = SaveFile['settings'];
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<SaveFile>(() => runMigration());
+  const [config, setConfig] = useState<SaveFile>(() => loadOrInitSaveFile());
   const [lastSavedFingerprint, setLastSavedFingerprint] = useState<string>(() =>
     fingerprint(config)
   );
   const currentFingerprint = useMemo(() => fingerprint(config), [config]);
   const isDirty = currentFingerprint !== lastSavedFingerprint;
 
-  // Skip the redundant write on first render: runMigration already wrote
+  // Skip the redundant write on first render: loadOrInitSaveFile already wrote
   // localStorage when it built (or accepted) the SaveFile. The auto-save
   // effect only needs to run on subsequent state changes.
   const isFirstRender = useRef(true);

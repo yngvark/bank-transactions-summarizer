@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { saveToLocalStorage, fingerprint, importFromFile } from './persistence';
-import { SAVEFILE_STORAGE_KEY } from './migration';
+import { SAVEFILE_STORAGE_KEY } from './boot';
 import type { SaveFile } from '../../../shared/types';
 
 function stubLocalStorage(): Map<string, string> {

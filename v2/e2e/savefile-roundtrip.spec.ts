@@ -10,10 +10,6 @@ const SAVEFILE_KEY = 'bts-savefile-v1';
 async function freshAppWithData(page: Page) {
   await page.goto('/', { timeout: 60000 });
   await page.evaluate((key) => localStorage.removeItem(key), SAVEFILE_KEY);
-  await page.evaluate(() => {
-    localStorage.removeItem('bts-rules-v1');
-    localStorage.removeItem('theme');
-  });
   await page.reload();
   await page.locator('#fileInput').setInputFiles(fixtureFile);
   await page.waitForSelector('.statistics-section table tbody tr');
@@ -33,7 +29,7 @@ test.describe('SaveFile persistence', () => {
     await expect(page.locator('[data-testid="config-save"]')).toBeVisible();
   });
 
-  test('migration runs on first load and writes savefile to localStorage', async ({ page }) => {
+  test('boot init runs on first load and writes savefile to localStorage', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
     await page.evaluate(() => localStorage.clear());
     await page.reload();
@@ -47,35 +43,6 @@ test.describe('SaveFile persistence', () => {
     expect(parsed.version).toBe(2);
     expect(parsed.settings.density).toBe('normal');
     expect(Object.keys(parsed.rules.merchantCodeMappings).length).toBeGreaterThan(0);
-  });
-
-  test('migrates legacy bts-rules-v1 and theme into savefile', async ({ page }) => {
-    await page.goto('/', { timeout: 60000 });
-    await page.evaluate(() => localStorage.clear());
-    await page.evaluate(() => {
-      localStorage.setItem(
-        'bts-rules-v1',
-        JSON.stringify([
-          { id: 'legacy-1', type: 'substring', pattern: 'IKEA', category: ['Hus og innbo', 'Interiør og varehus'] },
-        ])
-      );
-      localStorage.setItem('theme', 'dark');
-    });
-    await page.reload();
-
-    const stored = await page.evaluate(
-      (key) => localStorage.getItem(key),
-      SAVEFILE_KEY
-    );
-    const parsed = JSON.parse(stored!);
-    expect(parsed.rules.textPatternRules).toHaveLength(1);
-    expect(parsed.rules.textPatternRules[0].pattern).toBe('IKEA');
-    expect(parsed.settings.theme).toBe('dark');
-
-    const legacyRules = await page.evaluate(() => localStorage.getItem('bts-rules-v1'));
-    const legacyTheme = await page.evaluate(() => localStorage.getItem('theme'));
-    expect(legacyRules).toBeNull();
-    expect(legacyTheme).toBeNull();
   });
 
   test('save → modify → load round-trip restores rules and theme', async ({ page }) => {

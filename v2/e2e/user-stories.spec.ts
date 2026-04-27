@@ -19,8 +19,6 @@ async function loadFixture(page: Page) {
   await page.goto('/', { timeout: 60000 });
   await page.evaluate(() => {
     localStorage.removeItem('bts-savefile-v1');
-    localStorage.removeItem('bts-rules-v1');
-    localStorage.removeItem('theme');
   });
   await page.reload();
   await page.locator('#fileInput').setInputFiles(fixtureFile);
