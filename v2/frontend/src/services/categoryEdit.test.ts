@@ -10,8 +10,9 @@ import {
   collectAffectedRules,
   rewriteRulesForRename,
   rewriteMappingsForRename,
+  renameCategoryCascade,
 } from './categoryEdit';
-import type { CategoryTree, TextPatternRule } from '../../../shared/types';
+import type { CategoryTree, SaveFile, TextPatternRule } from '../../../shared/types';
 
 const baseTree = (): CategoryTree => [
   { name: 'Mat og drikke', children: [
@@ -158,6 +159,78 @@ describe('rewriteMappingsForRename', () => {
     const next = rewriteMappingsForRename(mappings, ['Mat og drikke', 'Dagligvarer'], 'Mat-D');
     expect(next['5411']).toEqual(['Mat og drikke', 'Mat-D']);
     expect(next['5812']).toEqual(['Mat og drikke', 'Restaurant']);
+  });
+});
+
+describe('renameCategoryCascade', () => {
+  const baseSaveFile = (): SaveFile => ({
+    version: 2,
+    categories: [
+      { name: 'Mat og drikke', children: [
+        { name: 'Dagligvarer', children: [] },
+        { name: 'Restaurant', children: [] },
+      ]},
+      { name: 'Reise', children: [
+        { name: 'Tog', children: [] },
+      ]},
+    ],
+    rules: {
+      merchantCodeMappings: {
+        '5411': ['Mat og drikke', 'Dagligvarer'],
+        '5812': ['Mat og drikke', 'Restaurant'],
+        '4111': ['Reise', 'Tog'],
+      },
+      textPatternRules: [
+        { id: '1', type: 'substring', pattern: 'A', category: ['Mat og drikke', 'Dagligvarer'] },
+        { id: '2', type: 'substring', pattern: 'B', category: ['Reise', 'Tog'] },
+      ],
+    },
+    settings: { theme: 'light', density: 'normal' },
+  });
+
+  it('renames a primary in categories, mappings, and rules in one call', () => {
+    const next = renameCategoryCascade(baseSaveFile(), [0], 'Mat');
+    expect(next.categories[0].name).toBe('Mat');
+    expect(next.rules.merchantCodeMappings['5411']).toEqual(['Mat', 'Dagligvarer']);
+    expect(next.rules.merchantCodeMappings['5812']).toEqual(['Mat', 'Restaurant']);
+    expect(next.rules.merchantCodeMappings['4111']).toEqual(['Reise', 'Tog']);
+    expect(next.rules.textPatternRules[0].category).toEqual(['Mat', 'Dagligvarer']);
+    expect(next.rules.textPatternRules[1].category).toEqual(['Reise', 'Tog']);
+  });
+
+  it('renames a sub-category leaving the primary alone', () => {
+    const next = renameCategoryCascade(baseSaveFile(), [0, 0], 'Mat-D');
+    expect(next.categories[0].children[0].name).toBe('Mat-D');
+    expect(next.rules.merchantCodeMappings['5411']).toEqual(['Mat og drikke', 'Mat-D']);
+    expect(next.rules.merchantCodeMappings['5812']).toEqual(['Mat og drikke', 'Restaurant']);
+    expect(next.rules.textPatternRules[0].category).toEqual(['Mat og drikke', 'Mat-D']);
+  });
+
+  it('preserves settings and version unchanged', () => {
+    const before = baseSaveFile();
+    const next = renameCategoryCascade(before, [0], 'Mat');
+    expect(next.version).toBe(before.version);
+    expect(next.settings).toEqual(before.settings);
+  });
+
+  it('does not mutate the input SaveFile', () => {
+    const before = baseSaveFile();
+    const snapshot = JSON.parse(JSON.stringify(before));
+    renameCategoryCascade(before, [0], 'Mat');
+    expect(before).toEqual(snapshot);
+  });
+
+  it('throws when a sibling already has the new name (and does not mutate input)', () => {
+    const before = baseSaveFile();
+    expect(() => renameCategoryCascade(before, [0], 'Reise')).toThrow(/sibling/i);
+    expect(before.categories[0].name).toBe('Mat og drikke');
+  });
+
+  it('is a no-op when the new name equals the existing name', () => {
+    const before = baseSaveFile();
+    const next = renameCategoryCascade(before, [0], 'Mat og drikke');
+    expect(next.categories[0].name).toBe('Mat og drikke');
+    expect(next.rules.merchantCodeMappings['5411']).toEqual(['Mat og drikke', 'Dagligvarer']);
   });
 });
 

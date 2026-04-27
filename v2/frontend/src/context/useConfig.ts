@@ -10,6 +10,9 @@ export interface ConfigContextValue {
   updateCategories: (next: CategoryTree) => void;
   updateMerchantMappings: (next: MerchantCodeMappings) => void;
   updateSettings: (patch: Partial<Settings>) => void;
+  // Atomic rename. Use this instead of updateCategories+updateRules+
+  // updateMerchantMappings, or the three structures may desync.
+  renameCategory: (path: number[], newName: string) => void;
   isDirty: boolean;
   saveToFile: () => void;
   loadFromFile: (file: File) => Promise<void>;

@@ -3,15 +3,12 @@ import { GroupedStatistics, ColorConfig, CategoryTreeNode } from '../../../share
 import { useConfig } from '../context/useConfig';
 import type { CategoryTree, CategoryNode } from '../../../shared/types';
 import {
-  renameAt,
   addChildAt,
   addRoot,
   deleteAt,
   getNodeAt,
   countDescendants,
   namePathOf,
-  rewriteRulesForRename,
-  rewriteMappingsForRename,
   collectAffectedRules,
   collectAffectedMappings,
   deleteFromMappings,
@@ -174,7 +171,7 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
-  const { config, updateCategories, updateRules, updateMerchantMappings } = useConfig();
+  const { config, updateCategories, updateRules, updateMerchantMappings, renameCategory } = useConfig();
   const [editing, setEditing] = useState(false);
   const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ path: number[]; initial: string } | null>(null);
@@ -396,28 +393,13 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
       return;
     }
     try {
-      const oldNamePath = namePathOf(config.categories, renameTarget.path);
-      const newTree = renameAt(config.categories, renameTarget.path, trimmed);
-      const newRules = rewriteRulesForRename(config.rules.textPatternRules, oldNamePath, trimmed);
-      const newMappings = rewriteMappingsForRename(config.rules.merchantCodeMappings, oldNamePath, trimmed);
-      updateCategories(newTree);
-      if (newRules !== config.rules.textPatternRules) updateRules(newRules);
-      if (newMappings !== config.rules.merchantCodeMappings) updateMerchantMappings(newMappings);
+      renameCategory(renameTarget.path, trimmed);
       emitToast(`Renamed → ${trimmed}`);
     } catch (err) {
       emitToast((err as Error).message);
     }
     setRenameTarget(null);
-  }, [
-    renameTarget,
-    config.categories,
-    config.rules.textPatternRules,
-    config.rules.merchantCodeMappings,
-    updateCategories,
-    updateRules,
-    updateMerchantMappings,
-    emitToast,
-  ]);
+  }, [renameTarget, renameCategory, emitToast]);
 
   const onAddChild = useCallback((parentPath: number[]) => {
     let cand = 'New category';

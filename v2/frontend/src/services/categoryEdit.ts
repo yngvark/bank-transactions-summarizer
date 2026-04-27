@@ -1,4 +1,4 @@
-import type { CategoryNode, CategoryTree, TextPatternRule } from '../../../shared/types';
+import type { CategoryNode, CategoryTree, SaveFile, TextPatternRule } from '../../../shared/types';
 
 export type Path = number[];
 export type NamePath = string[];
@@ -262,6 +262,38 @@ export function collectAffectedMappings(
     }
   }
   return keys;
+}
+
+// Atomically rename a category in the SaveFile, propagating the new name to
+// every structure that references it (the categories tree, text-pattern rules,
+// and merchant-code mappings). All callers that rename a category MUST go
+// through this function so the three structures cannot drift apart.
+export function renameCategoryCascade(
+  saveFile: SaveFile,
+  path: Path,
+  newName: string,
+): SaveFile {
+  const oldNamePath = namePathOf(saveFile.categories, path);
+  const newCategories = renameAt(saveFile.categories, path, newName);
+  const newRules = rewriteRulesForRename(
+    saveFile.rules.textPatternRules,
+    oldNamePath,
+    newName,
+  );
+  const newMappings = rewriteMappingsForRename(
+    saveFile.rules.merchantCodeMappings,
+    oldNamePath,
+    newName,
+  );
+  return {
+    ...saveFile,
+    categories: newCategories,
+    rules: {
+      ...saveFile.rules,
+      textPatternRules: newRules,
+      merchantCodeMappings: newMappings,
+    },
+  };
 }
 
 export function deleteFromMappings(

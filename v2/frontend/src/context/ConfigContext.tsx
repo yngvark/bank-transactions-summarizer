@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type { SaveFile, TextPatternRule, CategoryTree } from '../../../shared/types';
 import { runMigration } from '../services/migration';
+import { renameCategoryCascade } from '../services/categoryEdit';
 import {
   exportToFile,
   fingerprint,
@@ -67,6 +68,10 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     setConfig((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }));
   }, []);
 
+  const renameCategory = useCallback((path: number[], newName: string) => {
+    setConfig((prev) => renameCategoryCascade(prev, path, newName));
+  }, []);
+
   const saveToFile = useCallback(() => {
     exportToFile(config);
     setLastSavedFingerprint(fingerprint(config));
@@ -85,6 +90,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       updateCategories,
       updateMerchantMappings,
       updateSettings,
+      renameCategory,
       isDirty,
       saveToFile,
       loadFromFile,
@@ -95,6 +101,7 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       updateCategories,
       updateMerchantMappings,
       updateSettings,
+      renameCategory,
       isDirty,
       saveToFile,
       loadFromFile,

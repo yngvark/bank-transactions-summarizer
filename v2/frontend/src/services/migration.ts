@@ -2,6 +2,7 @@ import type {
   SaveFile,
   CategoryTree,
   CategoryMapping,
+  CategoryNode,
   TextPatternRule,
 } from '../../../shared/types';
 import { validateSaveFile, V1SaveFileSchema } from '../schemas/savefile';
@@ -102,6 +103,49 @@ function stripCategoryEmoji(input: unknown): unknown {
   return { ...obj, categories: obj.categories.map(walk) };
 }
 
+// Append any (primary, sub) pair referenced in `mappings` but missing from
+// `tree`. Categories the user added that have no mapping are preserved
+// untouched; only missing nodes are added (never renamed or removed). Returns
+// the same tree reference when nothing was missing, so callers can detect a
+// no-op via identity comparison.
+function reconcileCategoriesWithMappings(
+  tree: CategoryTree,
+  mappings: CategoryMapping,
+): CategoryTree {
+  const required = new Map<string, Set<string>>();
+  for (const [primary, sub] of Object.values(mappings)) {
+    if (!required.has(primary)) required.set(primary, new Set());
+    required.get(primary)!.add(sub);
+  }
+  const present = new Map<string, Set<string>>();
+  for (const node of tree) {
+    present.set(node.name, new Set(node.children.map((c) => c.name)));
+  }
+  let changed = false;
+  for (const [primary, subs] of required) {
+    if (!present.has(primary)) { changed = true; break; }
+    const have = present.get(primary)!;
+    for (const sub of subs) {
+      if (!have.has(sub)) { changed = true; break; }
+    }
+    if (changed) break;
+  }
+  if (!changed) return tree;
+  const next: CategoryNode[] = tree.map((n) => ({ ...n, children: [...n.children] }));
+  for (const [primary, subs] of required) {
+    let node = next.find((n) => n.name === primary);
+    if (!node) {
+      node = { name: primary, children: [] };
+      next.push(node);
+    }
+    const have = new Set(node.children.map((c) => c.name));
+    for (const sub of subs) {
+      if (!have.has(sub)) node.children.push({ name: sub, children: [] });
+    }
+  }
+  return next;
+}
+
 function buildFreshSaveFile(): SaveFile {
   const merchantCodeMappings = importMerchantMappings();
   return {
@@ -156,6 +200,17 @@ function backupAndRebuild(rawBlob: string, reason: string): SaveFile {
  * it in place to v2. Otherwise builds one from legacy keys and the static
  * categories.json, persists it, and removes the legacy keys.
  */
+// Heal a SaveFile whose categories tree has drifted from its mappings (a
+// primary or sub appears in mappings but not in the tree). Persists the healed
+// SaveFile when anything actually changed.
+function healAndPersist(sf: SaveFile): SaveFile {
+  const healed = reconcileCategoriesWithMappings(sf.categories, sf.rules.merchantCodeMappings);
+  if (healed === sf.categories) return sf;
+  const next: SaveFile = { ...sf, categories: healed };
+  localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(next));
+  return next;
+}
+
 export function runMigration(): SaveFile {
   const raw = localStorage.getItem(SAVEFILE_STORAGE_KEY);
   if (raw == null) return writeFresh();
@@ -168,7 +223,7 @@ export function runMigration(): SaveFile {
   }
 
   const v2 = validateSaveFile(parsed);
-  if (v2.ok) return v2.data;
+  if (v2.ok) return healAndPersist(v2.data);
 
   // Older v2 SaveFiles carried an `emoji` field on category nodes; the field
   // has since been removed in favor of putting the emoji directly in the name.
@@ -176,11 +231,11 @@ export function runMigration(): SaveFile {
   const stripped = validateSaveFile(stripCategoryEmoji(parsed));
   if (stripped.ok) {
     localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(stripped.data));
-    return stripped.data;
+    return healAndPersist(stripped.data);
   }
 
   const v1 = tryUpgradeV1(parsed);
-  if (v1) return v1;
+  if (v1) return healAndPersist(v1);
 
   return backupAndRebuild(raw, v2.error);
 }

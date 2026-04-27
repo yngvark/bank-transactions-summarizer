@@ -186,6 +186,71 @@ describe('runMigration', () => {
     expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!).version).toBe(2);
   });
 
+  it('heals drift where merchantCodeMappings reference primaries missing from categories', () => {
+    // Reproduces the user-reported state from feature/prototype-g testing:
+    // a primary in mappings ("Hus og innbo2") had been renamed but the
+    // categories tree still carried the original name ("Hus og innbo").
+    const drifted = {
+      version: 2,
+      categories: [
+        { name: 'Hus og innbo', children: [{ name: 'Interiør og varehus', children: [] }] },
+      ],
+      rules: {
+        merchantCodeMappings: {
+          'Department Stores': ['Hus og innbo2', 'Interiør og varehus'],
+          'Variety Stores': ['Hus og innbo2', 'Interiør og varehus'],
+        },
+        textPatternRules: [],
+      },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(drifted));
+    const sf = runMigration();
+    const names = sf.categories.map((n) => n.name);
+    expect(names).toContain('Hus og innbo2');
+    const renamed = sf.categories.find((n) => n.name === 'Hus og innbo2');
+    expect(renamed?.children.map((c) => c.name)).toContain('Interiør og varehus');
+    // Healed state must be re-persisted so subsequent loads are stable.
+    const persisted = JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!);
+    expect(persisted.categories.some((n: { name: string }) => n.name === 'Hus og innbo2')).toBe(true);
+  });
+
+  it('heals drift where a sub-category in mappings is missing from the tree', () => {
+    const drifted = {
+      version: 2,
+      categories: [{ name: 'Mat og drikke', children: [{ name: 'Dagligvarer', children: [] }] }],
+      rules: {
+        merchantCodeMappings: {
+          '5411': ['Mat og drikke', 'Dagligvarer'],
+          '5812': ['Mat og drikke', 'Restauranter'],
+        },
+        textPatternRules: [],
+      },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(drifted));
+    const sf = runMigration();
+    const mat = sf.categories.find((n) => n.name === 'Mat og drikke');
+    expect(mat?.children.map((c) => c.name).sort()).toEqual(['Dagligvarer', 'Restauranter']);
+  });
+
+  it('leaves a consistent SaveFile untouched (heal step is a no-op when nothing drifts)', () => {
+    const consistent = {
+      version: 2,
+      categories: [{ name: 'Mat og drikke', children: [{ name: 'Dagligvarer', children: [] }] }],
+      rules: {
+        merchantCodeMappings: { '5411': ['Mat og drikke', 'Dagligvarer'] },
+        textPatternRules: [],
+      },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    store.set(SAVEFILE_STORAGE_KEY, JSON.stringify(consistent));
+    const sf = runMigration();
+    expect(sf).toEqual(consistent);
+    // No spurious re-write either — the value in storage stays identical.
+    expect(JSON.parse(store.get(SAVEFILE_STORAGE_KEY)!)).toEqual(consistent);
+  });
+
   it('strips legacy emoji field from a v2 SaveFile and merges it into the name', () => {
     const oldV2 = {
       version: 2,
