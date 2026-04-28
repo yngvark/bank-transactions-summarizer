@@ -25,8 +25,8 @@ test.describe('SaveFile persistence', () => {
 
   test('config toolbar is visible in header', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
-    await expect(page.locator('[data-testid="config-load"]')).toBeVisible();
-    await expect(page.locator('[data-testid="config-save"]')).toBeVisible();
+    await expect(page.locator('[data-testid="config-import"]')).toBeVisible();
+    await expect(page.locator('[data-testid="config-export"]')).toBeVisible();
   });
 
   test('boot init runs on first load and writes savefile to localStorage', async ({ page }) => {
@@ -45,7 +45,7 @@ test.describe('SaveFile persistence', () => {
     expect(Object.keys(parsed.rules.merchantCodeMappings).length).toBeGreaterThan(0);
   });
 
-  test('save → modify → load round-trip restores rules and theme', async ({ page }) => {
+  test('export → modify → import round-trip restores rules and theme', async ({ page }) => {
     await freshAppWithData(page);
 
     // Create a rule by clicking a transaction category cell
@@ -57,17 +57,17 @@ test.describe('SaveFile persistence', () => {
     await page.locator('[data-testid="rd-create"]').click();
     await expect(page.locator('[data-testid="rd-create"]')).toHaveCount(0);
 
-    // Save: dirty indicator should be present, then click triggers download
-    const saveButton = page.locator('[data-testid="config-save"]');
-    await expect(saveButton).toContainText('●');
+    // Export: dirty indicator should be present, then click triggers download
+    const exportButton = page.locator('[data-testid="config-export"]');
+    await expect(exportButton).toContainText('●');
 
     const downloadPromise = page.waitForEvent('download');
-    await saveButton.click();
+    await exportButton.click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/^bank-config-\d{8}-\d{6}\.json$/);
 
-    // After save, dirty indicator clears
-    await expect(saveButton).not.toContainText('●');
+    // After export, dirty indicator clears
+    await expect(exportButton).not.toContainText('●');
 
     // Read the saved file
     const savedPath = await download.path();
@@ -87,11 +87,11 @@ test.describe('SaveFile persistence', () => {
     // Confirm rule removed (rules panel disappears when count goes to 0)
     await expect(page.locator('[data-testid="rules-list"]')).toHaveCount(0);
 
-    // We are now dirty, so the next Load will prompt for confirmation —
+    // We are now dirty, so the next Import will prompt for confirmation —
     // accept it.
     page.once('dialog', (dialog) => dialog.accept());
 
-    // Now load the saved file back via the Load button
+    // Now import the saved file back
     const fileInput = page.locator('[data-testid="config-file-input"]');
     await fileInput.setInputFiles(savedPath!);
 

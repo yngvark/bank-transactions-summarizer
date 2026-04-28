@@ -104,4 +104,26 @@ test.describe('User stories', () => {
     await page.locator('.theme-toggle-button').click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', expectedAfter);
   });
+
+  test('I can export my configuration to a file and import it back later', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'Mobile Chrome', 'desktop-only header layout for now');
+    await page.goto('/', { timeout: 60000 });
+
+    // Both buttons live in the header toolbar.
+    await expect(page.locator('[data-testid="config-import"]')).toBeVisible();
+    const exportButton = page.locator('[data-testid="config-export"]');
+    await expect(exportButton).toBeVisible();
+
+    // Export triggers a JSON download.
+    const downloadPromise = page.waitForEvent('download');
+    await exportButton.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/\.json$/);
+
+    // Import accepts the downloaded file.
+    const savedPath = await download.path();
+    expect(savedPath).toBeTruthy();
+    await page.locator('[data-testid="config-file-input"]').setInputFiles(savedPath!);
+    await expect(page.locator('.toast.visible')).toHaveCount(0);
+  });
 });

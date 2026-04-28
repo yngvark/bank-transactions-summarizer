@@ -10,9 +10,9 @@ import type { SaveFile, TextPatternRule, CategoryTree } from '../../../shared/ty
 import { loadOrInitSaveFile } from '../services/boot';
 import { renameCategoryCascade } from '../services/categoryEdit';
 import {
-  exportToFile,
+  exportToFile as writeExportFile,
   fingerprint,
-  importFromFile,
+  importFromFile as readImportFile,
   saveToLocalStorage,
 } from '../services/persistence';
 import { ConfigContext, ConfigContextValue } from './useConfig';
@@ -72,13 +72,13 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     setConfig((prev) => renameCategoryCascade(prev, path, newName));
   }, []);
 
-  const saveToFile = useCallback(() => {
-    exportToFile(config);
+  const exportToFile = useCallback(() => {
+    writeExportFile(config);
     setLastSavedFingerprint(fingerprint(config));
   }, [config]);
 
-  const loadFromFile = useCallback(async (file: File) => {
-    const loaded = await importFromFile(file);
+  const importFromFile = useCallback(async (file: File) => {
+    const loaded = await readImportFile(file);
     setConfig(loaded);
     setLastSavedFingerprint(fingerprint(loaded));
   }, []);
@@ -92,8 +92,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       updateSettings,
       renameCategory,
       isDirty,
-      saveToFile,
-      loadFromFile,
+      exportToFile,
+      importFromFile,
     }),
     [
       config,
@@ -103,8 +103,8 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       updateSettings,
       renameCategory,
       isDirty,
-      saveToFile,
-      loadFromFile,
+      exportToFile,
+      importFromFile,
     ]
   );
 

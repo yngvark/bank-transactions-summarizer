@@ -6,11 +6,11 @@ interface ConfigToolbarProps {
 }
 
 function ConfigToolbar({ onError }: ConfigToolbarProps) {
-  const { isDirty, saveToFile, loadFromFile } = useConfig();
+  const { isDirty, exportToFile, importFromFile } = useConfig();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
-  const handleLoadClick = () => {
+  const handleImportClick = () => {
     fileInputRef.current?.click();
   };
 
@@ -21,18 +21,18 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
     if (
       isDirty &&
       !window.confirm(
-        'You have unsaved changes. Loading a file will replace the current configuration. Continue?'
+        'You have unsaved changes. Importing a file will replace the current configuration. Continue?'
       )
     ) {
       return;
     }
-    setIsLoading(true);
+    setIsImporting(true);
     try {
-      await loadFromFile(file);
+      await importFromFile(file);
     } catch (err) {
       onError((err as Error).message);
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
   };
 
@@ -41,22 +41,22 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
       <button
         type="button"
         className="config-toolbar-button"
-        onClick={handleLoadClick}
-        disabled={isLoading}
-        data-testid="config-load"
-        aria-label={isLoading ? 'Loading configuration file' : 'Load configuration file'}
+        onClick={handleImportClick}
+        disabled={isImporting}
+        data-testid="config-import"
+        aria-label={isImporting ? 'Importing configuration file' : 'Import configuration file'}
       >
-        {isLoading ? 'Loading…' : 'Load'}
+        {isImporting ? 'Importing…' : 'Import'}
       </button>
       <button
         type="button"
         className="config-toolbar-button"
-        onClick={saveToFile}
-        data-testid="config-save"
-        aria-label={isDirty ? 'Save (unsaved changes)' : 'Save'}
+        onClick={exportToFile}
+        data-testid="config-export"
+        aria-label={isDirty ? 'Export (unexported changes)' : 'Export'}
       >
         {isDirty && <span className="config-dirty-dot" aria-hidden>{'● '}</span>}
-        Save
+        Export
       </button>
       <input
         ref={fileInputRef}
