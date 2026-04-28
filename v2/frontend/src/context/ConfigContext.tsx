@@ -40,18 +40,6 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     saveToLocalStorage(config);
   }, [config]);
 
-  // Warn the user when navigating away with unsaved file changes.
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-      return '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
-
   const updateRules = useCallback((next: TextPatternRule[]) => {
     setConfig((prev) => ({ ...prev, rules: { ...prev.rules, textPatternRules: next } }));
   }, []);
