@@ -486,11 +486,6 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
           <span>{editing ? '✏️ Editing' : '✏️ Edit categories'}</span>
         </button>
       </div>
-      {editing && (
-        <div className="cat-edit-hint" role="status">
-          Edit mode active. Click a name to rename · Hover a row for <strong>+</strong> (add child) and <strong>×</strong> (delete) · Drag <span className="drag-glyph">⋮⋮</span> to reorder within siblings · <kbd>Esc</kbd> exits
-        </div>
-      )}
       <div className={`table-wrapper${editing ? ' editing' : ''}`}>
         <table>
           <thead>

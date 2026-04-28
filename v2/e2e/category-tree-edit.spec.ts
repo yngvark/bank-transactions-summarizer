@@ -28,10 +28,9 @@ test.describe('Category tree editing (prototype G)', () => {
     const toggle = page.locator('[data-testid="cat-edit-toggle"]');
     await expect(toggle).toBeVisible();
     await toggle.click();
-    await expect(page.locator('.cat-edit-hint')).toBeVisible();
     await expect(page.locator('[data-testid="cat-add-primary"]')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.cat-edit-hint')).toBeHidden();
+    await expect(page.locator('[data-testid="cat-add-primary"]')).toBeHidden();
   });
 
   test('rename a primary updates rules referencing it', async ({ page }) => {

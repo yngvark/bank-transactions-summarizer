@@ -1645,25 +1645,10 @@ td.cat-cell-parent:hover {
 .statistics-controls-bar .edit-toggle.active .switch-pill { background: rgba(255,255,255,0.4); }
 .statistics-controls-bar .edit-toggle.active .switch-pill::after { transform: translateX(14px); }
 
-/* Hint banner */
-.cat-edit-hint {
-  background: #fef3c7; color: #92400e;
-  padding: 0.5rem 0.75rem; border-radius: 8px 8px 0 0;
-  font-size: 0.8rem;
-}
-[data-theme="dark"] .cat-edit-hint {
-  background: rgba(251,191,36,0.12); color: #fbbf24;
-}
-.cat-edit-hint kbd {
-  background: var(--surface, #fff); border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 4px; padding: 0 0.3rem; font-family: monospace; font-size: 0.75rem;
-}
-.cat-edit-hint .drag-glyph { font-family: monospace; }
-
 /* Subtle indication that the table is in edit mode */
 .table-wrapper.editing {
   background: rgba(99,102,241,0.04);
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
 }
 [data-theme="dark"] .table-wrapper.editing { background: rgba(129,140,248,0.06); }
 
