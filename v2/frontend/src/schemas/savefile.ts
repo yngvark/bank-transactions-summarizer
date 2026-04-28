@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { SaveFile } from '../../../shared/types';
+import type { SaveFile, CategoryNode } from '../../../shared/types';
 
 const TextPatternRuleSchema = z.strictObject({
   id: z.string(),
@@ -8,15 +8,17 @@ const TextPatternRuleSchema = z.strictObject({
   category: z.tuple([z.string(), z.string()]),
 });
 
-const CategoryTreeNodeSchema = z.strictObject({
-  emoji: z.string().optional(),
-  subcategories: z.array(z.string()),
-});
+const CategoryNodeSchema: z.ZodType<CategoryNode> = z.lazy(() =>
+  z.strictObject({
+    name: z.string(),
+    children: z.array(CategoryNodeSchema),
+  })
+);
 
-const CategoryTreeSchema = z.record(z.string(), CategoryTreeNodeSchema);
+const CategoryTreeSchema = z.array(CategoryNodeSchema);
 
 export const SaveFileSchema = z.strictObject({
-  version: z.literal(1),
+  version: z.literal(2),
   categories: CategoryTreeSchema,
   rules: z.strictObject({
     merchantCodeMappings: z.record(z.string(), z.tuple([z.string(), z.string()])),

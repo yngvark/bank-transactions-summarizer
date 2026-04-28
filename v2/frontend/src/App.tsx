@@ -277,7 +277,7 @@ function App() {
         {statistics && (
           <section className="statistics-section">
             <h2>Spending by Category</h2>
-            <StatisticsTable statistics={statistics} />
+            <StatisticsTable statistics={statistics} onToast={showToast} />
             <DisplaySettings />
           </section>
         )}
@@ -306,7 +306,7 @@ function App() {
       {dropdown && (
         <CategoryDropdown
           anchor={dropdown.anchor}
-          categoryMapping={categoryMapping}
+          categories={config.categories}
           existingRule={dropdownExistingRule}
           onPick={handleDropdownPick}
           onRemove={handleDropdownRemove}

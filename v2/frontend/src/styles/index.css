@@ -736,6 +736,8 @@ td.cat-cell-parent:hover {
   flex-shrink: 0;
 }
 .chevron.open { transform: rotate(90deg); }
+.chevron.clickable { cursor: pointer; padding: 2px; }
+.chevron.clickable:hover { color: #475569; }
 .no-chevron { display: inline-block; width: 14px; flex-shrink: 0; }
 
 /* Responsive */
@@ -1616,3 +1618,93 @@ td.cat-cell-parent:hover {
     flex-basis: 100%;
   }
 }
+
+/* Edit toggle pill */
+.statistics-controls-bar .edit-toggle {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.4rem 0.75rem; border-radius: 999px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--surface, #fff); color: var(--text-primary);
+  font: inherit; cursor: pointer;
+}
+.statistics-controls-bar .edit-toggle:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-color);
+}
+.statistics-controls-bar .edit-toggle.active {
+  background: var(--primary-color); color: #fff; border-color: var(--primary-color);
+}
+.statistics-controls-bar .edit-toggle .switch-pill {
+  width: 28px; height: 14px; background: rgba(0,0,0,0.15); border-radius: 999px;
+  position: relative; transition: background 0.2s;
+}
+.statistics-controls-bar .edit-toggle .switch-pill::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px;
+  background: #fff; border-radius: 50%; transition: transform 0.2s;
+}
+.statistics-controls-bar .edit-toggle.active .switch-pill { background: rgba(255,255,255,0.4); }
+.statistics-controls-bar .edit-toggle.active .switch-pill::after { transform: translateX(14px); }
+
+/* Subtle indication that the table is in edit mode */
+.table-wrapper.editing {
+  background: rgba(99,102,241,0.04);
+  border-radius: 8px;
+}
+[data-theme="dark"] .table-wrapper.editing { background: rgba(129,140,248,0.06); }
+
+/* Drag handle */
+.cat-content .drag-handle {
+  display: inline-block; width: 14px; user-select: none;
+  color: var(--text-secondary, #6b7280); cursor: grab; opacity: 0;
+  transition: opacity 0.15s;
+}
+.table-wrapper.editing .cat-content .drag-handle { opacity: 0.5; }
+.table-wrapper.editing tr:hover .cat-content .drag-handle { opacity: 1; }
+
+/* Inline name affordance */
+.cat-content .cat-name.editable {
+  cursor: text; padding: 0.1rem 0.3rem; border-radius: 4px;
+  border: 1px dashed transparent;
+}
+.table-wrapper.editing .cat-content .cat-name.editable:hover {
+  border-color: rgba(99,102,241,0.4);
+  background: var(--primary-light);
+}
+
+.cat-content .cat-name-input {
+  flex: 1; min-width: 0;
+  background: var(--surface, #fff);
+  border: 1px solid var(--primary-color);
+  border-radius: 6px; padding: 0.15rem 0.4rem;
+  font: inherit; color: var(--text-primary); outline: none;
+}
+
+/* Row actions */
+.cat-content .row-actions {
+  display: inline-flex; gap: 0.1rem; margin-left: 0.4rem;
+  opacity: 0; transition: opacity 0.15s;
+}
+.table-wrapper.editing tr:hover .cat-content .row-actions { opacity: 1; }
+.cat-content .icon-btn {
+  background: transparent; border: 0; color: var(--text-secondary, #6b7280);
+  width: 22px; height: 22px; border-radius: 4px; cursor: pointer;
+  font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center;
+}
+.cat-content .icon-btn:hover { background: var(--primary-light); color: var(--text-primary); }
+.cat-content .icon-btn.danger:hover { color: #ef4444; }
+.cat-content .icon-btn.add:hover { color: var(--primary-color); }
+
+/* Add-primary footer row */
+tr.add-primary-row td {
+  padding: 0.5rem;
+  background: rgba(99,102,241,0.04);
+}
+.add-primary-btn {
+  background: transparent; border: 1px dashed var(--border-color, #e5e7eb);
+  color: var(--text-secondary, #6b7280); padding: 0.35rem 0.75rem;
+  border-radius: 6px; cursor: pointer; font: inherit;
+}
+.add-primary-btn:hover {
+  border-color: var(--primary-color); color: var(--primary-color);
+}
+

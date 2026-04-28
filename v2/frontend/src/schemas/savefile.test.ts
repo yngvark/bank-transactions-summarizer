@@ -4,16 +4,23 @@ import type { SaveFile } from '../../../shared/types';
 
 function validSaveFile(): SaveFile {
   return {
-    version: 1,
-    categories: {
-      'Mat og drikke': {
-        emoji: '\u{1F354}',
-        subcategories: ['Dagligvarer', 'Restauranter og barer'],
+    version: 2,
+    categories: [
+      {
+        name: '\u{1F354} Mat og drikke',
+        children: [
+          { name: 'Dagligvarer', children: [] },
+          { name: 'Restauranter og barer', children: [] },
+        ],
       },
-      'Reise': {
-        subcategories: ['Flyselskap', 'Hotel og opphold'],
+      {
+        name: 'Reise',
+        children: [
+          { name: 'Flyselskap', children: [] },
+          { name: 'Hotel og opphold', children: [] },
+        ],
       },
-    },
+    ],
     rules: {
       merchantCodeMappings: {
         'Grocery Stores, Supermarkets': ['Mat og drikke', 'Dagligvarer'],
@@ -40,15 +47,15 @@ describe('validateSaveFile', () => {
     const result = validateSaveFile(validSaveFile());
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.version).toBe(1);
+      expect(result.data.version).toBe(2);
       expect(result.data.rules.textPatternRules).toHaveLength(1);
     }
   });
 
   it('accepts a minimal SaveFile with empty rules and categories', () => {
     const result = validateSaveFile({
-      version: 1,
-      categories: {},
+      version: 2,
+      categories: [],
       rules: { merchantCodeMappings: {}, textPatternRules: [] },
       settings: { theme: 'light', density: 'normal' },
     });
@@ -57,7 +64,7 @@ describe('validateSaveFile', () => {
 
   it('rejects wrong version', () => {
     const sf = validSaveFile() as unknown as Record<string, unknown>;
-    sf.version = 2;
+    sf.version = 1;
     const result = validateSaveFile(sf);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('version');
@@ -107,12 +114,39 @@ describe('validateSaveFile', () => {
     expect(validateSaveFile(42).ok).toBe(false);
   });
 
-  it('rejects subcategories that are not strings', () => {
-    const sf = validSaveFile() as unknown as Record<string, unknown>;
-    (sf.categories as Record<string, { subcategories: unknown[] }>)['Mat og drikke'].subcategories = [
-      123,
-    ];
+  it('rejects category nodes whose children are not arrays', () => {
+    const sf = validSaveFile() as unknown as { categories: Array<{ children: unknown }> };
+    sf.categories[0].children = 'not-an-array';
     const result = validateSaveFile(sf);
     expect(result.ok).toBe(false);
+  });
+
+  it('rejects category nodes with non-string names', () => {
+    const sf = validSaveFile() as unknown as { categories: Array<{ name: unknown }> };
+    sf.categories[0].name = 123;
+    const result = validateSaveFile(sf);
+    expect(result.ok).toBe(false);
+  });
+
+  it('accepts deeply nested category nodes', () => {
+    const result = validateSaveFile({
+      version: 2,
+      categories: [
+        {
+          name: 'A',
+          children: [
+            {
+              name: 'B',
+              children: [
+                { name: 'C', children: [{ name: 'D', children: [] }] },
+              ],
+            },
+          ],
+        },
+      ],
+      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      settings: { theme: 'light', density: 'normal' },
+    });
+    expect(result.ok).toBe(true);
   });
 });

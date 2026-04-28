@@ -1,6 +1,6 @@
 import type { SaveFile } from '../../../shared/types';
 import { validateSaveFile } from '../schemas/savefile';
-import { SAVEFILE_STORAGE_KEY } from './migration';
+import { SAVEFILE_STORAGE_KEY } from './boot';
 
 export function saveToLocalStorage(sf: SaveFile): void {
   localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(sf));

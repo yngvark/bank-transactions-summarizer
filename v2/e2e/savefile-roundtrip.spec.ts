@@ -10,10 +10,6 @@ const SAVEFILE_KEY = 'bts-savefile-v1';
 async function freshAppWithData(page: Page) {
   await page.goto('/', { timeout: 60000 });
   await page.evaluate((key) => localStorage.removeItem(key), SAVEFILE_KEY);
-  await page.evaluate(() => {
-    localStorage.removeItem('bts-rules-v1');
-    localStorage.removeItem('theme');
-  });
   await page.reload();
   await page.locator('#fileInput').setInputFiles(fixtureFile);
   await page.waitForSelector('.statistics-section table tbody tr');
@@ -29,11 +25,11 @@ test.describe('SaveFile persistence', () => {
 
   test('config toolbar is visible in header', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
-    await expect(page.locator('[data-testid="config-load"]')).toBeVisible();
-    await expect(page.locator('[data-testid="config-save"]')).toBeVisible();
+    await expect(page.locator('[data-testid="config-import"]')).toBeVisible();
+    await expect(page.locator('[data-testid="config-export"]')).toBeVisible();
   });
 
-  test('migration runs on first load and writes savefile to localStorage', async ({ page }) => {
+  test('boot init runs on first load and writes savefile to localStorage', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
     await page.evaluate(() => localStorage.clear());
     await page.reload();
@@ -44,41 +40,12 @@ test.describe('SaveFile persistence', () => {
     );
     expect(stored).not.toBeNull();
     const parsed = JSON.parse(stored!);
-    expect(parsed.version).toBe(1);
+    expect(parsed.version).toBe(2);
     expect(parsed.settings.density).toBe('normal');
     expect(Object.keys(parsed.rules.merchantCodeMappings).length).toBeGreaterThan(0);
   });
 
-  test('migrates legacy bts-rules-v1 and theme into savefile', async ({ page }) => {
-    await page.goto('/', { timeout: 60000 });
-    await page.evaluate(() => localStorage.clear());
-    await page.evaluate(() => {
-      localStorage.setItem(
-        'bts-rules-v1',
-        JSON.stringify([
-          { id: 'legacy-1', type: 'substring', pattern: 'IKEA', category: ['Hus og innbo', 'Interiør og varehus'] },
-        ])
-      );
-      localStorage.setItem('theme', 'dark');
-    });
-    await page.reload();
-
-    const stored = await page.evaluate(
-      (key) => localStorage.getItem(key),
-      SAVEFILE_KEY
-    );
-    const parsed = JSON.parse(stored!);
-    expect(parsed.rules.textPatternRules).toHaveLength(1);
-    expect(parsed.rules.textPatternRules[0].pattern).toBe('IKEA');
-    expect(parsed.settings.theme).toBe('dark');
-
-    const legacyRules = await page.evaluate(() => localStorage.getItem('bts-rules-v1'));
-    const legacyTheme = await page.evaluate(() => localStorage.getItem('theme'));
-    expect(legacyRules).toBeNull();
-    expect(legacyTheme).toBeNull();
-  });
-
-  test('save → modify → load round-trip restores rules and theme', async ({ page }) => {
+  test('export → modify → import round-trip restores rules and theme', async ({ page }) => {
     await freshAppWithData(page);
 
     // Create a rule by clicking a transaction category cell
@@ -90,17 +57,17 @@ test.describe('SaveFile persistence', () => {
     await page.locator('[data-testid="rd-create"]').click();
     await expect(page.locator('[data-testid="rd-create"]')).toHaveCount(0);
 
-    // Save: dirty indicator should be present, then click triggers download
-    const saveButton = page.locator('[data-testid="config-save"]');
-    await expect(saveButton).toContainText('●');
+    // Export: dirty indicator should be present, then click triggers download
+    const exportButton = page.locator('[data-testid="config-export"]');
+    await expect(exportButton).toContainText('●');
 
     const downloadPromise = page.waitForEvent('download');
-    await saveButton.click();
+    await exportButton.click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/^bank-config-\d{8}-\d{6}\.json$/);
 
-    // After save, dirty indicator clears
-    await expect(saveButton).not.toContainText('●');
+    // After export, dirty indicator clears
+    await expect(exportButton).not.toContainText('●');
 
     // Read the saved file
     const savedPath = await download.path();
@@ -120,11 +87,11 @@ test.describe('SaveFile persistence', () => {
     // Confirm rule removed (rules panel disappears when count goes to 0)
     await expect(page.locator('[data-testid="rules-list"]')).toHaveCount(0);
 
-    // We are now dirty, so the next Load will prompt for confirmation —
+    // We are now dirty, so the next Import will prompt for confirmation —
     // accept it.
     page.once('dialog', (dialog) => dialog.accept());
 
-    // Now load the saved file back via the Load button
+    // Now import the saved file back
     const fileInput = page.locator('[data-testid="config-file-input"]');
     await fileInput.setInputFiles(savedPath!);
 

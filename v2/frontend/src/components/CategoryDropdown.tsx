@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CategoryMapping, TextPatternRule } from '../../../shared/types';
+import type { CategoryTree, TextPatternRule } from '../../../shared/types';
 
 interface CategoryDropdownProps {
   anchor: DOMRect;
-  categoryMapping: CategoryMapping;
+  categories: CategoryTree;
   existingRule?: TextPatternRule;
   onPick: (primary: string, sub: string) => void;
   onRemove: () => void;
@@ -12,7 +12,7 @@ interface CategoryDropdownProps {
 
 function CategoryDropdown({
   anchor,
-  categoryMapping,
+  categories,
   existingRule,
   onPick,
   onRemove,
@@ -20,22 +20,12 @@ function CategoryDropdown({
 }: CategoryDropdownProps) {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
 
-  const primaries = useMemo(
-    () =>
-      Array.from(new Set(Object.values(categoryMapping).map((pair) => pair[0]))).sort(),
-    [categoryMapping]
-  );
-
+  const primaries = useMemo(() => categories.map((n) => n.name), [categories]);
   const subs = useMemo(() => {
     if (!selectedPrimary) return [];
-    return Array.from(
-      new Set(
-        Object.values(categoryMapping)
-          .filter((pair) => pair[0] === selectedPrimary)
-          .map((pair) => pair[1])
-      )
-    ).sort();
-  }, [categoryMapping, selectedPrimary]);
+    const node = categories.find((n) => n.name === selectedPrimary);
+    return node ? node.children.map((c) => c.name) : [];
+  }, [categories, selectedPrimary]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
