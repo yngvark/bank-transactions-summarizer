@@ -144,6 +144,24 @@ test.describe('Category rules (prototype D)', () => {
     await expect(header).toContainText('⇕');
   });
 
+  for (const key of ['TransactionDate', 'Text', 'Type', 'Amount', 'Merchant Category'] as const) {
+    test(`sortable ${key} column cycles asc → desc → none`, async ({ page }) => {
+      await loadFixture(page);
+
+      const header = page.locator(`[data-testid="sort-header-${key}"]`);
+      await expect(header).toContainText('⇕');
+
+      await clickCell(header);
+      await expect(header).toContainText('▲');
+
+      await clickCell(header);
+      await expect(header).toContainText('▼');
+
+      await clickCell(header);
+      await expect(header).toContainText('⇕');
+    });
+  }
+
   test('invalid regex shows error and disables Create', async ({ page }) => {
     await loadFixture(page);
 
