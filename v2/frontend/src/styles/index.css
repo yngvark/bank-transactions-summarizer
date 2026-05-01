@@ -292,6 +292,37 @@ section h2 .count {
   max-width: 300px;
 }
 
+/* Loaded-file pill: shows the active Excel filename above the data area. */
+.loaded-file-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  max-width: 100%;
+}
+
+.loaded-file-pill-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.loaded-file-pill-count {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
 /* Search container */
 .search-container {
   display: flex;

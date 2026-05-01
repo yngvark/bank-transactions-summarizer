@@ -19,6 +19,7 @@ async function loadFixture(page: Page) {
   await page.goto('/', { timeout: 60000 });
   await page.evaluate(() => {
     localStorage.removeItem('bts-savefile-v1');
+    localStorage.removeItem('bts-transactions-v1');
   });
   await page.reload();
   await page.locator('#fileInput').setInputFiles(fixtureFile);
@@ -139,11 +140,15 @@ test.describe('User stories', () => {
   test('I can export my configuration to a file and import it back later', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'desktop-only header layout for now');
     await page.goto('/', { timeout: 60000 });
+    await page.evaluate(() => {
+      localStorage.removeItem('bts-transactions-v1');
+    });
+    await page.reload();
 
-    // Both buttons live in the header toolbar.
-    await expect(page.locator('[data-testid="config-import"]')).toBeVisible();
+    // The buttons make it explicit that they handle configuration, not transactions.
+    await expect(page.locator('[data-testid="config-import"]')).toHaveText(/Import config/);
     const exportButton = page.locator('[data-testid="config-export"]');
-    await expect(exportButton).toBeVisible();
+    await expect(exportButton).toContainText('Export config');
 
     // Export triggers a JSON download.
     const downloadPromise = page.waitForEvent('download');
@@ -151,10 +156,28 @@ test.describe('User stories', () => {
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.json$/);
 
-    // Import accepts the downloaded file.
+    // Import accepts the downloaded file and confirms with a toast that points
+    // out transactions are not part of the configuration.
     const savedPath = await download.path();
     expect(savedPath).toBeTruthy();
     await page.locator('[data-testid="config-file-input"]').setInputFiles(savedPath!);
-    await expect(page.locator('.toast.visible')).toHaveCount(0);
+    await expect(page.locator('.toast.visible')).toContainText(
+      'Configuration imported. Upload an Excel file to see transactions.'
+    );
+  });
+
+  test('My uploaded transactions are still loaded after I refresh the page', async ({ page }) => {
+    await loadFixture(page);
+    const rowsBefore = await page.locator('#transactions-table tbody tr').count();
+    expect(rowsBefore).toBeGreaterThan(0);
+
+    await page.reload();
+
+    await page.waitForSelector('#transactions-table tbody tr');
+    const rowsAfter = await page.locator('#transactions-table tbody tr').count();
+    expect(rowsAfter).toBe(rowsBefore);
+    await expect(page.locator('[data-testid="loaded-file-pill"]')).toContainText(
+      'test-transactions-bank-norwegian.xlsx'
+    );
   });
 });

@@ -3,9 +3,10 @@ import { useConfig } from '../context/useConfig';
 
 interface ConfigToolbarProps {
   onError: (message: string) => void;
+  onSuccess?: () => void;
 }
 
-function ConfigToolbar({ onError }: ConfigToolbarProps) {
+function ConfigToolbar({ onError, onSuccess }: ConfigToolbarProps) {
   const { isDirty, exportToFile, importFromFile } = useConfig();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -29,6 +30,7 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
     setIsImporting(true);
     try {
       await importFromFile(file);
+      onSuccess?.();
     } catch (err) {
       onError((err as Error).message);
     } finally {
@@ -46,17 +48,17 @@ function ConfigToolbar({ onError }: ConfigToolbarProps) {
         data-testid="config-import"
         aria-label={isImporting ? 'Importing configuration file' : 'Import configuration file'}
       >
-        {isImporting ? 'Importing…' : 'Import'}
+        {isImporting ? 'Importing…' : 'Import config'}
       </button>
       <button
         type="button"
         className="config-toolbar-button"
         onClick={exportToFile}
         data-testid="config-export"
-        aria-label={isDirty ? 'Export (unexported changes)' : 'Export'}
+        aria-label={isDirty ? 'Export configuration (unexported changes)' : 'Export configuration'}
       >
         {isDirty && <span className="config-dirty-dot" aria-hidden>{'● '}</span>}
-        Export
+        Export config
       </button>
       <input
         ref={fileInputRef}

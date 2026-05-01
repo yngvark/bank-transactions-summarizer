@@ -17,6 +17,7 @@ import RuleDialog from './components/RuleDialog';
 import RulesPanel from './components/RulesPanel';
 import Toast from './components/Toast';
 import ConfigToolbar from './components/ConfigToolbar';
+import LoadedFilePill from './components/LoadedFilePill';
 import { parseTransactions } from './services/parser';
 import { calculateStatistics } from './services/statistics';
 import {
@@ -25,6 +26,10 @@ import {
   getMatchingTransactions,
 } from './services/rules';
 import { generateRandomTransactions } from './utils/randomize';
+import {
+  loadTransactions,
+  saveTransactions,
+} from './services/transactionPersistence';
 import { useConfig } from './context/useConfig';
 
 type DropdownState = { anchor: DOMRect; tx: Transaction } | null;
@@ -65,6 +70,16 @@ function App() {
   useEffect(() => {
     applyDisplaySettings(density);
   }, [density]);
+
+  // Restore the most recently uploaded transactions across page refreshes.
+  // Runs once on mount; explicit re-uploads or randomize calls overwrite this.
+  useEffect(() => {
+    const stored = loadTransactions();
+    if (stored != null) {
+      setAllTransactions(stored.transactions);
+      setCurrentFileName(stored.fileName);
+    }
+  }, []);
 
   const processTransactions = useCallback(async () => {
     if (allTransactions.length === 0) return;
@@ -122,12 +137,15 @@ function App() {
   const handleFileLoad = (transactions: RawTransaction[], fileName: string) => {
     setAllTransactions(transactions);
     setCurrentFileName(fileName);
+    saveTransactions(fileName, transactions);
   };
 
   const handleRandomize = () => {
     const transactions = generateRandomTransactions();
+    const fileName = 'random-data.xlsx';
     setAllTransactions(transactions);
-    setCurrentFileName('random-data.xlsx');
+    setCurrentFileName(fileName);
+    saveTransactions(fileName, transactions);
   };
 
   const showToast = useCallback((msg: string) => setToast(msg), []);
@@ -269,7 +287,16 @@ function App() {
           <h1>Bank Transactions</h1>
           <p className="app-subtitle">Analyze and categorize your spending</p>
         </div>
-        <ConfigToolbar onError={showToast} />
+        <ConfigToolbar
+          onError={showToast}
+          onSuccess={() =>
+            showToast(
+              allTransactions.length === 0
+                ? 'Configuration imported. Upload an Excel file to see transactions.'
+                : 'Configuration imported.'
+            )
+          }
+        />
       </header>
 
       <main className="app-content">
@@ -286,6 +313,10 @@ function App() {
             onRandomize={handleRandomize}
           />
         </section>
+
+        {allTransactions.length > 0 && (
+          <LoadedFilePill fileName={currentFileName} count={allTransactions.length} />
+        )}
 
         {statistics && (
           <section className="statistics-section">
