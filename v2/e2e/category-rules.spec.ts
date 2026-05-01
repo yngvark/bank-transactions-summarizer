@@ -175,4 +175,46 @@ test.describe('Category rules (prototype D)', () => {
     // Dropdown opens
     await expect(page.locator('[data-testid="cd-primary-Personlig forbruk"]')).toBeVisible();
   });
+
+  test('create merchant-category rule from unmapped transaction', async ({ page }) => {
+    await loadFixture(page);
+
+    // The ZARA pending row has Merchant Category "Clothing Stores, MEN, WOMEN, and CHIL"
+    // which is not in categories.json — its Category is "Ukjent kategori".
+    const zaraRow = page
+      .locator('#transactions-table tbody tr')
+      .filter({ hasText: 'Pending at ZARA' });
+    const zaraCell = zaraRow.locator('button.cat-cell');
+
+    await expect(zaraCell).toContainText('Ukjent kategori');
+    await clickCell(zaraCell);
+
+    // The dropdown is a fixed-position overlay anchored at the cell's bottom-
+    // left corner; its menu items can fall outside the viewport when the row
+    // is in the lower half. Dispatch a click event directly to bypass the
+    // viewport check (the click handler doesn't read mouse coordinates).
+    await page.locator('[data-testid="cd-primary-Personlig forbruk"]').dispatchEvent('click');
+    await page.locator('[data-testid="cd-sub-Klær og sko"]').dispatchEvent('click');
+
+    // Smart default: dialog opens with field=Merchant Category, match=Exact,
+    // pattern set to the merchant-category string.
+    await expect(page.locator('[data-testid="rd-field-merchantCategory"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-testid="rd-type-exact"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-testid="rd-pattern"]')).toHaveValue(
+      'Clothing Stores, MEN, WOMEN, and CHIL',
+    );
+    await expect(page.locator('[data-testid="rd-preview-label"]')).toContainText('Matches:');
+
+    await page.locator('[data-testid="rd-create"]').click();
+    await expect(page.locator('[data-testid="rd-create"]')).toHaveCount(0);
+
+    // The previously-unknown row now shows the chosen category.
+    await expect(zaraCell).toContainText('Personlig forbruk ➡ Klær og sko');
+    await expect(page.locator('.toast.visible')).toContainText('Rule created');
+
+    // The new rule is visible in the rules panel (seeded rules stay hidden).
+    await page.locator('[data-testid="rules-panel-toggle"]').click();
+    await expect(page.locator('.rules-row')).toHaveCount(1);
+    await expect(page.locator('.rules-row .rules-field-merchantCategory')).toBeVisible();
+  });
 });

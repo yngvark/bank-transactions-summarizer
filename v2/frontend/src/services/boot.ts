@@ -1,8 +1,8 @@
 import type {
   SaveFile,
   CategoryTree,
-  CategoryMapping,
   CategoryNode,
+  Rule,
 } from '../../../shared/types';
 import { validateSaveFile } from '../schemas/savefile';
 import categoriesJson from '../data/categories.json';
@@ -12,20 +12,27 @@ import categoriesJson from '../data/categories.json';
 export const SAVEFILE_STORAGE_KEY = 'bts-savefile-v1';
 export const SAVEFILE_BACKUP_KEY = 'bts-savefile-v1.bak';
 
-function importMerchantMappings(): CategoryMapping {
-  const out: CategoryMapping = {};
+function importSeededRules(): Rule[] {
   const source = categoriesJson as Record<string, string[]>;
+  const rules: Rule[] = [];
   for (const [code, pair] of Object.entries(source)) {
     if (Array.isArray(pair) && pair.length === 2 && typeof pair[0] === 'string' && typeof pair[1] === 'string') {
-      out[code] = [pair[0], pair[1]];
+      rules.push({
+        id: `seed-${code}`,
+        field: 'merchantCategory',
+        match: 'exact',
+        pattern: code,
+        category: [pair[0], pair[1]],
+      });
     }
   }
-  return out;
+  return rules;
 }
 
-export function deriveCategoryTree(mappings: CategoryMapping): CategoryTree {
+export function deriveCategoryTree(rules: Rule[]): CategoryTree {
   const byPrimary = new Map<string, Set<string>>();
-  for (const [primary, sub] of Object.values(mappings)) {
+  for (const r of rules) {
+    const [primary, sub] = r.category;
     if (!byPrimary.has(primary)) byPrimary.set(primary, new Set());
     byPrimary.get(primary)!.add(sub);
   }
@@ -41,17 +48,18 @@ export function deriveCategoryTree(mappings: CategoryMapping): CategoryTree {
   }));
 }
 
-// Append any (primary, sub) pair referenced in `mappings` but missing from
-// `tree`. Categories the user added that have no mapping are preserved
+// Append any (primary, sub) pair referenced in `rules` but missing from
+// `tree`. Categories the user added that have no rule are preserved
 // untouched; only missing nodes are added (never renamed or removed). Returns
 // the same tree reference when nothing was missing, so callers can detect a
 // no-op via identity comparison.
-function reconcileCategoriesWithMappings(
+function reconcileCategoriesWithRules(
   tree: CategoryTree,
-  mappings: CategoryMapping,
+  rules: Rule[],
 ): CategoryTree {
   const required = new Map<string, Set<string>>();
-  for (const [primary, sub] of Object.values(mappings)) {
+  for (const r of rules) {
+    const [primary, sub] = r.category;
     if (!required.has(primary)) required.set(primary, new Set());
     required.get(primary)!.add(sub);
   }
@@ -85,14 +93,11 @@ function reconcileCategoriesWithMappings(
 }
 
 function buildFreshSaveFile(): SaveFile {
-  const merchantCodeMappings = importMerchantMappings();
+  const seededRules = importSeededRules();
   return {
-    version: 2,
-    categories: deriveCategoryTree(merchantCodeMappings),
-    rules: {
-      merchantCodeMappings,
-      textPatternRules: [],
-    },
+    version: 3,
+    categories: deriveCategoryTree(seededRules),
+    rules: seededRules,
     settings: {
       theme: 'light',
       density: 'normal',
@@ -115,11 +120,11 @@ function backupAndRebuild(rawBlob: string, reason: string): SaveFile {
   return writeFresh();
 }
 
-// Heal a SaveFile whose categories tree has drifted from its mappings (a
-// primary or sub appears in mappings but not in the tree). Persists the healed
+// Heal a SaveFile whose categories tree has drifted from its rules (a
+// primary or sub appears in rules but not in the tree). Persists the healed
 // SaveFile when anything actually changed.
 function healAndPersist(sf: SaveFile): SaveFile {
-  const healed = reconcileCategoriesWithMappings(sf.categories, sf.rules.merchantCodeMappings);
+  const healed = reconcileCategoriesWithRules(sf.categories, sf.rules);
   if (healed === sf.categories) return sf;
   const next: SaveFile = { ...sf, categories: healed };
   localStorage.setItem(SAVEFILE_STORAGE_KEY, JSON.stringify(next));
@@ -143,8 +148,8 @@ export function loadOrInitSaveFile(): SaveFile {
     return backupAndRebuild(raw, 'invalid JSON');
   }
 
-  const v2 = validateSaveFile(parsed);
-  if (v2.ok) return healAndPersist(v2.data);
+  const v = validateSaveFile(parsed);
+  if (v.ok) return healAndPersist(v.data);
 
-  return backupAndRebuild(raw, v2.error);
+  return backupAndRebuild(raw, v.error);
 }

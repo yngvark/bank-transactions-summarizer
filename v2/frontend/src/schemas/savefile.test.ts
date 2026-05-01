@@ -4,7 +4,7 @@ import type { SaveFile } from '../../../shared/types';
 
 function validSaveFile(): SaveFile {
   return {
-    version: 2,
+    version: 3,
     categories: [
       {
         name: '\u{1F354} Mat og drikke',
@@ -21,20 +21,22 @@ function validSaveFile(): SaveFile {
         ],
       },
     ],
-    rules: {
-      merchantCodeMappings: {
-        'Grocery Stores, Supermarkets': ['Mat og drikke', 'Dagligvarer'],
-        'Airlines': ['Reise', 'Flyselskap'],
+    rules: [
+      {
+        id: 'seed-grocery',
+        field: 'merchantCategory',
+        match: 'exact',
+        pattern: 'Grocery Stores, Supermarkets',
+        category: ['Mat og drikke', 'Dagligvarer'],
       },
-      textPatternRules: [
-        {
-          id: 'rule-1',
-          type: 'substring',
-          pattern: 'SPOTIFY',
-          category: ['Personlig forbruk', 'Digitale tjenester'],
-        },
-      ],
-    },
+      {
+        id: 'rule-1',
+        field: 'text',
+        match: 'substring',
+        pattern: 'SPOTIFY',
+        category: ['Personlig forbruk', 'Digitale tjenester'],
+      },
+    ],
     settings: {
       theme: 'dark',
       density: 'normal',
@@ -47,16 +49,16 @@ describe('validateSaveFile', () => {
     const result = validateSaveFile(validSaveFile());
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.data.version).toBe(2);
-      expect(result.data.rules.textPatternRules).toHaveLength(1);
+      expect(result.data.version).toBe(3);
+      expect(result.data.rules).toHaveLength(2);
     }
   });
 
   it('accepts a minimal SaveFile with empty rules and categories', () => {
     const result = validateSaveFile({
-      version: 2,
+      version: 3,
       categories: [],
-      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      rules: [],
       settings: { theme: 'light', density: 'normal' },
     });
     expect(result.ok).toBe(true);
@@ -64,7 +66,7 @@ describe('validateSaveFile', () => {
 
   it('rejects wrong version', () => {
     const sf = validSaveFile() as unknown as Record<string, unknown>;
-    sf.version = 1;
+    sf.version = 2;
     const result = validateSaveFile(sf);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('version');
@@ -86,25 +88,36 @@ describe('validateSaveFile', () => {
     if (!result.ok) expect(result.error).toContain('settings.theme');
   });
 
-  it('rejects invalid rule type', () => {
-    const sf = validSaveFile();
-    (sf.rules.textPatternRules[0] as { type: string }).type = 'glob';
-    const result = validateSaveFile(sf);
+  it('rejects invalid rule match value', () => {
+    const sf = validSaveFile() as unknown as { rules: Array<Record<string, unknown>> };
+    sf.rules[1].match = 'glob';
+    const result = validateSaveFile(sf as unknown);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error).toContain('rules.textPatternRules.0.type');
+    if (!result.ok) expect(result.error).toContain('rules.1.match');
+  });
+
+  it('rejects invalid rule field value', () => {
+    const sf = validSaveFile() as unknown as { rules: Array<Record<string, unknown>> };
+    sf.rules[0].field = 'description';
+    const result = validateSaveFile(sf as unknown);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain('rules.0.field');
   });
 
   it('rejects rule category that is not a 2-tuple', () => {
-    const sf = validSaveFile();
-    (sf.rules.textPatternRules[0] as { category: unknown }).category = ['only-one'];
-    const result = validateSaveFile(sf);
+    const sf = validSaveFile() as unknown as { rules: Array<Record<string, unknown>> };
+    sf.rules[0].category = ['only-one'];
+    const result = validateSaveFile(sf as unknown);
     expect(result.ok).toBe(false);
   });
 
-  it('rejects merchant mapping that is not a 2-tuple', () => {
-    const sf = validSaveFile();
-    (sf.rules.merchantCodeMappings as Record<string, unknown>)['Foo'] = ['only-one'];
-    const result = validateSaveFile(sf);
+  it('rejects old v2 nested rules shape', () => {
+    const result = validateSaveFile({
+      version: 3,
+      categories: [],
+      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      settings: { theme: 'light', density: 'normal' },
+    });
     expect(result.ok).toBe(false);
   });
 
@@ -130,7 +143,7 @@ describe('validateSaveFile', () => {
 
   it('accepts deeply nested category nodes', () => {
     const result = validateSaveFile({
-      version: 2,
+      version: 3,
       categories: [
         {
           name: 'A',
@@ -144,7 +157,7 @@ describe('validateSaveFile', () => {
           ],
         },
       ],
-      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      rules: [],
       settings: { theme: 'light', density: 'normal' },
     });
     expect(result.ok).toBe(true);

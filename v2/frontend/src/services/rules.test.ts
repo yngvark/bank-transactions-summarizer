@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  matchesPattern,
   applyRules,
   findRuleForTransaction,
   getMatchingTransactions,
   isValidRegex,
+  matchesRule,
 } from './rules';
-import { Transaction, TextPatternRule } from '../../../shared/types';
+import { Transaction, Rule } from '../../../shared/types';
 
 function makeTx(overrides: Partial<Transaction> = {}): Transaction {
   return {
@@ -26,45 +26,16 @@ function makeTx(overrides: Partial<Transaction> = {}): Transaction {
   };
 }
 
-function makeRule(overrides: Partial<TextPatternRule> = {}): TextPatternRule {
+function makeRule(overrides: Partial<Rule> = {}): Rule {
   return {
     id: 'rule-1',
-    type: 'substring',
+    field: 'text',
+    match: 'substring',
     pattern: 'SPOTIFY',
     category: ['Personlig forbruk', 'Digitale tjenester'],
     ...overrides,
   };
 }
-
-describe('matchesPattern', () => {
-  it('matches substring case-insensitively', () => {
-    const rule = makeRule({ type: 'substring', pattern: 'spotify' });
-    expect(matchesPattern('SPOTIFY PREMIUM', rule)).toBe(true);
-    expect(matchesPattern('Spotify subscription', rule)).toBe(true);
-  });
-
-  it('does not match substring when absent', () => {
-    const rule = makeRule({ type: 'substring', pattern: 'netflix' });
-    expect(matchesPattern('SPOTIFY PREMIUM', rule)).toBe(false);
-  });
-
-  it('matches regex case-insensitively', () => {
-    const rule = makeRule({ type: 'regex', pattern: 'kiwi|meny' });
-    expect(matchesPattern('KIWI STORO', rule)).toBe(true);
-    expect(matchesPattern('meny lønner', rule)).toBe(true);
-    expect(matchesPattern('REMA 1000', rule)).toBe(false);
-  });
-
-  it('returns false for invalid regex', () => {
-    const rule = makeRule({ type: 'regex', pattern: '[' });
-    expect(matchesPattern('anything', rule)).toBe(false);
-  });
-
-  it('returns false when text is empty', () => {
-    const rule = makeRule({ type: 'substring', pattern: 'foo' });
-    expect(matchesPattern('', rule)).toBe(false);
-  });
-});
 
 describe('applyRules', () => {
   it('returns transactions unchanged when rules array is empty', () => {
@@ -76,7 +47,7 @@ describe('applyRules', () => {
   it('replaces Category with rule category (joined with ➡) when rule matches', () => {
     const txs = [makeTx({ Text: 'SPOTIFY PREMIUM', Category: 'Ukjent kategori' })];
     const rule = makeRule({
-      type: 'substring',
+      match: 'substring',
       pattern: 'SPOTIFY',
       category: ['Personlig forbruk', 'Digitale tjenester'],
     });
@@ -86,7 +57,7 @@ describe('applyRules', () => {
 
   it('preserves merchant-code Category when no rule matches', () => {
     const txs = [makeTx({ Text: 'REMA 1000', Category: 'Mat og drikke ➡ Dagligvarer' })];
-    const rule = makeRule({ type: 'substring', pattern: 'SPOTIFY' });
+    const rule = makeRule({ match: 'substring', pattern: 'SPOTIFY' });
     const result = applyRules(txs, [rule]);
     expect(result[0].Category).toBe('Mat og drikke ➡ Dagligvarer');
   });
@@ -95,13 +66,13 @@ describe('applyRules', () => {
     const txs = [makeTx({ Text: 'MENY STORO' })];
     const narrowRule = makeRule({
       id: 'r1',
-      type: 'substring',
+      match: 'substring',
       pattern: 'MENY STORO',
       category: ['Mat og drikke', 'Dagligvarer'],
     });
     const broadRule = makeRule({
       id: 'r2',
-      type: 'regex',
+      match: 'regex',
       pattern: 'kiwi|meny',
       category: ['Kontanter og pengeoverføring', 'Kontaktuttak'],
     });
@@ -123,13 +94,25 @@ describe('applyRules', () => {
     applyRules(txs, [rule]);
     expect(original.Category).toBe('Ukjent kategori');
   });
+
+  it('applies merchantCategory exact rules', () => {
+    const txs = [makeTx({ 'Merchant Category': 'Electronic Sales', Category: 'Ukjent kategori' })];
+    const rule = makeRule({
+      field: 'merchantCategory',
+      match: 'exact',
+      pattern: 'Electronic Sales',
+      category: ['Personlig forbruk', 'PC og elektroutstyr'],
+    });
+    const result = applyRules(txs, [rule]);
+    expect(result[0].Category).toBe('Personlig forbruk ➡ PC og elektroutstyr');
+  });
 });
 
 describe('findRuleForTransaction', () => {
   it('returns the first matching rule', () => {
     const tx = makeTx({ Text: 'MENY STORO' });
     const r1 = makeRule({ id: 'r1', pattern: 'MENY STORO' });
-    const r2 = makeRule({ id: 'r2', type: 'regex', pattern: 'meny' });
+    const r2 = makeRule({ id: 'r2', match: 'regex', pattern: 'meny' });
     expect(findRuleForTransaction(tx, [r1, r2])?.id).toBe('r1');
   });
 
@@ -142,6 +125,12 @@ describe('findRuleForTransaction', () => {
   it('returns undefined when rules array is empty', () => {
     expect(findRuleForTransaction(makeTx(), [])).toBeUndefined();
   });
+
+  it('finds merchantCategory rules', () => {
+    const tx = makeTx({ 'Merchant Category': 'Electronic Sales' });
+    const r = makeRule({ field: 'merchantCategory', match: 'exact', pattern: 'Electronic Sales' });
+    expect(findRuleForTransaction(tx, [r])?.id).toBe('rule-1');
+  });
 });
 
 describe('getMatchingTransactions', () => {
@@ -153,24 +142,38 @@ describe('getMatchingTransactions', () => {
   ];
 
   it('returns substring matches case-insensitively', () => {
-    const result = getMatchingTransactions(txs, 'spotify', 'substring');
+    const result = getMatchingTransactions(txs, 'spotify', 'substring', 'text');
     expect(result).toHaveLength(2);
     expect(result.map((t) => t.Text)).toEqual(['SPOTIFY PREMIUM', 'SPOTIFY NO AS']);
   });
 
   it('returns regex matches', () => {
-    const result = getMatchingTransactions(txs, 'rema|netflix', 'regex');
+    const result = getMatchingTransactions(txs, 'rema|netflix', 'regex', 'text');
     expect(result).toHaveLength(2);
   });
 
   it('returns empty array for invalid regex', () => {
-    const result = getMatchingTransactions(txs, '[', 'regex');
+    const result = getMatchingTransactions(txs, '[', 'regex', 'text');
     expect(result).toEqual([]);
   });
 
   it('returns empty array for empty pattern', () => {
-    expect(getMatchingTransactions(txs, '', 'substring')).toEqual([]);
-    expect(getMatchingTransactions(txs, '', 'regex')).toEqual([]);
+    expect(getMatchingTransactions(txs, '', 'substring', 'text')).toEqual([]);
+    expect(getMatchingTransactions(txs, '', 'regex', 'text')).toEqual([]);
+  });
+
+  it('defaults to text field when field is omitted', () => {
+    const result = getMatchingTransactions(txs, 'spotify', 'substring');
+    expect(result).toHaveLength(2);
+  });
+
+  it('matches on merchantCategory field', () => {
+    const mcTxs = [
+      makeTx({ 'Merchant Category': 'Electronic Sales' }),
+      makeTx({ 'Merchant Category': 'Grocery Stores, Supermarkets' }),
+    ];
+    const result = getMatchingTransactions(mcTxs, 'Electronic Sales', 'exact', 'merchantCategory');
+    expect(result).toHaveLength(1);
   });
 });
 
@@ -192,3 +195,51 @@ describe('isValidRegex', () => {
   });
 });
 
+describe('matchesRule', () => {
+  const tx = (over: Partial<Transaction>): Transaction => ({
+    TransactionDate: null,
+    BookDate: null,
+    ValueDate: null,
+    Text: '',
+    Type: '',
+    'Currency Amount': 0,
+    'Currency Rate': 1,
+    Currency: 'NOK',
+    Amount: 0,
+    'Merchant Area': '',
+    'Merchant Category': '',
+    Category: '',
+    ...over,
+  });
+
+  const rule = (over: Partial<Rule>): Rule => ({
+    id: 'r1',
+    field: 'text',
+    match: 'substring',
+    pattern: '',
+    category: ['A', 'B'],
+    ...over,
+  });
+
+  it('matches substring on text field (case-insensitive)', () => {
+    expect(matchesRule(tx({ Text: 'Rema 1000 Oslo' }), rule({ pattern: 'rema' }))).toBe(true);
+  });
+
+  it('matches regex on text field (case-insensitive)', () => {
+    expect(matchesRule(tx({ Text: 'AB12' }), rule({ match: 'regex', pattern: '^ab\\d+$' }))).toBe(true);
+  });
+
+  it('matches exact on merchantCategory field (case-sensitive)', () => {
+    const r = rule({ field: 'merchantCategory', match: 'exact', pattern: 'Grocery Stores, Supermarkets' });
+    expect(matchesRule(tx({ 'Merchant Category': 'Grocery Stores, Supermarkets' }), r)).toBe(true);
+    expect(matchesRule(tx({ 'Merchant Category': 'grocery stores, supermarkets' }), r)).toBe(false);
+  });
+
+  it('does not match when target field is empty', () => {
+    expect(matchesRule(tx({}), rule({ pattern: 'foo' }))).toBe(false);
+  });
+
+  it('returns false on invalid regex', () => {
+    expect(matchesRule(tx({ Text: 'x' }), rule({ match: 'regex', pattern: '[' }))).toBe(false);
+  });
+});

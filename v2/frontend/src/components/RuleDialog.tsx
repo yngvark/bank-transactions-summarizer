@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RuleType, TextPatternRule, Transaction } from '../../../shared/types';
+import { Rule, RuleField, MatchKind, Transaction } from '../../../shared/types';
 import { getMatchingTransactions, isValidRegex } from '../services/rules';
 
 export type RuleDialogMode = 'create' | 'update' | 'delete';
@@ -7,11 +7,12 @@ export type RuleDialogMode = 'create' | 'update' | 'delete';
 interface RuleDialogProps {
   mode: RuleDialogMode;
   category: [string, string];
+  initialField: RuleField;
+  initialMatch: MatchKind;
   initialPattern: string;
-  initialType: RuleType;
   ruleId?: string;
   transactions: Transaction[];
-  onSave: (rule: TextPatternRule) => void;
+  onSave: (rule: Rule) => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -23,9 +24,11 @@ const numberFormatter = new Intl.NumberFormat('nb-NO', {
   maximumFractionDigits: 0,
 });
 
-function findMatchRange(text: string, pattern: string, type: RuleType): [number, number] | null {
+function findMatchRange(text: string, pattern: string, match: MatchKind, field: RuleField): [number, number] | null {
+  if (field !== 'text') return null;
   if (!pattern) return null;
-  if (type === 'substring') {
+  if (match === 'exact') return text === pattern ? [0, text.length] : null;
+  if (match === 'substring') {
     const i = text.toLowerCase().indexOf(pattern.toLowerCase());
     if (i < 0) return null;
     return [i, i + pattern.length];
@@ -39,8 +42,8 @@ function findMatchRange(text: string, pattern: string, type: RuleType): [number,
   }
 }
 
-function renderHighlighted(text: string, pattern: string, type: RuleType) {
-  const range = findMatchRange(text, pattern, type);
+function renderHighlighted(text: string, pattern: string, match: MatchKind, field: RuleField) {
+  const range = findMatchRange(text, pattern, match, field);
   if (!range) return <>{text}</>;
   const [start, end] = range;
   return (
@@ -55,25 +58,27 @@ function renderHighlighted(text: string, pattern: string, type: RuleType) {
 function RuleDialog({
   mode,
   category,
+  initialField,
+  initialMatch,
   initialPattern,
-  initialType,
   ruleId,
   transactions,
   onSave,
   onDelete,
   onClose,
 }: RuleDialogProps) {
+  const [field, setField] = useState<RuleField>(initialField);
+  const [match, setMatch] = useState<MatchKind>(initialMatch);
   const [pattern, setPattern] = useState(initialPattern);
-  const [type, setType] = useState<RuleType>(initialType);
 
-  const regexInvalid = type === 'regex' && pattern.length > 0 && !isValidRegex(pattern);
+  const regexInvalid = match === 'regex' && pattern.length > 0 && !isValidRegex(pattern);
 
   const matches = useMemo(() => {
     if (mode === 'delete') {
-      return getMatchingTransactions(transactions, initialPattern, initialType);
+      return getMatchingTransactions(transactions, initialPattern, initialMatch, initialField);
     }
-    return getMatchingTransactions(transactions, pattern, type);
-  }, [mode, transactions, pattern, type, initialPattern, initialType]);
+    return getMatchingTransactions(transactions, pattern, match, field);
+  }, [mode, transactions, pattern, match, field, initialPattern, initialMatch, initialField]);
 
   const canSave = pattern.trim().length > 0 && !regexInvalid && matches.length > 0;
 
@@ -89,13 +94,14 @@ function RuleDialog({
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canSave, mode, onClose, pattern, type]);
+  }, [canSave, mode, onClose, pattern, match, field]);
 
   function save() {
     if (!canSave) return;
     onSave({
       id: ruleId ?? crypto.randomUUID(),
-      type,
+      field,
+      match,
       pattern: pattern.trim(),
       category,
     });
@@ -134,30 +140,60 @@ function RuleDialog({
               </div>
 
               <div className="rd-section">
+                <label className="rd-label">Match field</label>
+                <div className="rd-type-toggle">
+                  <button
+                    type="button"
+                    className={`rd-type-btn ${field === 'text' ? 'active' : ''}`}
+                    onClick={() => setField('text')}
+                    data-testid="rd-field-text"
+                  >
+                    Text
+                  </button>
+                  <button
+                    type="button"
+                    className={`rd-type-btn ${field === 'merchantCategory' ? 'active' : ''}`}
+                    onClick={() => setField('merchantCategory')}
+                    data-testid="rd-field-merchantCategory"
+                  >
+                    Merchant Category
+                  </button>
+                </div>
+              </div>
+
+              <div className="rd-section">
                 <label className="rd-label">Match type</label>
                 <div className="rd-type-toggle">
                   <button
                     type="button"
-                    className={`rd-type-btn ${type === 'substring' ? 'active' : ''}`}
-                    onClick={() => setType('substring')}
+                    className={`rd-type-btn ${match === 'substring' ? 'active' : ''}`}
+                    onClick={() => setMatch('substring')}
                     data-testid="rd-type-substring"
                   >
                     Substring
                   </button>
                   <button
                     type="button"
-                    className={`rd-type-btn ${type === 'regex' ? 'active' : ''}`}
-                    onClick={() => setType('regex')}
+                    className={`rd-type-btn ${match === 'regex' ? 'active' : ''}`}
+                    onClick={() => setMatch('regex')}
                     data-testid="rd-type-regex"
                   >
                     Regex
+                  </button>
+                  <button
+                    type="button"
+                    className={`rd-type-btn ${match === 'exact' ? 'active' : ''}`}
+                    onClick={() => setMatch('exact')}
+                    data-testid="rd-type-exact"
+                  >
+                    Exact
                   </button>
                 </div>
               </div>
 
               <div className="rd-section">
                 <label className="rd-label" htmlFor="rd-pattern">
-                  Pattern (matches on transaction text)
+                  {field === 'text' ? 'Pattern (matches on transaction text)' : 'Pattern (matches on merchant category)'}
                 </label>
                 <input
                   id="rd-pattern"
@@ -190,8 +226,8 @@ function RuleDialog({
                 <div key={i} className="rd-match-row">
                   <span className="rd-match-text">
                     {mode === 'delete'
-                      ? renderHighlighted(tx.Text, initialPattern, initialType)
-                      : renderHighlighted(tx.Text, pattern, type)}
+                      ? renderHighlighted(tx.Text, initialPattern, initialMatch, initialField)
+                      : renderHighlighted(tx.Text, pattern, match, field)}
                   </span>
                   <span className="rd-match-amount">
                     {numberFormatter.format(tx.Amount)}

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CategoryTree, TextPatternRule } from '../../../shared/types';
+import type { CategoryTree, Rule } from '../../../shared/types';
 
 interface CategoryDropdownProps {
   anchor: DOMRect;
   categories: CategoryTree;
-  existingRule?: TextPatternRule;
+  existingRule?: Rule;
   onPick: (primary: string, sub: string) => void;
   onRemove: () => void;
   onClose: () => void;

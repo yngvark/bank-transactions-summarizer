@@ -18,14 +18,13 @@ function stubLocalStorage(): Map<string, string> {
 
 function validSaveFile(): SaveFile {
   return {
-    version: 2,
+    version: 3,
     categories: [
       { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
     ],
-    rules: {
-      merchantCodeMappings: { 'GROCERY': ['Food', 'Groceries'] },
-      textPatternRules: [],
-    },
+    rules: [
+      { id: 'seed-GROCERY', field: 'merchantCategory', match: 'exact', pattern: 'GROCERY', category: ['Food', 'Groceries'] },
+    ],
     settings: { theme: 'light', density: 'normal' },
   };
 }
@@ -59,17 +58,17 @@ describe('fingerprint', () => {
 
   it('is stable across object key reordering', () => {
     const a: SaveFile = {
-      version: 2,
+      version: 3,
       categories: [
         { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
       ],
-      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      rules: [],
       settings: { theme: 'light', density: 'normal' },
     };
-    // Same SaveFile, settings keys defined in opposite order.
+    // Same SaveFile, top-level keys defined in opposite order.
     const b: SaveFile = {
-      version: 2,
-      rules: { textPatternRules: [], merchantCodeMappings: {} },
+      version: 3,
+      rules: [],
       settings: { density: 'normal', theme: 'light' },
       categories: [
         { name: 'Food', children: [{ name: 'Groceries', children: [] }] },
@@ -93,7 +92,7 @@ describe('importFromFile', () => {
   });
 
   it('rejects schema-invalid content with descriptive error', async () => {
-    const file = new File([JSON.stringify({ version: 2 })], 'cfg.json');
+    const file = new File([JSON.stringify({ version: 3 })], 'cfg.json');
     await expect(importFromFile(file)).rejects.toThrow(/Invalid save file/);
   });
 
@@ -101,6 +100,17 @@ describe('importFromFile', () => {
     const sf = validSaveFile() as SaveFile & { extra?: string };
     sf.extra = 'should not be allowed';
     const file = new File([JSON.stringify(sf)], 'cfg.json');
+    await expect(importFromFile(file)).rejects.toThrow(/Invalid save file/);
+  });
+
+  it('rejects v2 format (old nested rules)', async () => {
+    const v2 = {
+      version: 2,
+      categories: [],
+      rules: { merchantCodeMappings: {}, textPatternRules: [] },
+      settings: { theme: 'light', density: 'normal' },
+    };
+    const file = new File([JSON.stringify(v2)], 'cfg.json');
     await expect(importFromFile(file)).rejects.toThrow(/Invalid save file/);
   });
 });

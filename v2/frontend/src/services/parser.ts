@@ -1,9 +1,6 @@
-import { RawTransaction, Transaction, CategoryMapping } from '../../../shared/types';
+import { RawTransaction, Transaction } from '../../../shared/types';
 
-export function parseTransactions(
-  categoryMapping: CategoryMapping,
-  data: RawTransaction[]
-): Transaction[] {
+export function parseTransactions(data: RawTransaction[]): Transaction[] {
   return data
     .filter(removeMyOwnInvoicePayments)
     .map((row) => ({
@@ -13,10 +10,7 @@ export function parseTransactions(
       TransactionDate: toDateOrNull(row.TransactionDate),
       BookDate: toDateOrNull(row.BookDate),
       ValueDate: toDateOrNull(row.ValueDate),
-    }))
-    .map((row) => ({
-      ...row,
-      Category: getCategoryFromMapping(categoryMapping, row['Merchant Category']),
+      Category: 'Ukjent kategori',
     })) as Transaction[];
 }
 
@@ -31,12 +25,4 @@ function removeMyOwnInvoicePayments(row: RawTransaction): boolean {
     row.Amount > 0 && /^From \d+$/.test(row.Text.trim());
 
   return !rowIsMyOwnInvoicePayment;
-}
-
-function getCategoryFromMapping(categoryMapping: CategoryMapping, key: string): string {
-  if (!Object.prototype.hasOwnProperty.call(categoryMapping, key)) {
-    return 'Ukjent kategori';
-  }
-
-  return categoryMapping[key].join(' ➡ ');
 }

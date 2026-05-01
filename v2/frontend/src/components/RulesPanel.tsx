@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { TextPatternRule } from '../../../shared/types';
+import { Rule } from '../../../shared/types';
 
 interface RulesPanelProps {
-  rules: TextPatternRule[];
+  rules: Rule[];
   onReorder: (id: string, direction: 'up' | 'down') => void;
-  onEdit: (rule: TextPatternRule) => void;
-  onDelete: (rule: TextPatternRule) => void;
+  onEdit: (rule: Rule) => void;
+  onDelete: (rule: Rule) => void;
 }
 
 function RulesPanel({ rules, onReorder, onEdit, onDelete }: RulesPanelProps) {
@@ -59,10 +59,16 @@ function RulesPanel({ rules, onReorder, onEdit, onDelete }: RulesPanelProps) {
                 </button>
               </div>
               <span
-                className={`rules-type rules-type-${rule.type}`}
-                title={rule.type === 'substring' ? 'Substring' : 'Regex'}
+                className={`rules-field rules-field-${rule.field}`}
+                title={rule.field === 'text' ? 'Matches transaction text' : 'Matches merchant category'}
               >
-                {rule.type === 'substring' ? 'Substring' : 'Regex'}
+                {rule.field === 'text' ? 'Text' : 'Merch.'}
+              </span>
+              <span
+                className={`rules-type rules-type-${rule.match}`}
+                title={rule.match === 'substring' ? 'Substring' : rule.match === 'regex' ? 'Regex' : 'Exact'}
+              >
+                {rule.match === 'substring' ? 'Substring' : rule.match === 'regex' ? 'Regex' : 'Exact'}
               </span>
               <span className="rules-pattern">{rule.pattern}</span>
               <span className="rules-arrow">→</span>

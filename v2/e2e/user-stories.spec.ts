@@ -105,6 +105,37 @@ test.describe('User stories', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', expectedAfter);
   });
 
+  test('I can correct an unmapped merchant category by adding a merchant-category rule', async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name === 'Mobile Chrome',
+      'mobile dropdown positioning tested separately in mobile-responsive.spec.ts'
+    );
+    await loadFixture(page);
+
+    // Find the row whose Merchant Category is not in the seeded list.
+    const zaraRow = page
+      .locator('#transactions-table tbody tr')
+      .filter({ hasText: 'Pending at ZARA' });
+    const zaraCell = zaraRow.locator('button.cat-cell');
+    await expect(zaraCell).toContainText('Ukjent kategori');
+
+    await zaraCell.evaluate((el) => (el as HTMLElement).scrollIntoView({ block: 'center' }));
+    await zaraCell.click({ force: true });
+
+    // Bypass viewport check; the dropdown's fixed-position overlay can extend
+    // off-screen horizontally on the test viewport.
+    await page.locator('[data-testid="cd-primary-Personlig forbruk"]').dispatchEvent('click');
+    await page.locator('[data-testid="cd-sub-Klær og sko"]').dispatchEvent('click');
+
+    // The dialog defaults to a merchant-category exact-match rule, with the
+    // pattern pre-filled from the row's Merchant Category column.
+    await expect(page.locator('[data-testid="rd-field-merchantCategory"]')).toHaveClass(/active/);
+    await page.locator('[data-testid="rd-create"]').click();
+
+    // The previously-unknown row now shows the chosen category.
+    await expect(zaraCell).toContainText('Personlig forbruk ➡ Klær og sko');
+  });
+
   test('I can export my configuration to a file and import it back later', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'Mobile Chrome', 'desktop-only header layout for now');
     await page.goto('/', { timeout: 60000 });

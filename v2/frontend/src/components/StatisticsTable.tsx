@@ -10,8 +10,6 @@ import {
   countDescendants,
   namePathOf,
   collectAffectedRules,
-  collectAffectedMappings,
-  deleteFromMappings,
   reorderSiblings,
 } from '../services/categoryEdit';
 
@@ -171,7 +169,7 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
   const { categoryTree, yearMonths, footer } = statistics;
-  const { config, updateCategories, updateRules, updateMerchantMappings, renameCategory } = useConfig();
+  const { config, updateCategories, updateRules, renameCategory } = useConfig();
   const [editing, setEditing] = useState(false);
   const [savedExpand, setSavedExpand] = useState<Record<string, boolean> | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ path: number[]; initial: string } | null>(null);
@@ -423,40 +421,19 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
   const onDelete = useCallback((path: number[], name: string) => {
     const node = getNodeAt(config.categories, path);
     const desc = countDescendants(node);
-    const affectedRules = collectAffectedRules(
-      config.rules.textPatternRules,
-      config.categories,
-      path
-    );
-    const affectedMappingKeys = collectAffectedMappings(
-      config.rules.merchantCodeMappings,
-      config.categories,
-      path
-    );
+    const affectedRules = collectAffectedRules(config.rules, config.categories, path);
     const detail: string[] = [];
     if (desc > 0) detail.push(`${desc} descendant${desc === 1 ? '' : 's'}`);
     if (affectedRules.length > 0) detail.push(`${affectedRules.length} rule${affectedRules.length === 1 ? '' : 's'}`);
-    if (affectedMappingKeys.length > 0) detail.push(`${affectedMappingKeys.length} merchant mapping${affectedMappingKeys.length === 1 ? '' : 's'}`);
     const detailStr = detail.length > 0 ? ` (along with ${detail.join(', ')})` : '';
     if (!confirm(`Delete "${name}"${detailStr}?`)) return;
 
     const newTree = deleteAt(config.categories, path);
-    const newRules = config.rules.textPatternRules.filter((r) => !affectedRules.includes(r));
-    const newMappings = deleteFromMappings(config.rules.merchantCodeMappings, affectedMappingKeys);
-
+    const newRules = config.rules.filter((r) => !affectedRules.includes(r));
     updateCategories(newTree);
-    if (newRules !== config.rules.textPatternRules) updateRules(newRules);
-    if (newMappings !== config.rules.merchantCodeMappings) updateMerchantMappings(newMappings);
+    if (newRules !== config.rules) updateRules(newRules);
     emitToast(`Deleted "${name}"`);
-  }, [
-    config.categories,
-    config.rules.textPatternRules,
-    config.rules.merchantCodeMappings,
-    updateCategories,
-    updateRules,
-    updateMerchantMappings,
-    emitToast,
-  ]);
+  }, [config.categories, config.rules, updateCategories, updateRules, emitToast]);
 
   return (
     <>

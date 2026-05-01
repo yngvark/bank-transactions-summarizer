@@ -3,8 +3,9 @@ import {
   RawTransaction,
   Transaction,
   GroupedStatistics,
-  TextPatternRule,
-  RuleType,
+  Rule,
+  RuleField,
+  MatchKind,
 } from '../../shared/types';
 import FileUpload from './components/FileUpload';
 import SearchControls from './components/SearchControls';
@@ -33,15 +34,20 @@ type DialogState =
   | {
       mode: 'create' | 'update' | 'delete';
       category: [string, string];
+      initialField: RuleField;
+      initialMatch: MatchKind;
       initialPattern: string;
-      initialType: RuleType;
       ruleId?: string;
     };
 
 function App() {
   const { config, updateRules } = useConfig();
-  const rules = config.rules.textPatternRules;
-  const categoryMapping = config.rules.merchantCodeMappings;
+  const rules = config.rules;
+  // User-created rules: shown in the panel and considered when looking up an
+  // "existing rule" for a clicked transaction. Seeded merchant-category rules
+  // (from categories.json, id prefix `seed-`) are evaluated for transaction
+  // categorization but kept out of the user-facing list.
+  const userRules = useMemo(() => rules.filter((r) => !r.id.startsWith('seed-')), [rules]);
   const density = config.settings.density;
 
   const [allTransactions, setAllTransactions] = useState<RawTransaction[]>([]);
@@ -61,7 +67,7 @@ function App() {
   }, [density]);
 
   const processTransactions = useCallback(async () => {
-    if (!categoryMapping || allTransactions.length === 0) return;
+    if (allTransactions.length === 0) return;
 
     let filtered = allTransactions.filter((row) =>
       row.Text.toLowerCase().includes(searchTerm.toLowerCase())
@@ -79,13 +85,13 @@ function App() {
       );
     }
 
-    const withMcCat = parseTransactions(categoryMapping, filtered);
-    const withRules = applyRules(withMcCat, rules);
+    const parsed = parseTransactions(filtered);
+    const withRules = applyRules(parsed, rules);
     const stats = calculateStatistics(withRules);
 
     setFilteredTransactions(withRules);
     setStatistics(stats);
-  }, [allTransactions, searchTerm, periodFrom, periodTo, rules, categoryMapping]);
+  }, [allTransactions, searchTerm, periodFrom, periodTo, rules]);
 
   useEffect(() => {
     processTransactions();
@@ -129,25 +135,22 @@ function App() {
   const rulesRef = useMemo(() => rules, [rules]);
 
   const handleAddRule = useCallback(
-    (rule: TextPatternRule) => {
-      const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.type).length;
-      updateRules([...rulesRef, rule]);
+    (rule: Rule) => {
+      const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.match, rule.field).length;
+      // Prepend user rules so they take priority over seeded rules.
+      updateRules([rule, ...rulesRef]);
       setDialog(null);
-      showToast(
-        `Rule created — ${count} transaction${count === 1 ? '' : 's'} updated`
-      );
+      showToast(`Rule created — ${count} transaction${count === 1 ? '' : 's'} updated`);
     },
     [filteredTransactions, updateRules, rulesRef, showToast]
   );
 
   const handleUpdateRule = useCallback(
-    (rule: TextPatternRule) => {
-      const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.type).length;
+    (rule: Rule) => {
+      const count = getMatchingTransactions(filteredTransactions, rule.pattern, rule.match, rule.field).length;
       updateRules(rulesRef.map((r) => (r.id === rule.id ? rule : r)));
       setDialog(null);
-      showToast(
-        `Rule updated — ${count} transaction${count === 1 ? '' : 's'} affected`
-      );
+      showToast(`Rule updated — ${count} transaction${count === 1 ? '' : 's'} affected`);
     },
     [filteredTransactions, updateRules, rulesRef, showToast]
   );
@@ -156,7 +159,7 @@ function App() {
     (id: string) => {
       const removed = rulesRef.find((r) => r.id === id);
       const count = removed
-        ? getMatchingTransactions(filteredTransactions, removed.pattern, removed.type).length
+        ? getMatchingTransactions(filteredTransactions, removed.pattern, removed.match, removed.field).length
         : 0;
       updateRules(rulesRef.filter((r) => r.id !== id));
       setDialog(null);
@@ -190,64 +193,74 @@ function App() {
   const handleDropdownPick = useCallback(
     (primary: string, sub: string) => {
       if (!dropdown) return;
-      const existing = findRuleForTransaction(dropdown.tx, rulesRef);
+      // Only consider user-created rules as "existing rules" — seeded rules
+      // are automatic and should not block creating a new user rule.
+      const existing = findRuleForTransaction(dropdown.tx, userRules);
       if (existing) {
         setDialog({
           mode: 'update',
           category: [primary, sub],
+          initialField: existing.field,
+          initialMatch: existing.match,
           initialPattern: existing.pattern,
-          initialType: existing.type,
           ruleId: existing.id,
         });
       } else {
+        const merchantCat = dropdown.tx['Merchant Category'];
+        const useMerchantCat = !!merchantCat;
         setDialog({
           mode: 'create',
           category: [primary, sub],
-          initialPattern: dropdown.tx.Text,
-          initialType: 'substring',
+          initialField: useMerchantCat ? 'merchantCategory' : 'text',
+          initialMatch: useMerchantCat ? 'exact' : 'substring',
+          initialPattern: useMerchantCat ? merchantCat : dropdown.tx.Text,
         });
       }
       setDropdown(null);
     },
-    [dropdown, rulesRef]
+    [dropdown, userRules]
   );
 
   const handleDropdownRemove = useCallback(() => {
     if (!dropdown) return;
-    const existing = findRuleForTransaction(dropdown.tx, rulesRef);
+    const existing = findRuleForTransaction(dropdown.tx, userRules);
     if (!existing) return;
     setDialog({
       mode: 'delete',
       category: existing.category,
+      initialField: existing.field,
+      initialMatch: existing.match,
       initialPattern: existing.pattern,
-      initialType: existing.type,
       ruleId: existing.id,
     });
     setDropdown(null);
-  }, [dropdown, rulesRef]);
+  }, [dropdown, userRules]);
 
-  const handleRulesPanelEdit = useCallback((rule: TextPatternRule) => {
+  const handleRulesPanelEdit = useCallback((rule: Rule) => {
     setDialog({
       mode: 'update',
       category: rule.category,
+      initialField: rule.field,
+      initialMatch: rule.match,
       initialPattern: rule.pattern,
-      initialType: rule.type,
       ruleId: rule.id,
     });
   }, []);
 
-  const handleRulesPanelDelete = useCallback((rule: TextPatternRule) => {
+  const handleRulesPanelDelete = useCallback((rule: Rule) => {
     setDialog({
       mode: 'delete',
       category: rule.category,
+      initialField: rule.field,
+      initialMatch: rule.match,
       initialPattern: rule.pattern,
-      initialType: rule.type,
       ruleId: rule.id,
     });
   }, []);
 
+  // Only show "Remove rule" for user-created rules, not seeded rules.
   const dropdownExistingRule =
-    dropdown != null ? findRuleForTransaction(dropdown.tx, rules) : undefined;
+    dropdown != null ? findRuleForTransaction(dropdown.tx, userRules) : undefined;
 
   return (
     <div className="app">
@@ -283,7 +296,7 @@ function App() {
         )}
 
         <RulesPanel
-          rules={rules}
+          rules={userRules}
           onReorder={handleReorderRule}
           onEdit={handleRulesPanelEdit}
           onDelete={handleRulesPanelDelete}
@@ -318,8 +331,9 @@ function App() {
         <RuleDialog
           mode={dialog.mode}
           category={dialog.category}
+          initialField={dialog.initialField}
+          initialMatch={dialog.initialMatch}
           initialPattern={dialog.initialPattern}
-          initialType={dialog.initialType}
           ruleId={dialog.ruleId}
           transactions={filteredTransactions}
           onSave={(rule) => {

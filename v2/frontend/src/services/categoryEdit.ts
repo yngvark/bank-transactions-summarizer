@@ -1,4 +1,4 @@
-import type { CategoryNode, CategoryTree, SaveFile, TextPatternRule } from '../../../shared/types';
+import type { CategoryNode, CategoryTree, SaveFile, Rule } from '../../../shared/types';
 
 export type Path = number[];
 export type NamePath = string[];
@@ -184,13 +184,13 @@ export function namePathOf(tree: CategoryTree, path: Path): NamePath {
   return result;
 }
 
-// ---------- Rule / mapping rewrites ----------
+// ---------- Rule rewrites ----------
 
 export function rewriteRulesForRename(
-  rules: TextPatternRule[],
+  rules: Rule[],
   oldNamePath: NamePath,
   newName: string,
-): TextPatternRule[] {
+): Rule[] {
   if (oldNamePath.length === 1) {
     const [oldPrimary] = oldNamePath;
     return rules.map((r) =>
@@ -208,35 +208,11 @@ export function rewriteRulesForRename(
   return rules;
 }
 
-export function rewriteMappingsForRename(
-  mappings: Record<string, [string, string]>,
-  oldNamePath: NamePath,
-  newName: string,
-): Record<string, [string, string]> {
-  if (oldNamePath.length === 1) {
-    const [oldPrimary] = oldNamePath;
-    const next: Record<string, [string, string]> = {};
-    for (const [k, v] of Object.entries(mappings)) {
-      next[k] = v[0] === oldPrimary ? [newName, v[1]] : v;
-    }
-    return next;
-  }
-  if (oldNamePath.length === 2) {
-    const [oldPrimary, oldSub] = oldNamePath;
-    const next: Record<string, [string, string]> = {};
-    for (const [k, v] of Object.entries(mappings)) {
-      next[k] = v[0] === oldPrimary && v[1] === oldSub ? [v[0], newName] : v;
-    }
-    return next;
-  }
-  return mappings;
-}
-
 export function collectAffectedRules(
-  rules: TextPatternRule[],
+  rules: Rule[],
   tree: CategoryTree,
   path: Path,
-): TextPatternRule[] {
+): Rule[] {
   if (path.length === 0 || path.length >= 3) return [];
   const names = namePathOf(tree, path);
   if (names.length === 1) {
@@ -246,28 +222,10 @@ export function collectAffectedRules(
   return rules.filter((r) => r.category[0] === names[0] && r.category[1] === names[1]);
 }
 
-export function collectAffectedMappings(
-  mappings: Record<string, [string, string]>,
-  tree: CategoryTree,
-  path: Path,
-): string[] {
-  if (path.length === 0 || path.length >= 3) return [];
-  const names = namePathOf(tree, path);
-  const keys: string[] = [];
-  for (const [k, v] of Object.entries(mappings)) {
-    if (names.length === 1) {
-      if (v[0] === names[0]) keys.push(k);
-    } else {
-      if (v[0] === names[0] && v[1] === names[1]) keys.push(k);
-    }
-  }
-  return keys;
-}
-
 // Atomically rename a category in the SaveFile, propagating the new name to
-// every structure that references it (the categories tree, text-pattern rules,
-// and merchant-code mappings). All callers that rename a category MUST go
-// through this function so the three structures cannot drift apart.
+// every structure that references it (the categories tree and rules). All
+// callers that rename a category MUST go through this function so the
+// structures cannot drift apart.
 export function renameCategoryCascade(
   saveFile: SaveFile,
   path: Path,
@@ -275,36 +233,6 @@ export function renameCategoryCascade(
 ): SaveFile {
   const oldNamePath = namePathOf(saveFile.categories, path);
   const newCategories = renameAt(saveFile.categories, path, newName);
-  const newRules = rewriteRulesForRename(
-    saveFile.rules.textPatternRules,
-    oldNamePath,
-    newName,
-  );
-  const newMappings = rewriteMappingsForRename(
-    saveFile.rules.merchantCodeMappings,
-    oldNamePath,
-    newName,
-  );
-  return {
-    ...saveFile,
-    categories: newCategories,
-    rules: {
-      ...saveFile.rules,
-      textPatternRules: newRules,
-      merchantCodeMappings: newMappings,
-    },
-  };
-}
-
-export function deleteFromMappings(
-  mappings: Record<string, [string, string]>,
-  keys: string[],
-): Record<string, [string, string]> {
-  if (keys.length === 0) return mappings;
-  const next: Record<string, [string, string]> = {};
-  const drop = new Set(keys);
-  for (const [k, v] of Object.entries(mappings)) {
-    if (!drop.has(k)) next[k] = v;
-  }
-  return next;
+  const newRules = rewriteRulesForRename(saveFile.rules, oldNamePath, newName);
+  return { ...saveFile, categories: newCategories, rules: newRules };
 }

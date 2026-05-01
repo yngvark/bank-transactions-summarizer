@@ -21,17 +21,16 @@ export interface Transaction extends RawTransaction {
   Category: string;
 }
 
-// Category mapping from merchant category to a [primary, sub] hierarchical
-// category path. Same shape as SaveFile.rules.merchantCodeMappings.
-export type CategoryMapping = Record<string, [string, string]>;
+// User-defined rule for assigning a category to transactions. Rules are
+// evaluated in array order; the first match wins. `field` selects which
+// transaction column to match against, `match` selects the comparison.
+export type RuleField = 'text' | 'merchantCategory';
+export type MatchKind = 'substring' | 'regex' | 'exact';
 
-// User-defined text-pattern rule that overrides merchant-code categorization.
-// Rules are evaluated in array order; the first match wins.
-export type RuleType = 'substring' | 'regex';
-
-export interface TextPatternRule {
+export interface Rule {
   id: string;
-  type: RuleType;
+  field: RuleField;
+  match: MatchKind;
   pattern: string;
   category: [string, string]; // [primary, sub]
 }
@@ -48,12 +47,9 @@ export type CategoryTree = CategoryNode[];
 
 // Unified user state persisted to localStorage and exportable as a JSON file.
 export interface SaveFile {
-  version: 2;
+  version: 3;
   categories: CategoryTree;
-  rules: {
-    merchantCodeMappings: Record<string, [string, string]>;
-    textPatternRules: TextPatternRule[];
-  };
+  rules: Rule[];
   settings: {
     theme: 'light' | 'dark';
     density: string;

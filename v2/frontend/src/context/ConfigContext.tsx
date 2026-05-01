@@ -6,7 +6,7 @@ import {
   useState,
   ReactNode,
 } from 'react';
-import type { SaveFile, TextPatternRule, CategoryTree } from '../../../shared/types';
+import type { SaveFile, Rule, CategoryTree } from '../../../shared/types';
 import { loadOrInitSaveFile } from '../services/boot';
 import { renameCategoryCascade } from '../services/categoryEdit';
 import {
@@ -17,7 +17,6 @@ import {
 } from '../services/persistence';
 import { ConfigContext, ConfigContextValue } from './useConfig';
 
-type MerchantCodeMappings = SaveFile['rules']['merchantCodeMappings'];
 type Settings = SaveFile['settings'];
 
 export function ConfigProvider({ children }: { children: ReactNode }) {
@@ -40,16 +39,12 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
     saveToLocalStorage(config);
   }, [config]);
 
-  const updateRules = useCallback((next: TextPatternRule[]) => {
-    setConfig((prev) => ({ ...prev, rules: { ...prev.rules, textPatternRules: next } }));
+  const updateRules = useCallback((next: Rule[]) => {
+    setConfig((prev) => ({ ...prev, rules: next }));
   }, []);
 
   const updateCategories = useCallback((next: CategoryTree) => {
     setConfig((prev) => ({ ...prev, categories: next }));
-  }, []);
-
-  const updateMerchantMappings = useCallback((next: MerchantCodeMappings) => {
-    setConfig((prev) => ({ ...prev, rules: { ...prev.rules, merchantCodeMappings: next } }));
   }, []);
 
   const updateSettings = useCallback((patch: Partial<Settings>) => {
@@ -76,7 +71,6 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       config,
       updateRules,
       updateCategories,
-      updateMerchantMappings,
       updateSettings,
       renameCategory,
       isDirty,
@@ -87,7 +81,6 @@ export function ConfigProvider({ children }: { children: ReactNode }) {
       config,
       updateRules,
       updateCategories,
-      updateMerchantMappings,
       updateSettings,
       renameCategory,
       isDirty,

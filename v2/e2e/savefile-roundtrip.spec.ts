@@ -40,9 +40,10 @@ test.describe('SaveFile persistence', () => {
     );
     expect(stored).not.toBeNull();
     const parsed = JSON.parse(stored!);
-    expect(parsed.version).toBe(2);
+    expect(parsed.version).toBe(3);
     expect(parsed.settings.density).toBe('normal');
-    expect(Object.keys(parsed.rules.merchantCodeMappings).length).toBeGreaterThan(0);
+    expect(Array.isArray(parsed.rules)).toBe(true);
+    expect(parsed.rules.length).toBeGreaterThan(0);
   });
 
   test('export → modify → import round-trip restores rules and theme', async ({ page }) => {
@@ -77,7 +78,7 @@ test.describe('SaveFile persistence', () => {
 
     // Capture current state
     const before = await page.evaluate((key) => localStorage.getItem(key), SAVEFILE_KEY);
-    expect(before).toContain('"textPatternRules"');
+    expect(before).toContain('"rules"');
 
     // Modify state: delete the rule via dropdown
     await page.locator('[data-testid="cat-cell-0"]').click();

@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { parseTransactions } from './parser';
-import { RawTransaction, CategoryMapping } from '../../../shared/types';
+import { RawTransaction } from '../../../shared/types';
 import ExcelJS from '@protobi/exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
-import categoryMapping from '../data/categories.json';
 
 async function loadFixtureTransactions(): Promise<RawTransaction[]> {
   const filePath = path.resolve(__dirname, '../../../e2e/fixtures/test-transactions-bank-norwegian.xlsx');
@@ -37,25 +36,25 @@ describe('parseTransactions', () => {
   describe('with XLSX fixture', () => {
     it('parses transactions from XLSX file', async () => {
       const raw = await loadFixtureTransactions();
-      const result = parseTransactions(categoryMapping, raw);
+      const result = parseTransactions(raw);
 
       // 4 settled + 1 Reservert (pending) rows; the "From …" invoice row is filtered out
       expect(result).toHaveLength(5);
     });
 
-    it('assigns correct categories from XLSX data', async () => {
+    it('assigns "Ukjent kategori" for all transactions after parsing (rules applied separately)', async () => {
       const raw = await loadFixtureTransactions();
-      const result = parseTransactions(categoryMapping, raw);
+      const result = parseTransactions(raw);
 
-      const categories = result.map((t) => t.Category);
-      expect(categories).toContain('Personlig forbruk ➡ PC og elektroutstyr'); // Electronic Sales
-      expect(categories).toContain('Mat og drikke ➡ Dagligvarer'); // Grocery Stores
-      expect(categories).toContain('Mat og drikke ➡ Restauranter og barer'); // Eating places
+      // Parser no longer resolves categories — applyRules does that in App
+      for (const t of result) {
+        expect(t.Category).toBe('Ukjent kategori');
+      }
     });
 
     it('converts string dates to Date objects for settled rows', async () => {
       const raw = await loadFixtureTransactions();
-      const result = parseTransactions(categoryMapping, raw);
+      const result = parseTransactions(raw);
 
       const settled = result.filter((t) => t.Type !== 'Reservert');
       expect(settled.length).toBeGreaterThan(0);
@@ -68,7 +67,7 @@ describe('parseTransactions', () => {
 
     it('keeps Reservert rows from XLSX with null dates', async () => {
       const raw = await loadFixtureTransactions();
-      const result = parseTransactions(categoryMapping, raw);
+      const result = parseTransactions(raw);
 
       const pending = result.filter((t) => t.Type === 'Reservert');
       expect(pending.length).toBeGreaterThan(0);
@@ -81,11 +80,6 @@ describe('parseTransactions', () => {
   });
 
   describe('with inline data', () => {
-    const mapping: CategoryMapping = {
-      'Electronic Sales': ['Personlig forbruk', 'PC og elektroutstyr'],
-      'Grocery Stores, Supermarkets': ['Mat og drikke', 'Dagligvarer'],
-    };
-
     it('trims whitespace from Text and Merchant Category', () => {
       const raw: RawTransaction[] = [
         {
@@ -103,9 +97,11 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].Text).toBe('KOMPLETT.NO');
-      expect(result[0].Category).toBe('Personlig forbruk ➡ PC og elektroutstyr');
+      expect(result[0]['Merchant Category']).toBe('Electronic Sales');
+      // Category is not resolved by parser — rules do that
+      expect(result[0].Category).toBe('Ukjent kategori');
     });
 
     it('assigns "Ukjent kategori" for unknown merchant categories', () => {
@@ -125,7 +121,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].Category).toBe('Ukjent kategori');
     });
 
@@ -159,7 +155,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result).toHaveLength(1);
       expect(result[0].Text).toBe('Normal purchase');
     });
@@ -181,7 +177,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].Category).toBe('Ukjent kategori');
     });
 
@@ -202,7 +198,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].TransactionDate).toBeInstanceOf(Date);
       expect(result[0].TransactionDate.getFullYear()).toBe(2023);
       expect(result[0].TransactionDate.getMonth()).toBe(5); // June = 5
@@ -226,13 +222,14 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result).toHaveLength(1);
       expect(result[0].TransactionDate).toBeNull();
       expect(result[0].BookDate).toBeNull();
       expect(result[0].ValueDate).toBeNull();
       expect(result[0].Type).toBe('Reservert');
-      expect(result[0].Category).toBe('Personlig forbruk ➡ PC og elektroutstyr');
+      // Category comes from rules, not parser
+      expect(result[0].Category).toBe('Ukjent kategori');
     });
 
     it('handles Reservert mixed with normal rows', () => {
@@ -265,7 +262,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result).toHaveLength(2);
       const pending = result.find((r) => r.Type === 'Reservert');
       const normal = result.find((r) => r.Type === 'Kjøp');
@@ -290,7 +287,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].TransactionDate).toBeNull();
       expect(result[0].BookDate).toBeNull();
       expect(result[0].ValueDate).toBeNull();
@@ -314,7 +311,7 @@ describe('parseTransactions', () => {
         },
       ];
 
-      const result = parseTransactions(mapping, raw);
+      const result = parseTransactions(raw);
       expect(result[0].TransactionDate).toBeInstanceOf(Date);
     });
   });
