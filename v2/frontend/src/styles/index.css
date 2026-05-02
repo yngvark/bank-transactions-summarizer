@@ -323,6 +323,52 @@ section h2 .count {
   white-space: nowrap;
 }
 
+/* Active category filter pill: shown above the transactions table when a
+   category is selected from the statistics table. */
+.category-filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: var(--primary-light);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  max-width: 100%;
+}
+.category-filter-pill-label {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+.category-filter-pill-clear {
+  background: transparent;
+  border: 0;
+  color: var(--text-secondary);
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.category-filter-pill-clear:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+}
+[data-theme="dark"] .category-filter-pill-clear:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 /* Search container */
 .search-container {
   display: flex;
@@ -770,6 +816,36 @@ td.cat-cell-parent:hover {
 .chevron.clickable { cursor: pointer; padding: 2px; }
 .chevron.clickable:hover { color: #475569; }
 .no-chevron { display: inline-block; width: 14px; flex-shrink: 0; }
+
+/* Per-row filter button in the statistics table (view mode only) */
+.cat-content .cat-filter-btn {
+  background: transparent;
+  border: 0;
+  padding: 2px;
+  margin-left: 0.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  opacity: 0.45;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.cat-content .cat-filter-btn:hover,
+.cat-content .cat-filter-btn:focus-visible {
+  opacity: 1;
+  background: var(--primary-light);
+  color: var(--text-primary);
+  outline: none;
+}
+.cat-content .cat-filter-btn.active {
+  opacity: 1;
+  color: var(--primary-color);
+  background: var(--primary-light);
+}
+tr:hover .cat-content .cat-filter-btn { opacity: 0.85; }
 
 /* Responsive */
 @media (max-width: 768px) {

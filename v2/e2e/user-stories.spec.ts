@@ -166,6 +166,39 @@ test.describe('User stories', () => {
     );
   });
 
+  test('I can filter the transactions list to only show one category', async ({ page }) => {
+    await loadFixture(page);
+    const rows = page.locator('#transactions-table tbody tr');
+    const totalBefore = await rows.count();
+    expect(totalBefore).toBeGreaterThan(1);
+
+    // Click the filter icon on a known parent category from the fixture.
+    const parentRow = page.locator('tr[data-path]').filter({ hasText: 'Mat og drikke' }).first();
+    await parentRow.locator('[data-testid^="cat-filter-"]').first().click();
+
+    // Active-filter pill confirms the selection.
+    await expect(page.locator('[data-testid="category-filter-pill"]')).toContainText('Mat og drikke');
+
+    // Transaction list narrows; every remaining row is in the chosen category
+    // (exact match or descendant via the ' ➡ ' separator).
+    await expect.poll(async () => rows.count(), { timeout: 5000 }).toBeLessThan(totalBefore);
+    const categoryTexts = await page
+      .locator('#transactions-table tbody tr .cat-cell')
+      .allInnerTexts();
+    expect(categoryTexts.length).toBeGreaterThan(0);
+    for (const t of categoryTexts) {
+      expect(t).toMatch(/^Mat og drikke( ➡ |$)/);
+    }
+
+    // Statistics table is unchanged — sibling primaries are still visible.
+    await expect(page.locator('.statistics-section table')).toContainText('Personlig forbruk');
+
+    // Clearing via the × restores the original count.
+    await page.locator('[data-testid="category-filter-clear"]').click();
+    await expect(page.locator('[data-testid="category-filter-pill"]')).toHaveCount(0);
+    await expect.poll(async () => rows.count()).toBe(totalBefore);
+  });
+
   test('My uploaded transactions are still loaded after I refresh the page', async ({ page }) => {
     await loadFixture(page);
     const rowsBefore = await page.locator('#transactions-table tbody tr').count();

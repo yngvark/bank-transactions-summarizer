@@ -16,6 +16,8 @@ import {
 interface StatisticsTableProps {
   statistics: GroupedStatistics;
   onToast?: (msg: string) => void;
+  selectedCategory?: string | null;
+  onSelectCategoryFilter?: (joinedPath: string) => void;
 }
 
 function countNodeDescendants(node: CategoryTreeNode): number {
@@ -164,7 +166,12 @@ function flattenAmountsByJoinedName(stats: GroupedStatistics): Map<string, { per
   return map;
 }
 
-function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
+function StatisticsTable({
+  statistics,
+  onToast,
+  selectedCategory,
+  onSelectCategoryFilter,
+}: StatisticsTableProps) {
   const [expandState, setExpandState] = useState<Record<string, boolean>>({});
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
   const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'light');
@@ -527,6 +534,48 @@ function StatisticsTable({ statistics, onToast }: StatisticsTableProps) {
                     ) : (
                       <span>{node.name}</span>
                     )}
+                    {!editing && onSelectCategoryFilter && (() => {
+                      const joinedPath = node.path.split('/').join(' ➡ ');
+                      const isActive = selectedCategory === joinedPath;
+                      return (
+                        <button
+                          type="button"
+                          className={`cat-filter-btn${isActive ? ' active' : ''}`}
+                          title={
+                            isActive
+                              ? `Clear filter (showing only ${node.name})`
+                              : `Show only ${node.name} transactions`
+                          }
+                          aria-label={
+                            isActive
+                              ? `Clear category filter`
+                              : `Filter transactions by ${node.name}`
+                          }
+                          aria-pressed={isActive}
+                          data-testid={`cat-filter-${indexPath.join('-')}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectCategoryFilter(joinedPath);
+                          }}
+                        >
+                          <svg
+                            viewBox="0 0 16 16"
+                            width="12"
+                            height="12"
+                            aria-hidden="true"
+                            focusable="false"
+                          >
+                            <path
+                              d="M2 3 L14 3 L10 8.5 L10 13 L6 13 L6 8.5 Z"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      );
+                    })()}
                     {editing && renameTarget?.path.join('.') !== indexPath.join('.') && (
                       <span className="row-actions">
                         <button

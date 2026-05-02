@@ -25,6 +25,7 @@ import {
   findRuleForTransaction,
   getMatchingTransactions,
 } from './services/rules';
+import { transactionMatchesCategoryFilter } from './services/categoryFilter';
 import { generateRandomTransactions } from './utils/randomize';
 import {
   loadTransactions,
@@ -62,6 +63,7 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [periodFrom, setPeriodFrom] = useState('');
   const [periodTo, setPeriodTo] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   const [toast, setToast] = useState<string | null>(null);
   const [dropdown, setDropdown] = useState<DropdownState>(null);
@@ -111,6 +113,16 @@ function App() {
   useEffect(() => {
     processTransactions();
   }, [processTransactions]);
+
+  const displayedTransactions = useMemo(
+    () =>
+      selectedCategory
+        ? filteredTransactions.filter((t) =>
+            transactionMatchesCategoryFilter(t.Category, selectedCategory)
+          )
+        : filteredTransactions,
+    [filteredTransactions, selectedCategory]
+  );
 
   useEffect(() => {
     if (allTransactions.length === 0) return;
@@ -201,11 +213,11 @@ function App() {
 
   const handleCategoryClick = useCallback(
     (txIndex: number, anchor: DOMRect) => {
-      const tx = filteredTransactions[txIndex];
+      const tx = displayedTransactions[txIndex];
       if (!tx) return;
       setDropdown({ anchor, tx });
     },
-    [filteredTransactions]
+    [displayedTransactions]
   );
 
   const handleDropdownPick = useCallback(
@@ -321,7 +333,14 @@ function App() {
         {statistics && (
           <section className="statistics-section">
             <h2>Spending by Category</h2>
-            <StatisticsTable statistics={statistics} onToast={showToast} />
+            <StatisticsTable
+              statistics={statistics}
+              onToast={showToast}
+              selectedCategory={selectedCategory}
+              onSelectCategoryFilter={(joinedPath) =>
+                setSelectedCategory((prev) => (prev === joinedPath ? null : joinedPath))
+              }
+            />
             <DisplaySettings />
           </section>
         )}
@@ -336,12 +355,29 @@ function App() {
         <section className="transactions-section">
           <h2>
             Transactions{' '}
-            {filteredTransactions.length > 0 && (
-              <span className="count">({filteredTransactions.length})</span>
+            {displayedTransactions.length > 0 && (
+              <span className="count">({displayedTransactions.length})</span>
             )}
           </h2>
+          {selectedCategory && (
+            <div className="category-filter-pill" data-testid="category-filter-pill">
+              <span aria-hidden>▾</span>
+              <span className="category-filter-pill-label">
+                Filter: {selectedCategory}
+              </span>
+              <button
+                type="button"
+                className="category-filter-pill-clear"
+                aria-label="Clear category filter"
+                data-testid="category-filter-clear"
+                onClick={() => setSelectedCategory(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
           <TransactionsTable
-            transactions={filteredTransactions}
+            transactions={displayedTransactions}
             onCategoryClick={handleCategoryClick}
           />
         </section>
