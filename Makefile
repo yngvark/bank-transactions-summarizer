@@ -15,11 +15,11 @@ build: install ## Build frontend
 	@echo "Building frontend..."
 	@(cd v2/frontend && pnpm run build)
 
-run: install ## Run frontend in development mode, foreground (use PORT=XXXX for custom port)
+run: ## Run frontend in development mode, foreground (run `make install` first if deps changed)
 	@echo "Starting development server on port $(PORT)..."
 	@(cd v2/frontend && PORT=$(PORT) pnpm run dev)
 
-run-bg: install ## Start dev server detached in its own session (PID at $(PID_FILE), log at $(LOG_FILE))
+run-bg: ## Start dev server detached in its own session (PID at $(PID_FILE), log at $(LOG_FILE))
 	@if [ -f $(PID_FILE) ] && kill -0 $$(cat $(PID_FILE)) 2>/dev/null; then \
 		echo "Dev server already running (PID $$(cat $(PID_FILE))). Run 'make stop' first."; exit 1; \
 	fi
