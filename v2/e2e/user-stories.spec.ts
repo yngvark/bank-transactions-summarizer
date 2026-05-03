@@ -189,6 +189,36 @@ test.describe('User stories', () => {
     await expect.poll(async () => rows.count()).toBe(totalBefore);
   });
 
+  test('I can pick a date range by clicking two months in the picker grid', async ({ page }) => {
+    await loadFixture(page);
+
+    // Year tab for the fixture's data is visible.
+    const yearTab = page.locator('[data-testid="year-tab-2023"]');
+    await expect(yearTab).toBeVisible();
+
+    // First click anchors; second click commits the range.
+    await page.locator('[data-testid="month-cell-2023-03"]').click();
+    await page.locator('[data-testid="month-cell-2023-04"]').click();
+
+    // From/To inputs reflect the picked months.
+    await expect(page.locator('input[type="date"]').first()).toHaveValue('2023-03-01');
+    await expect(page.locator('input[type="date"]').nth(1)).toHaveValue('2023-04-30');
+
+    // Period summary reads the committed range.
+    await expect(page.locator('[data-testid="period-summary"]')).toContainText('Mar 2023');
+    await expect(page.locator('[data-testid="period-summary"]')).toContainText('Apr 2023');
+
+    // Edge cells show the current bounds.
+    await expect(page.locator('[data-testid="month-cell-2023-03"]')).toHaveAttribute(
+      'data-state',
+      'edge'
+    );
+    await expect(page.locator('[data-testid="month-cell-2023-04"]')).toHaveAttribute(
+      'data-state',
+      'edge'
+    );
+  });
+
   test('My uploaded transactions are still loaded after I refresh the page', async ({ page }) => {
     await loadFixture(page);
     const rowsBefore = await page.locator('#transactions-table tbody tr').count();

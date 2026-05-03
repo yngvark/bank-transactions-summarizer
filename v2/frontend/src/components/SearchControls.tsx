@@ -1,9 +1,11 @@
 import { KeyboardEvent } from 'react';
+import MonthRangePicker from './MonthRangePicker';
 
 interface SearchControlsProps {
   searchTerm: string;
   periodFrom: string;
   periodTo: string;
+  availableYears: number[];
   onSearchChange: (value: string) => void;
   onPeriodFromChange: (value: string) => void;
   onPeriodToChange: (value: string) => void;
@@ -14,6 +16,7 @@ function SearchControls({
   searchTerm,
   periodFrom,
   periodTo,
+  availableYears,
   onSearchChange,
   onPeriodFromChange,
   onPeriodToChange,
@@ -24,6 +27,11 @@ function SearchControls({
       e.preventDefault();
       // Triggers filter via state change
     }
+  };
+
+  const handleRangeChange = (from: string, to: string) => {
+    onPeriodFromChange(from);
+    onPeriodToChange(to);
   };
 
   return (
@@ -59,6 +67,13 @@ function SearchControls({
           onKeyDown={handlePeriodKeyDown}
         />
       </div>
+
+      <MonthRangePicker
+        periodFrom={periodFrom}
+        periodTo={periodTo}
+        availableYears={availableYears}
+        onRangeChange={handleRangeChange}
+      />
     </div>
   );
 }
