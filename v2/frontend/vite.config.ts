@@ -40,5 +40,11 @@ export default defineConfig(({ mode }) => {
       port: parseInt(env.PORT || '5173'),
       strictPort: true,
     },
+    build: {
+      // ExcelJS is dynamically imported (FileUpload.tsx), so its ~1 MB chunk
+      // (~295 kB gzipped) loads only when a user drops a file — never on
+      // first paint. See docs/2026-05-03-vite-chunk-size-warning.md.
+      chunkSizeWarningLimit: 1100,
+    },
   };
 });
