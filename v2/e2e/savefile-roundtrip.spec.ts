@@ -16,13 +16,6 @@ async function freshAppWithData(page: Page) {
 }
 
 test.describe('SaveFile persistence', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'Mobile Chrome',
-      'desktop-only header layout for now'
-    );
-  });
-
   test('config toolbar is visible in header', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
     await expect(page.locator('[data-testid="config-import"]')).toBeVisible();

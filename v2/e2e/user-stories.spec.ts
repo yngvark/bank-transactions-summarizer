@@ -34,11 +34,7 @@ test.describe('User stories', () => {
   });
 
   for (const mode of ['view', 'edit'] as const) {
-    test(`I can collapse and re-expand a category by clicking its chevron (${mode} mode)`, async ({ page }, testInfo) => {
-      test.skip(
-        mode === 'edit' && testInfo.project.name === 'Mobile Chrome',
-        'mobile edit mode is intentionally degraded'
-      );
+    test(`I can collapse and re-expand a category by clicking its chevron (${mode} mode)`, async ({ page }) => {
       await loadFixture(page);
       if (mode === 'edit') {
         await page.locator('[data-testid="cat-edit-toggle"]').click();
@@ -80,8 +76,7 @@ test.describe('User stories', () => {
     expect(remainingText).toContain('NETFLIX');
   });
 
-  test('I can rename a category and the new name is shown in the statistics table', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'Mobile Chrome', 'mobile edit mode is intentionally degraded');
+  test('I can rename a category and the new name is shown in the statistics table', async ({ page }) => {
     await loadFixture(page);
     await page.locator('[data-testid="cat-edit-toggle"]').click();
 
@@ -106,11 +101,7 @@ test.describe('User stories', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', expectedAfter);
   });
 
-  test('I can correct an unmapped merchant category by adding a merchant-category rule', async ({ page }, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'Mobile Chrome',
-      'mobile dropdown positioning tested separately in mobile-responsive.spec.ts'
-    );
+  test('I can correct an unmapped merchant category by adding a merchant-category rule', async ({ page }) => {
     await loadFixture(page);
 
     // Find the row whose Merchant Category is not in the seeded list.
@@ -137,8 +128,7 @@ test.describe('User stories', () => {
     await expect(zaraCell).toContainText('Personlig forbruk ➡ Klær og sko');
   });
 
-  test('I can export my configuration to a file and import it back later', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'Mobile Chrome', 'desktop-only header layout for now');
+  test('I can export my configuration to a file and import it back later', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
     await page.evaluate(() => {
       localStorage.removeItem('bts-transactions-v1');

@@ -65,20 +65,15 @@ Opens the HTML report from the last test run.
 ### Run tests for a specific browser
 ```bash
 pnpm exec playwright test --project=chromium
-pnpm exec playwright test --project=firefox
-pnpm exec playwright test --project=webkit
-pnpm exec playwright test --project="Mobile Safari"
-pnpm exec playwright test --project=iPad
 ```
 
 ### Run a specific test file
 ```bash
-pnpm exec playwright test e2e/mobile-responsive.spec.ts
+pnpm exec playwright test e2e/desktop-responsive.spec.ts
 ```
 
 ### Run tests matching a pattern
 ```bash
-pnpm exec playwright test --grep "mobile"
 pnpm exec playwright test --grep "should hide month columns"
 ```
 
@@ -92,7 +87,7 @@ This opens Playwright Inspector for step-by-step debugging.
 
 ### Debug a specific test
 ```bash
-pnpm exec playwright test --debug --grep "should have adequate touch targets"
+pnpm exec playwright test --debug --grep "should display all columns"
 ```
 
 ### Generate trace
@@ -106,10 +101,7 @@ pnpm exec playwright show-trace test-results/path-to-trace.zip
 
 ## Test Structure
 
-- `e2e/mobile-responsive.spec.ts` - Mobile responsiveness tests
-  - Mobile tests (iPhone 12 viewport)
-  - Desktop tests (Desktop Chrome viewport)
-  - Cross-device compatibility tests (iPhone SE, iPad Pro, Desktop)
+- `e2e/desktop-responsive.spec.ts` - Desktop responsiveness tests (Desktop Chrome viewport)
 
 ## Continuous Integration
 
