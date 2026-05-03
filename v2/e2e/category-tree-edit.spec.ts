@@ -16,13 +16,6 @@ async function loadFixture(page: Page) {
 }
 
 test.describe('Category tree editing (prototype G)', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'Mobile Chrome',
-      'mobile edit-mode is a known degraded experience for prototype G'
-    );
-  });
-
   test('toggle reveals edit chrome and Esc exits', async ({ page }) => {
     await loadFixture(page);
     const toggle = page.locator('[data-testid="cat-edit-toggle"]');

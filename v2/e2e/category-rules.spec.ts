@@ -16,28 +16,12 @@ async function loadFixture(page: Page) {
   await page.locator('#transactions-table').scrollIntoViewIfNeeded();
 }
 
-/**
- * Center the target cell in the viewport before clicking so the anchored
- * dropdown (positioned at cell.bottom + 4) has room to render on-screen,
- * especially on the narrower Mobile Chrome viewport.
- */
 async function clickCell(locator: Locator) {
   await locator.evaluate((el) => (el as HTMLElement).scrollIntoView({ block: 'center', inline: 'center' }));
   await locator.click({ force: true });
 }
 
-// Feature behaviour is the same across projects; mobile has known dropdown
-// positioning quirks under Pixel 5 emulation (backdrop intercepts the
-// programmatic click point) that are test-harness issues, not feature bugs.
-// Mobile layout coverage lives in mobile-responsive.spec.ts.
 test.describe('Category rules (prototype D)', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'Mobile Chrome',
-      'mobile dropdown positioning tested separately in mobile-responsive.spec.ts'
-    );
-  });
-
   test('create rule via category dropdown updates matching rows and shows toast', async ({ page }) => {
     await loadFixture(page);
 
