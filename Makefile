@@ -48,8 +48,9 @@ stop: ## Stop the development server (prefers PID file, falls back to fuser)
 		echo "No PID file at $(PID_FILE), and fuser is unavailable. Start the dev server with 'make run-bg' so its PID is tracked, or stop it manually."; \
 	fi
 
-install-e2e: ## Install E2E test dependencies
+install-e2e: ## Install E2E test dependencies (incl. Playwright browser)
 	@(cd v2 && pnpm install)
+	@(cd v2 && pnpm exec playwright install chromium)
 
 ci: install install-e2e build ## Run unit and E2E tests
 	@(cd v2/frontend && pnpm test)
