@@ -9,7 +9,6 @@ interface SearchControlsProps {
   onSearchChange: (value: string) => void;
   onPeriodFromChange: (value: string) => void;
   onPeriodToChange: (value: string) => void;
-  onRandomize: () => void;
 }
 
 function SearchControls({
@@ -20,7 +19,6 @@ function SearchControls({
   onSearchChange,
   onPeriodFromChange,
   onPeriodToChange,
-  onRandomize,
 }: SearchControlsProps) {
   const handlePeriodKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -44,9 +42,6 @@ function SearchControls({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
         />
-        <button className="regular-button randomize-button" onClick={onRandomize}>
-          Load Sample Data
-        </button>
       </div>
 
       <div className="period-fields-wrapper">
