@@ -311,16 +311,25 @@ function App() {
           <h1>Bank Transactions</h1>
           <p className="app-subtitle">Analyze and categorize your spending</p>
         </div>
-        <ConfigToolbar
-          onError={showToast}
-          onSuccess={() =>
-            showToast(
-              allTransactions.length === 0
-                ? 'Configuration imported. Upload an Excel file to see transactions.'
-                : 'Configuration imported.'
-            )
-          }
-        />
+        <div className="app-header-actions">
+          <ConfigToolbar
+            onError={showToast}
+            onSuccess={() =>
+              showToast(
+                allTransactions.length === 0
+                  ? 'Configuration imported. Upload an Excel file to see transactions.'
+                  : 'Configuration imported.'
+              )
+            }
+          />
+          <button
+            type="button"
+            className="config-toolbar-button"
+            onClick={handleRandomize}
+          >
+            Load Sample Data
+          </button>
+        </div>
       </header>
 
       <main className="app-content">
@@ -335,7 +344,6 @@ function App() {
             onSearchChange={setSearchTerm}
             onPeriodFromChange={setPeriodFrom}
             onPeriodToChange={setPeriodTo}
-            onRandomize={handleRandomize}
           />
         </section>
 
