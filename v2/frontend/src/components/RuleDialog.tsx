@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CategoryTree, Rule, RuleField, MatchKind, Transaction } from '../../../shared/types';
 import { getMatchingTransactions, isValidRegex } from '../services/rules';
 import CategoryDropdown from './CategoryDropdown';
@@ -309,7 +310,9 @@ function RuleDialog({
             </button>
           )}
         </footer>
-        {pickerAnchor && (
+      </div>
+      {pickerAnchor &&
+        createPortal(
           <div className="rd-category-picker">
             <CategoryDropdown
               anchor={pickerAnchor}
@@ -321,9 +324,9 @@ function RuleDialog({
               onRemove={() => setPickerAnchor(null)}
               onClose={() => setPickerAnchor(null)}
             />
-          </div>
+          </div>,
+          document.body,
         )}
-      </div>
     </>
   );
 }
