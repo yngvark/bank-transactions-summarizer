@@ -367,7 +367,7 @@ function App() {
         )}
 
         <RulesPanel
-          rules={userRules}
+          rules={rules}
           onReorder={handleReorderRule}
           onEdit={handleRulesPanelEdit}
           onDelete={handleRulesPanelDelete}

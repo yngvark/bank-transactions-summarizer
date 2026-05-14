@@ -86,12 +86,16 @@ test.describe('Category rules (prototype D)', () => {
 
     await page.locator('[data-testid="rules-panel-toggle"]').click();
     await expect(page.locator('[data-testid="rules-list"]')).toBeVisible();
-    await expect(page.locator('.rules-row')).toHaveCount(1);
+    // 56 seeded rules from categories.json + 1 just-created user rule.
+    await expect(page.locator('.rules-row')).toHaveCount(57);
 
-    await page.locator('.rules-row button[data-testid^="rules-delete-"]').click();
+    await page
+      .locator('.rules-row button[data-testid^="rules-delete-"]:not([data-testid^="rules-delete-seed-"])')
+      .click();
     await page.locator('[data-testid="rd-confirm-delete"]').click();
 
-    await expect(page.locator('.rules-panel')).toHaveCount(0);
+    // Seeded rules remain after deleting the user rule.
+    await expect(page.locator('.rules-row')).toHaveCount(56);
     await expect(page.locator('[data-testid="cat-cell-0"]')).not.toContainText('Reise');
   });
 
@@ -214,9 +218,10 @@ test.describe('Category rules (prototype D)', () => {
     await expect(zaraCell).toContainText('Personlig forbruk ➡ Klær og sko');
     await expect(page.locator('.toast.visible')).toContainText('Rule created');
 
-    // The new rule is visible in the rules panel (seeded rules stay hidden).
+    // The new rule is visible in the rules panel alongside the seeded rules.
     await page.locator('[data-testid="rules-panel-toggle"]').click();
-    await expect(page.locator('.rules-row')).toHaveCount(1);
-    await expect(page.locator('.rules-row .rules-field-merchantCategory')).toBeVisible();
+    // 56 seeded rules + 1 just-created user rule.
+    await expect(page.locator('.rules-row')).toHaveCount(57);
+    await expect(page.locator('.rules-row .rules-field-merchantCategory').first()).toBeVisible();
   });
 });

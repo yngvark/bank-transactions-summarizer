@@ -78,8 +78,9 @@ test.describe('SaveFile persistence', () => {
     await page.locator('[data-testid="cd-remove"]').click();
     await page.locator('[data-testid="rd-confirm-delete"]').click();
 
-    // Confirm rule removed (rules panel disappears when count goes to 0)
-    await expect(page.locator('[data-testid="rules-list"]')).toHaveCount(0);
+    // Confirm user rule removed (56 seeded rules from categories.json remain).
+    await page.locator('[data-testid="rules-panel-toggle"]').click();
+    await expect(page.locator('.rules-row')).toHaveCount(56);
 
     // We are now dirty, so the next Import will prompt for confirmation —
     // accept it.
@@ -89,10 +90,10 @@ test.describe('SaveFile persistence', () => {
     const fileInput = page.locator('[data-testid="config-file-input"]');
     await fileInput.setInputFiles(savedPath!);
 
-    // Rule should be restored
+    // Rule should be restored (56 seeded + 1 imported user rule). The panel
+    // was opened earlier and remains open.
     await expect(page.locator('[data-testid="rules-panel-toggle"]')).toBeVisible();
-    await page.locator('[data-testid="rules-panel-toggle"]').click();
-    await expect(page.locator('.rules-row')).toHaveCount(1);
+    await expect(page.locator('.rules-row')).toHaveCount(57);
   });
 
   test('loading an invalid file shows toast', async ({ page }, testInfo) => {
