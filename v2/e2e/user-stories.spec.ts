@@ -76,6 +76,32 @@ test.describe('User stories', () => {
     expect(remainingText).toContain('NETFLIX');
   });
 
+  test('When I search, the statistics table keeps the same month columns and category rows', async ({ page }) => {
+    await loadFixture(page);
+
+    const headerCells = page.locator('.statistics-section table thead th');
+    const bodyRows = page.locator('.statistics-section table tbody tr');
+
+    const headersBefore = await headerCells.allInnerTexts();
+    const rowsBefore = await bodyRows.count();
+    expect(headersBefore.length).toBeGreaterThan(3);
+    expect(rowsBefore).toBeGreaterThan(1);
+
+    // A narrow search that will not match every month/category in the fixture.
+    await page.locator('.search-input').fill('NETFLIX');
+
+    // Transaction list narrows (proves the search is active).
+    await expect
+      .poll(async () => page.locator('#transactions-table tbody tr').innerText())
+      .toContain('NETFLIX');
+
+    // Statistics structure is unchanged: same columns, same row count.
+    await expect.poll(async () => (await headerCells.allInnerTexts()).join('|')).toBe(
+      headersBefore.join('|')
+    );
+    await expect.poll(async () => bodyRows.count()).toBe(rowsBefore);
+  });
+
   test('I can rename a category and the new name is shown in the statistics table', async ({ page }) => {
     await loadFixture(page);
     await page.locator('[data-testid="cat-edit-toggle"]').click();

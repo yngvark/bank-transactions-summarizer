@@ -58,6 +58,44 @@ describe('calculateStatistics', () => {
     expect(categorySum).toBe(-100);
   });
 
+  it('preserves yearMonths and categories from structureTransactions even when narrower value set has no matches', () => {
+    const structure: Transaction[] = [
+      makeTx({
+        TransactionDate: new Date('2023-06-15'),
+        Category: 'Mat og drikke ➡ Dagligvarer',
+        Amount: -100,
+      }),
+      makeTx({
+        TransactionDate: new Date('2023-07-15'),
+        Category: 'Personlig forbruk ➡ Klær og sko',
+        Amount: -200,
+      }),
+    ];
+    // Value set is a strict subset — only the June Dagligvarer row.
+    const values: Transaction[] = [structure[0]];
+
+    const stats = calculateStatistics(values, { structureTransactions: structure });
+
+    // Columns: both months from the structure set, sorted.
+    expect(stats.yearMonths).toEqual(['2023-06', '2023-07']);
+
+    // Rows: both categories from the structure set, sorted.
+    const categoriesShown = stats.rawTableData.map((r) => r.category);
+    expect(categoriesShown).toEqual([
+      'Mat og drikke ➡ Dagligvarer',
+      'Personlig forbruk ➡ Klær og sko',
+    ]);
+
+    // Klær og sko has no values; its row is all zeros.
+    const klar = stats.rawTableData.find((r) => r.category === 'Personlig forbruk ➡ Klær og sko');
+    expect(klar?.periodTotals).toEqual([0, 0]);
+    expect(klar?.sum).toBe(0);
+
+    // Dagligvarer keeps June's value, July is zero.
+    const mat = stats.rawTableData.find((r) => r.category === 'Mat og drikke ➡ Dagligvarer');
+    expect(mat?.periodTotals).toEqual([-100, 0]);
+  });
+
   it('handles all-Reservert input without crashing', () => {
     const txs: Transaction[] = [
       makeTx({

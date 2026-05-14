@@ -2,15 +2,28 @@ import * as d3 from 'd3';
 import { Transaction, GroupedStatistics, RawRowData } from '../../../shared/types';
 import { buildCategoryTree } from './categoryTree';
 
-export function calculateStatistics(transactionsWithCategory: Transaction[]): GroupedStatistics {
+export function calculateStatistics(
+  transactionsWithCategory: Transaction[],
+  options: { structureTransactions?: Transaction[] } = {}
+): GroupedStatistics {
   // Pending ("Reservert") rows have no TransactionDate — exclude them from aggregation.
   const dated = transactionsWithCategory.filter(
     (t): t is Transaction & { TransactionDate: Date } => t.TransactionDate != null
   );
+  // `structureTransactions` determines which months (columns) and categories
+  // (rows) appear; cell values still come from `transactionsWithCategory`.
+  // This keeps the table layout stable when the value set is narrower (e.g.
+  // a search filter) than the structure set (e.g. a date range).
+  const structureSource = options.structureTransactions ?? transactionsWithCategory;
+  const structureDated = structureSource.filter(
+    (t): t is Transaction & { TransactionDate: Date } => t.TransactionDate != null
+  );
   const groupedData = groupData(dated);
 
-  const yearMonths = Array.from(groupedData.keys()).sort();
-  const categories = Array.from(new Set(dated.map((d) => d.Category))).sort();
+  const yearMonths = Array.from(
+    new Set(structureDated.map((d) => getDateKey(d.TransactionDate)))
+  ).sort();
+  const categories = Array.from(new Set(structureDated.map((d) => d.Category))).sort();
 
   const numberFormatter = new Intl.NumberFormat('nb-NO', {
     style: 'decimal',

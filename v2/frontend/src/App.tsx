@@ -86,25 +86,27 @@ function App() {
   const processTransactions = useCallback(async () => {
     if (allTransactions.length === 0) return;
 
-    let filtered = allTransactions.filter((row) =>
-      row.Text.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
+    // Date range fixes the statistics table's structure (months and categories);
+    // search only narrows the cell values within that structure.
+    let dateFiltered = allTransactions;
     if (periodFrom) {
-      filtered = filtered.filter(
+      dateFiltered = dateFiltered.filter(
         (row) => row.BookDate == null || new Date(row.BookDate) >= new Date(periodFrom)
       );
     }
-
     if (periodTo) {
-      filtered = filtered.filter(
+      dateFiltered = dateFiltered.filter(
         (row) => row.BookDate == null || new Date(row.BookDate) <= new Date(periodTo)
       );
     }
 
-    const parsed = parseTransactions(filtered);
-    const withRules = applyRules(parsed, rules);
-    const stats = calculateStatistics(withRules);
+    const searchFiltered = dateFiltered.filter((row) =>
+      row.Text.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const structureWithRules = applyRules(parseTransactions(dateFiltered), rules);
+    const withRules = applyRules(parseTransactions(searchFiltered), rules);
+    const stats = calculateStatistics(withRules, { structureTransactions: structureWithRules });
 
     setFilteredTransactions(withRules);
     setStatistics(stats);
