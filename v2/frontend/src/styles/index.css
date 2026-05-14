@@ -1244,6 +1244,24 @@ tr:hover .cat-content .cat-filter-btn { opacity: 0.85; }
   background-color: rgba(251, 191, 36, 0.28);
 }
 
+/* Column-scoped text selection in transactions table.
+   Default: cells are not selectable. Once the user mousedowns on a cell,
+   that column becomes the active selectable one. */
+#transactions-table[data-active-col] td {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#transactions-table[data-active-col="TransactionDate"] td[data-col="TransactionDate"],
+#transactions-table[data-active-col="Text"] td[data-col="Text"],
+#transactions-table[data-active-col="Type"] td[data-col="Type"],
+#transactions-table[data-active-col="Amount"] td[data-col="Amount"],
+#transactions-table[data-active-col="Merchant Category"] td[data-col="Merchant Category"],
+#transactions-table[data-active-col="Category"] td[data-col="Category"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Sortable column header in transactions table */
 .transactions-section th.sortable,
 #transactions-table th.sortable {

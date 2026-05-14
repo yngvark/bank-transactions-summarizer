@@ -49,6 +49,12 @@ function TransactionsTable({ transactions, onCategoryClick }: TransactionsTableP
     key: 'Category',
     dir: null,
   });
+  const [activeCol, setActiveCol] = useState<string | null>(null);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLTableElement>) => {
+    const cell = (e.target as HTMLElement).closest('td, th') as HTMLElement | null;
+    setActiveCol(cell?.dataset.col ?? null);
+  };
 
   const displayIndices = useMemo(() => {
     const indices = transactions.map((_, i) => i);
@@ -94,6 +100,7 @@ function TransactionsTable({ transactions, onCategoryClick }: TransactionsTableP
     return (
       <td
         key="Category"
+        data-col="Category"
         className={`cat-cell-td ${isUnknown ? 'cat-cell-td-unknown' : ''}`}
       >
         <button
@@ -118,7 +125,11 @@ function TransactionsTable({ transactions, onCategoryClick }: TransactionsTableP
     key === 'Category' ? 'category-sort-header' : undefined;
 
   return (
-    <table id="transactions-table">
+    <table
+      id="transactions-table"
+      data-active-col={activeCol ?? undefined}
+      onMouseDown={handleMouseDown}
+    >
       <thead>
         <tr>
           {tableHeaders.map((header, i) => {
@@ -128,6 +139,7 @@ function TransactionsTable({ transactions, onCategoryClick }: TransactionsTableP
             return (
               <th
                 key={header}
+                data-col={key}
                 className={className}
                 onClick={() => toggleSort(key)}
                 data-testid={extraTestId(key) ?? `sort-header-${key}`}
@@ -147,7 +159,7 @@ function TransactionsTable({ transactions, onCategoryClick }: TransactionsTableP
                 key === 'Category'
                   ? renderCategoryCell(transaction, txIndex)
                   : (
-                    <td key={key}>{formatValue(key, transaction[key])}</td>
+                    <td key={key} data-col={key}>{formatValue(key, transaction[key])}</td>
                   )
               )}
             </tr>

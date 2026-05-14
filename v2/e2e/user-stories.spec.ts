@@ -219,6 +219,34 @@ test.describe('User stories', () => {
     );
   });
 
+  test('When I drag in one transaction-table column, only that column gets selected', async ({ page }) => {
+    await loadFixture(page);
+
+    // Press the mouse on a Text cell. The table marks Text as the active column,
+    // so only Text cells are selectable; other columns drop user-select.
+    const textCell = page.locator('#transactions-table tbody td[data-col="Text"]').first();
+    await textCell.scrollIntoViewIfNeeded();
+    const box = await textCell.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(box!.x + 5, box!.y + box!.height / 2);
+    await page.mouse.down();
+
+    await expect(page.locator('#transactions-table')).toHaveAttribute('data-active-col', 'Text');
+
+    const userSelects = await page.evaluate(() => {
+      const text = document.querySelector('#transactions-table tbody td[data-col="Text"]');
+      const amount = document.querySelector('#transactions-table tbody td[data-col="Amount"]');
+      return {
+        text: text ? getComputedStyle(text).userSelect : null,
+        amount: amount ? getComputedStyle(amount).userSelect : null,
+      };
+    });
+    expect(userSelects.text).toBe('text');
+    expect(userSelects.amount).toBe('none');
+
+    await page.mouse.up();
+  });
+
   test('My uploaded transactions are still loaded after I refresh the page', async ({ page }) => {
     await loadFixture(page);
     const rowsBefore = await page.locator('#transactions-table tbody tr').count();
