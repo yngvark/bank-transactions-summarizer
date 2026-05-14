@@ -124,6 +124,18 @@ function App() {
     [filteredTransactions, selectedCategory]
   );
 
+  const availableYears = useMemo(() => {
+    const set = new Set<number>();
+    for (const tx of allTransactions) {
+      for (const d of [tx.TransactionDate, tx.BookDate]) {
+        if (d == null || d === '') continue;
+        const year = new Date(d).getFullYear();
+        if (Number.isFinite(year)) set.add(year);
+      }
+    }
+    return Array.from(set).sort((a, b) => a - b);
+  }, [allTransactions]);
+
   useEffect(() => {
     if (allTransactions.length === 0) return;
 
@@ -319,6 +331,7 @@ function App() {
             searchTerm={searchTerm}
             periodFrom={periodFrom}
             periodTo={periodTo}
+            availableYears={availableYears}
             onSearchChange={setSearchTerm}
             onPeriodFromChange={setPeriodFrom}
             onPeriodToChange={setPeriodTo}
