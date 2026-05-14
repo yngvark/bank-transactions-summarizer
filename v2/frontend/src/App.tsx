@@ -421,6 +421,7 @@ function App() {
         <RuleDialog
           mode={dialog.mode}
           category={dialog.category}
+          categories={config.categories}
           initialField={dialog.initialField}
           initialMatch={dialog.initialMatch}
           initialPattern={dialog.initialPattern}

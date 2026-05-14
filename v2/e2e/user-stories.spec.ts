@@ -154,6 +154,32 @@ test.describe('User stories', () => {
     await expect(zaraCell).toContainText('Personlig forbruk ➡ Klær og sko');
   });
 
+  test('I can change the target category of an existing rule', async ({ page }) => {
+    await loadFixture(page);
+
+    // Create a rule under Reise.
+    const firstCell = page.locator('[data-testid="cat-cell-0"]');
+    await firstCell.evaluate((el) => (el as HTMLElement).scrollIntoView({ block: 'center' }));
+    await firstCell.click({ force: true });
+    await page.locator('[data-testid="cd-primary-Reise"]').click();
+    await page.locator('.category-dropdown button.cd-item-sub').first().click();
+    await page.locator('[data-testid="rd-create"]').click();
+    await expect(firstCell).toContainText('Reise');
+
+    // Open the rule from the rules panel and re-target it to a different category.
+    await page.locator('[data-testid="rules-panel-toggle"]').click();
+    await page
+      .locator('.rules-row button[data-testid^="rules-edit-"]:not([data-testid^="rules-edit-seed-"])')
+      .click();
+    await page.locator('[data-testid="rd-category-button"]').click();
+    await page.locator('[data-testid="cd-primary-Mat og drikke"]').click();
+    await page.locator('[data-testid="cd-sub-Dagligvarer"]').click();
+    await page.locator('[data-testid="rd-update"]').click();
+
+    await expect(firstCell).toContainText('Mat og drikke');
+    await expect(firstCell).toContainText('Dagligvarer');
+  });
+
   test('I can export my configuration to a file and import it back later', async ({ page }) => {
     await page.goto('/', { timeout: 60000 });
     await page.evaluate(() => {

@@ -150,6 +150,45 @@ test.describe('Category rules (prototype D)', () => {
     });
   }
 
+  test('editing a rule can change its target category', async ({ page }) => {
+    await loadFixture(page);
+
+    // Create a rule under "Reise".
+    await clickCell(page.locator('[data-testid="cat-cell-0"]'));
+    await page.locator('[data-testid="cd-primary-Reise"]').click();
+    const subItem = page.locator('.category-dropdown button.cd-item-sub').first();
+    await expect(subItem).toBeVisible();
+    await subItem.click();
+    await expect(page.locator('[data-testid="rd-create"]')).toBeVisible();
+    await page.locator('[data-testid="rd-create"]').click();
+    await expect(page.locator('[data-testid="rd-create"]')).toHaveCount(0);
+
+    await expect(page.locator('[data-testid="cat-cell-0"]')).toContainText('Reise');
+
+    // Open the rule for editing from the rules panel.
+    await page.locator('[data-testid="rules-panel-toggle"]').click();
+    await page
+      .locator('.rules-row button[data-testid^="rules-edit-"]:not([data-testid^="rules-edit-seed-"])')
+      .click();
+
+    // Change the target category to Mat og drikke ➡ Dagligvarer.
+    await page.locator('[data-testid="rd-category-button"]').click();
+    await page.locator('[data-testid="cd-primary-Mat og drikke"]').click();
+    await page.locator('[data-testid="cd-sub-Dagligvarer"]').click();
+
+    // The badge reflects the new category before save.
+    await expect(page.locator('[data-testid="rd-category-button"]')).toContainText('Mat og drikke');
+    await expect(page.locator('[data-testid="rd-category-button"]')).toContainText('Dagligvarer');
+
+    await page.locator('[data-testid="rd-update"]').click();
+    await expect(page.locator('[data-testid="rd-update"]')).toHaveCount(0);
+
+    // The matched row now shows the new category, not "Reise".
+    await expect(page.locator('[data-testid="cat-cell-0"]')).toContainText('Mat og drikke');
+    await expect(page.locator('[data-testid="cat-cell-0"]')).toContainText('Dagligvarer');
+    await expect(page.locator('[data-testid="cat-cell-0"]')).not.toContainText('Reise');
+  });
+
   test('invalid regex shows error and disables Create', async ({ page }) => {
     await loadFixture(page);
 

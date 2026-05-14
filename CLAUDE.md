@@ -4,7 +4,9 @@ Bank Transactions Summarizer — a frontend-only SPA for personal finance analys
 
 **Tech stack:** TypeScript, React 18, Vite 6, D3.js (aggregation), SheetJS (Excel parsing), plain CSS, Playwright (E2E tests), GitHub Pages (deployment via GitHub Actions).
 
-**Data flow:** Excel upload → SheetJS parse → filter by text/date → categorize via `v2/frontend/src/data/categories.json` (36 merchant→Norwegian category mappings) → D3 rollup by month+category → render statistics heatmap table + transaction list.
+**Data flow:** Excel upload → SheetJS parse → filter by text/date → categorize by matching each transaction against the user's **rules** (stored in the SaveFile) → D3 rollup by month+category → render statistics heatmap table + transaction list.
+
+**Persistence model:** The SaveFile (localStorage key `bts-savefile-v1`, see `v2/frontend/src/services/boot.ts`) is the runtime source of truth. It holds `rules`, `categories` (the category tree), and `settings`. Rules and categories are user-editable; the tree may contain categories that have no rule. `v2/frontend/src/data/categories.json` is **seed-only** — it populates the SaveFile on first boot (or when a corrupt SaveFile is rebuilt), giving rules `id` prefix `seed-`. Editing `categories.json` does not affect existing users.
 
 **Key layout:**
 - `v2/frontend/src/` — React app (App.tsx, components/, services/, data/, styles/)

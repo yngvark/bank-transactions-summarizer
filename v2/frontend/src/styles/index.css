@@ -1448,6 +1448,32 @@ tr:hover .cat-content .cat-filter-btn { opacity: 0.85; }
   width: fit-content;
 }
 
+.rd-category-badge-button {
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rd-category-badge-button:hover {
+  filter: brightness(0.97);
+}
+
+.rd-category-caret {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* The category picker popover is rendered inside the modal so that it stacks
+   above the modal content. The modal creates its own stacking context. */
+.rd-category-picker .cd-backdrop {
+  z-index: 1102;
+}
+
+.rd-category-picker .category-dropdown {
+  z-index: 1103;
+}
+
 .rd-sep {
   color: var(--text-secondary);
 }

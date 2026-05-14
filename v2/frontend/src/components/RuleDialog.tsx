@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Rule, RuleField, MatchKind, Transaction } from '../../../shared/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { CategoryTree, Rule, RuleField, MatchKind, Transaction } from '../../../shared/types';
 import { getMatchingTransactions, isValidRegex } from '../services/rules';
+import CategoryDropdown from './CategoryDropdown';
 
 export type RuleDialogMode = 'create' | 'update' | 'delete';
 
 interface RuleDialogProps {
   mode: RuleDialogMode;
   category: [string, string];
+  categories: CategoryTree;
   initialField: RuleField;
   initialMatch: MatchKind;
   initialPattern: string;
@@ -58,6 +60,7 @@ function renderHighlighted(text: string, pattern: string, match: MatchKind, fiel
 function RuleDialog({
   mode,
   category,
+  categories,
   initialField,
   initialMatch,
   initialPattern,
@@ -70,6 +73,9 @@ function RuleDialog({
   const [field, setField] = useState<RuleField>(initialField);
   const [match, setMatch] = useState<MatchKind>(initialMatch);
   const [pattern, setPattern] = useState(initialPattern);
+  const [chosenCategory, setChosenCategory] = useState<[string, string]>(category);
+  const [pickerAnchor, setPickerAnchor] = useState<DOMRect | null>(null);
+  const categoryBtnRef = useRef<HTMLButtonElement | null>(null);
 
   const regexInvalid = match === 'regex' && pattern.length > 0 && !isValidRegex(pattern);
 
@@ -103,7 +109,7 @@ function RuleDialog({
       field,
       match,
       pattern: pattern.trim(),
-      category,
+      category: chosenCategory,
     });
   }
 
@@ -134,9 +140,21 @@ function RuleDialog({
             <>
               <div className="rd-section">
                 <label className="rd-label">Category</label>
-                <div className="rd-category-badge">
-                  {category[0]} <span className="rd-sep">›</span> {category[1]}
-                </div>
+                <button
+                  type="button"
+                  ref={categoryBtnRef}
+                  className="rd-category-badge rd-category-badge-button"
+                  onClick={() => {
+                    if (categoryBtnRef.current) {
+                      setPickerAnchor(categoryBtnRef.current.getBoundingClientRect());
+                    }
+                  }}
+                  data-testid="rd-category-button"
+                  aria-label="Change category"
+                >
+                  {chosenCategory[0]} <span className="rd-sep">›</span> {chosenCategory[1]}
+                  <span className="rd-category-caret" aria-hidden>▾</span>
+                </button>
               </div>
 
               <div className="rd-section">
@@ -291,6 +309,20 @@ function RuleDialog({
             </button>
           )}
         </footer>
+        {pickerAnchor && (
+          <div className="rd-category-picker">
+            <CategoryDropdown
+              anchor={pickerAnchor}
+              categories={categories}
+              onPick={(primary, sub) => {
+                setChosenCategory([primary, sub]);
+                setPickerAnchor(null);
+              }}
+              onRemove={() => setPickerAnchor(null)}
+              onClose={() => setPickerAnchor(null)}
+            />
+          </div>
+        )}
       </div>
     </>
   );
