@@ -1,9 +1,12 @@
 import { test, expect, Page, Locator } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtureFile = path.resolve(__dirname, 'fixtures/test-transactions-bank-norwegian.xlsx');
+const seedCategoriesPath = path.resolve(__dirname, '../frontend/src/data/categories.json');
+const SEEDED_RULE_COUNT = Object.keys(JSON.parse(fs.readFileSync(seedCategoriesPath, 'utf8'))).length;
 
 async function loadFixture(page: Page) {
   await page.goto('/', { timeout: 60000 });
@@ -86,8 +89,8 @@ test.describe('Category rules (prototype D)', () => {
 
     await page.locator('[data-testid="rules-panel-toggle"]').click();
     await expect(page.locator('[data-testid="rules-list"]')).toBeVisible();
-    // 56 seeded rules from categories.json + 1 just-created user rule.
-    await expect(page.locator('.rules-row')).toHaveCount(57);
+    // Seeded rules from categories.json + 1 just-created user rule.
+    await expect(page.locator('.rules-row')).toHaveCount(SEEDED_RULE_COUNT + 1);
 
     await page
       .locator('.rules-row button[data-testid^="rules-delete-"]:not([data-testid^="rules-delete-seed-"])')
@@ -95,7 +98,7 @@ test.describe('Category rules (prototype D)', () => {
     await page.locator('[data-testid="rd-confirm-delete"]').click();
 
     // Seeded rules remain after deleting the user rule.
-    await expect(page.locator('.rules-row')).toHaveCount(56);
+    await expect(page.locator('.rules-row')).toHaveCount(SEEDED_RULE_COUNT);
     await expect(page.locator('[data-testid="cat-cell-0"]')).not.toContainText('Reise');
   });
 
@@ -259,8 +262,8 @@ test.describe('Category rules (prototype D)', () => {
 
     // The new rule is visible in the rules panel alongside the seeded rules.
     await page.locator('[data-testid="rules-panel-toggle"]').click();
-    // 56 seeded rules + 1 just-created user rule.
-    await expect(page.locator('.rules-row')).toHaveCount(57);
+    // Seeded rules + 1 just-created user rule.
+    await expect(page.locator('.rules-row')).toHaveCount(SEEDED_RULE_COUNT + 1);
     await expect(page.locator('.rules-row .rules-field-merchantCategory').first()).toBeVisible();
   });
 });

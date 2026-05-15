@@ -1,9 +1,12 @@
 import { test, expect, Page } from '@playwright/test';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixtureFile = path.resolve(__dirname, 'fixtures/test-transactions-bank-norwegian.xlsx');
+const seedCategoriesPath = path.resolve(__dirname, '../frontend/src/data/categories.json');
+const SEEDED_RULE_COUNT = Object.keys(JSON.parse(fs.readFileSync(seedCategoriesPath, 'utf8'))).length;
 
 const SAVEFILE_KEY = 'bts-savefile-v1';
 
@@ -78,9 +81,9 @@ test.describe('SaveFile persistence', () => {
     await page.locator('[data-testid="cd-remove"]').click();
     await page.locator('[data-testid="rd-confirm-delete"]').click();
 
-    // Confirm user rule removed (56 seeded rules from categories.json remain).
+    // Confirm user rule removed (seeded rules from categories.json remain).
     await page.locator('[data-testid="rules-panel-toggle"]').click();
-    await expect(page.locator('.rules-row')).toHaveCount(56);
+    await expect(page.locator('.rules-row')).toHaveCount(SEEDED_RULE_COUNT);
 
     // We are now dirty, so the next Import will prompt for confirmation —
     // accept it.
@@ -90,10 +93,10 @@ test.describe('SaveFile persistence', () => {
     const fileInput = page.locator('[data-testid="config-file-input"]');
     await fileInput.setInputFiles(savedPath!);
 
-    // Rule should be restored (56 seeded + 1 imported user rule). The panel
+    // Rule should be restored (seeded + 1 imported user rule). The panel
     // was opened earlier and remains open.
     await expect(page.locator('[data-testid="rules-panel-toggle"]')).toBeVisible();
-    await expect(page.locator('.rules-row')).toHaveCount(57);
+    await expect(page.locator('.rules-row')).toHaveCount(SEEDED_RULE_COUNT + 1);
   });
 
   test('loading an invalid file shows toast', async ({ page }, testInfo) => {
