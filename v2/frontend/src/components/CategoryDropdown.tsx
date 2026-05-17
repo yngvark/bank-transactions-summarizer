@@ -41,11 +41,25 @@ function CategoryDropdown({
     return () => document.removeEventListener('keydown', handler);
   }, [onClose, selectedPrimary]);
 
+  // Flip above the anchor when there isn't enough room below; otherwise the
+  // bottom of the dropdown ends up past the viewport edge and unreachable,
+  // since the backdrop blocks page scroll and the dropdown is position: fixed.
+  const GAP = 4;
+  const MIN_BELOW = 200;
+  const viewportH = window.innerHeight;
+  const spaceBelow = viewportH - anchor.bottom - GAP;
+  const spaceAbove = anchor.top - GAP;
+  const openUp = spaceBelow < MIN_BELOW && spaceAbove > spaceBelow;
+  const available = openUp ? spaceAbove : spaceBelow;
+
   const style: React.CSSProperties = {
     position: 'fixed',
-    top: `${anchor.bottom + 4}px`,
     left: `${anchor.left}px`,
     minWidth: `${Math.max(anchor.width, 260)}px`,
+    maxHeight: `${available}px`,
+    ...(openUp
+      ? { bottom: `${viewportH - anchor.top + GAP}px` }
+      : { top: `${anchor.bottom + GAP}px` }),
   };
 
   return (

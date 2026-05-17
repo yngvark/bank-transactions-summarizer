@@ -299,6 +299,30 @@ test.describe('User stories', () => {
     await page.mouse.up();
   });
 
+  test('When the category cell sits near the bottom of the viewport, the dropdown still fits on screen', async ({ page }) => {
+    // Short viewport so the row ends up close to the bottom edge — the same
+    // situation a user hits when filtering leaves a single transaction.
+    await page.setViewportSize({ width: 1024, height: 520 });
+    await loadFixture(page);
+
+    // Narrow to the single "Pending at ZARA" row — its category is unknown.
+    await page.locator('.search-input').fill('ZARA');
+    const cell = page.locator('#transactions-table tbody button.cat-cell').first();
+    await expect(cell).toContainText('Ukjent kategori');
+
+    await cell.evaluate((el) => (el as HTMLElement).scrollIntoView({ block: 'end' }));
+    await cell.click({ force: true });
+
+    const dropdown = page.locator('.category-dropdown');
+    await expect(dropdown).toBeVisible();
+
+    const fits = await dropdown.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= window.innerHeight;
+    });
+    expect(fits).toBe(true);
+  });
+
   test('My uploaded transactions are still loaded after I refresh the page', async ({ page }) => {
     await loadFixture(page);
     const rowsBefore = await page.locator('#transactions-table tbody tr').count();
