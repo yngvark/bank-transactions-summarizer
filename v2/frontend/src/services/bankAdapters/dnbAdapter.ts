@@ -1,22 +1,7 @@
 import { RawTransaction } from '../../../../shared/types';
 import { BankAdapter, RawRow } from './types';
-import textPatterns from '../../data/categories-dnb-text.json';
 
 const DNB_HEADERS = ['Dato', 'Forklaring', 'Rentedato', 'Ut fra konto', 'Inn på konto'];
-
-const compiledPatterns = textPatterns.map((p) => ({
-  regex: new RegExp(p.pattern, 'i'),
-  merchantCategory: p.merchantCategory,
-}));
-
-function deriveMerchantCategory(text: string): string {
-  for (const { regex, merchantCategory } of compiledPatterns) {
-    if (regex.test(text)) {
-      return merchantCategory;
-    }
-  }
-  return '';
-}
 
 function deriveType(text: string, amount: number): string {
   if (amount > 0) return 'Innbetaling';
@@ -58,7 +43,7 @@ export const dnbAdapter: BankAdapter = {
         Currency: 'NOK',
         Amount: amount,
         'Merchant Area': '',
-        'Merchant Category': deriveMerchantCategory(text),
+        'Merchant Category': '',
       });
     }
 
