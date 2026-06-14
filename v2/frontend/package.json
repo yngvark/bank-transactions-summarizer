@@ -13,7 +13,7 @@
     "@fontsource/inter": "^5.2.8",
     "@protobi/exceljs": "github:yngvark/exceljs#8404952a3561fc8f5f44cf22a5cab0c973d36212",
     "d3": "^7.9.0",
-    "react": "^19.2.5",
+    "react": "^19.2.7",
     "react-dom": "^19.2.5",
     "zod": "^4.4.3"
   },
@@ -21,7 +21,7 @@
     "@eslint/js": "^9.39.4",
     "@types/d3": "^7.4.3",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.14",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.58.1",
     "@typescript-eslint/parser": "^8.60.1",
